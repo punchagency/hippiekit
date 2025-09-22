@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/constants/app_resources.dart';
+import '../../../../core/navigation/navigation_helper.dart';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/custom_input_field.dart';
 import '../viewmodels/auth_viewmodel.dart';
@@ -48,13 +49,9 @@ class _LoginPageState extends State<LoginPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Logo or App Title
-                  const Icon(
-                    Icons.eco,
-                    size: 80,
-                    color: AppColors.primary,
-                  ),
+                  const Icon(Icons.eco, size: 80, color: AppColors.primary),
                   const SizedBox(height: AppResources.largePadding),
-                  
+
                   Text(
                     'Welcome to HippieKit',
                     style: Theme.of(context).textTheme.headlineLarge?.copyWith(
@@ -63,7 +60,7 @@ class _LoginPageState extends State<LoginPage> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppResources.smallPadding),
-                  
+
                   Text(
                     'Sign in to continue',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -72,7 +69,7 @@ class _LoginPageState extends State<LoginPage> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppResources.largePadding * 2),
-                  
+
                   // Email Field
                   CustomInputField(
                     controller: _emailController,
@@ -90,7 +87,7 @@ class _LoginPageState extends State<LoginPage> {
                     },
                   ),
                   const SizedBox(height: AppResources.mediumPadding),
-                  
+
                   // Password Field
                   CustomInputField(
                     controller: _passwordController,
@@ -108,7 +105,7 @@ class _LoginPageState extends State<LoginPage> {
                     },
                   ),
                   const SizedBox(height: AppResources.mediumPadding),
-                  
+
                   // Forgot Password
                   Align(
                     alignment: Alignment.centerRight,
@@ -120,7 +117,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   const SizedBox(height: AppResources.largePadding),
-                  
+
                   // Login Button
                   Consumer<AuthViewModel>(
                     builder: (context, authViewModel, child) {
@@ -142,12 +139,12 @@ class _LoginPageState extends State<LoginPage> {
                     },
                   ),
                   const SizedBox(height: AppResources.mediumPadding),
-                  
+
                   // Register Button
                   CustomButton(
                     text: 'Create Account',
                     onPressed: () {
-                      // Navigate to register page
+                      NavigationHelper.go(route: '/signup');
                     },
                     type: ButtonType.outline,
                   ),
@@ -162,7 +159,7 @@ class _LoginPageState extends State<LoginPage> {
 
   void _showForgotPasswordDialog() {
     final emailController = TextEditingController();
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -170,7 +167,9 @@ class _LoginPageState extends State<LoginPage> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Enter your email address and we\'ll send you a reset link.'),
+            const Text(
+              'Enter your email address and we\'ll send you a reset link.',
+            ),
             const SizedBox(height: AppResources.mediumPadding),
             CustomInputField(
               controller: emailController,
@@ -193,7 +192,9 @@ class _LoginPageState extends State<LoginPage> {
                     ? null
                     : () {
                         if (emailController.text.isNotEmpty) {
-                          authViewModel.forgotPassword(emailController.text.trim());
+                          authViewModel.forgotPassword(
+                            emailController.text.trim(),
+                          );
                           Navigator.of(context).pop();
                         }
                       },

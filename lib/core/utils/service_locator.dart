@@ -18,27 +18,26 @@ Future<void> init() async {
   // Core Services
   sl.registerLazySingleton<StorageServiceInterface>(() => StorageService());
   sl.registerLazySingleton<ThemeServiceInterface>(() => ThemeService());
+  sl.registerLazySingleton<ThemeService>(() => ThemeService());
   sl.registerLazySingleton<NetworkServiceInterface>(() => NetworkService());
   sl.registerLazySingleton<SnackbarServiceInterface>(() => SnackbarService());
-  
+
   // API Services
   sl.registerLazySingleton<ApiClient>(() => ApiClient());
-  
+
   // Data Sources
   sl.registerLazySingleton<AuthRemoteDataSource>(
     () => AuthRemoteDataSourceImpl(),
   );
-  
+
   // Repositories
   sl.registerLazySingleton<AuthRepository>(
-    () => AuthRepositoryImpl(
-      remoteDataSource: sl<AuthRemoteDataSource>(),
-    ),
+    () => AuthRepositoryImpl(remoteDataSource: sl<AuthRemoteDataSource>()),
   );
-  
+
   // Initialize storage first
   sl.get<StorageServiceInterface>();
-  
+
   // Initialize theme service
   sl.get<ThemeServiceInterface>();
 }

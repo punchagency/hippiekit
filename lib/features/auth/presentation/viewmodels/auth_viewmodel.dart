@@ -1,5 +1,6 @@
 import '../../../../core/viewmodels/base_viewmodel.dart';
 import '../../../../core/utils/di.dart';
+import '../../../../core/navigation/navigation_helper.dart';
 import '../../../../shared/models/user_model.dart';
 import '../../domain/repositories/auth_repository.dart';
 
@@ -20,16 +21,17 @@ class AuthViewModel extends BaseViewModel {
     setLoading(true);
     try {
       final isLoggedInResult = await _authRepository.isLoggedIn();
-      
+
       isLoggedInResult.fold(
-        (failure) => showError('Failed to check auth status: ${failure.toString()}'),
+        (failure) =>
+            showError('Failed to check auth status: ${failure.toString()}'),
         (isLoggedIn) async {
           _isLoggedIn = isLoggedIn;
-          
+
           if (isLoggedIn) {
             await _loadCurrentUser();
           }
-          
+
           notifyListeners();
         },
       );
@@ -40,7 +42,7 @@ class AuthViewModel extends BaseViewModel {
 
   Future<void> _loadCurrentUser() async {
     final result = await _authRepository.getCurrentUser();
-    
+
     result.fold(
       (failure) => showError('Failed to load user: ${failure.toString()}'),
       (user) {
@@ -53,10 +55,10 @@ class AuthViewModel extends BaseViewModel {
   Future<void> login(String email, String password) async {
     setLoading(true);
     clearError();
-    
+
     try {
       final result = await _authRepository.login(email, password);
-      
+
       result.fold(
         (failure) {
           showError('Login failed: ${failure.toString()}');
@@ -65,12 +67,15 @@ class AuthViewModel extends BaseViewModel {
         (user) async {
           _currentUser = user;
           _isLoggedIn = true;
-          
+
           // Save user data to storage
           await _saveUserData(user);
-          
+
           notifyListeners();
           showSuccess('Login successful!');
+
+          // Navigate to dashboard using NavigationHelper
+          NavigationHelper.go(route: '/dashboard');
         },
       );
     } finally {
@@ -81,10 +86,10 @@ class AuthViewModel extends BaseViewModel {
   Future<void> register(String email, String password, String name) async {
     setLoading(true);
     clearError();
-    
+
     try {
       final result = await _authRepository.register(email, password, name);
-      
+
       result.fold(
         (failure) {
           showError('Registration failed: ${failure.toString()}');
@@ -93,12 +98,15 @@ class AuthViewModel extends BaseViewModel {
         (user) async {
           _currentUser = user;
           _isLoggedIn = true;
-          
+
           // Save user data to storage
           await _saveUserData(user);
-          
+
           notifyListeners();
           showSuccess('Registration successful!');
+
+          // Navigate to dashboard using NavigationHelper
+          NavigationHelper.go(route: '/dashboard');
         },
       );
     } finally {
@@ -108,10 +116,10 @@ class AuthViewModel extends BaseViewModel {
 
   Future<void> logout() async {
     setLoading(true);
-    
+
     try {
       final result = await _authRepository.logout();
-      
+
       result.fold(
         (failure) => showError('Logout failed: ${failure.toString()}'),
         (success) {
@@ -129,10 +137,10 @@ class AuthViewModel extends BaseViewModel {
   Future<void> forgotPassword(String email) async {
     setLoading(true);
     clearError();
-    
+
     try {
       final result = await _authRepository.forgotPassword(email);
-      
+
       result.fold(
         (failure) {
           showError('Failed to send reset email: ${failure.toString()}');
@@ -150,10 +158,10 @@ class AuthViewModel extends BaseViewModel {
   Future<void> resetPassword(String token, String newPassword) async {
     setLoading(true);
     clearError();
-    
+
     try {
       final result = await _authRepository.resetPassword(token, newPassword);
-      
+
       result.fold(
         (failure) {
           showError('Password reset failed: ${failure.toString()}');

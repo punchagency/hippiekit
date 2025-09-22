@@ -10,6 +10,7 @@ import 'core/providers/app_providers.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await init();
+  AppRouter.initialize(); // Initialize NavigationHelper
   runApp(const HippieKitApp());
 }
 
