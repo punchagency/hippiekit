@@ -1,0 +1,64 @@
+name: hippiekit
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # UI & Navigation
+  cupertino_icons: ^1.0.8
+  go_router: ^14.2.7
+  flutter_svg: ^2.0.10+1
+  
+  # State Management
+  provider: ^6.1.2
+  flutter_riverpod: ^2.5.1
+  
+  # Network
+  dio: ^5.4.3+1
+  connectivity_plus: ^6.0.3
+  
+  # Storage
+  shared_preferences: ^2.2.3
+  
+  # Utils
+  get_it: ^7.7.0
+  equatable: ^2.0.5
+  json_annotation: ^4.8.1
+  dartz: ^0.10.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  
+  # Code Generation
+  build_runner: ^2.4.9
+  json_serializable: ^6.8.0
+
+flutter:
+  uses-material-design: true
+  
+  # Assets
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/fonts/
+  
+  # Fonts
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700
