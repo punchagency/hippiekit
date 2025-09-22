@@ -10,7 +10,7 @@ class AppTheme {
       brightness: Brightness.light,
       colorScheme: AppColors.lightColorScheme,
       textTheme: AppTextStyles.lightTextTheme,
-      fontFamily: 'Inter',
+      fontFamily: 'Lato',
       appBarTheme: const AppBarTheme(
         systemOverlayStyle: SystemUiOverlayStyle.dark,
         backgroundColor: Colors.transparent,
@@ -65,7 +65,7 @@ class AppTheme {
       brightness: Brightness.dark,
       colorScheme: AppColors.darkColorScheme,
       textTheme: AppTextStyles.darkTextTheme,
-      fontFamily: 'Inter',
+      fontFamily: 'Lato',
       appBarTheme: const AppBarTheme(
         systemOverlayStyle: SystemUiOverlayStyle.light,
         backgroundColor: Colors.transparent,
@@ -85,7 +85,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.surface,
+        fillColor: AppColors.darkSurface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -105,9 +105,9 @@ class AppTheme {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: AppColors.surface,
+        backgroundColor: AppColors.darkSurface,
         selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.onSurfaceVariant,
+        unselectedItemColor: AppColors.darkOnSurfaceVariant,
         type: BottomNavigationBarType.fixed,
         elevation: 8,
       ),
