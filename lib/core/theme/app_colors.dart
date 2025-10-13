@@ -46,11 +46,9 @@ class AppColors {
     onSecondary: onSecondary,
     surface: surface,
     onSurface: onSurface,
-    background: background,
-    onBackground: onBackground,
     error: error,
     onError: onError,
-    surfaceVariant: surfaceVariant,
+    surfaceContainerHighest: surfaceVariant,
     onSurfaceVariant: onSurfaceVariant,
   );
 
@@ -62,11 +60,9 @@ class AppColors {
     onSecondary: onSecondary,
     surface: darkSurface,
     onSurface: darkOnSurface,
-    background: darkBackground,
-    onBackground: darkOnBackground,
     error: error,
     onError: onError,
-    surfaceVariant: darkSurfaceVariant,
+    surfaceContainerHighest: darkSurfaceVariant,
     onSurfaceVariant: darkOnSurfaceVariant,
   );
 }

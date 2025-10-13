@@ -44,8 +44,4 @@ abstract class BaseViewModel extends ChangeNotifier {
     _snackbarService.showInfo(message);
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
 }

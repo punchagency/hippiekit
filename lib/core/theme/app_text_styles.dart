@@ -231,7 +231,7 @@ class AppTextStyles {
     fontFamily: 'SegoePrint',
     fontSize: 24,
     fontWeight: FontWeight.w400,
-    color: Theme.of(context).colorScheme.onBackground,
+    color: Theme.of(context).colorScheme.onSurface,
     height: 1.2,
   );
 
@@ -239,7 +239,7 @@ class AppTextStyles {
     fontFamily: 'SegoePrint',
     fontSize: 18,
     fontWeight: FontWeight.w400,
-    color: Theme.of(context).colorScheme.onBackground,
+    color: Theme.of(context).colorScheme.onSurface,
     height: 1.3,
   );
 
@@ -247,7 +247,7 @@ class AppTextStyles {
     fontFamily: 'SegoePrint',
     fontSize: 14,
     fontWeight: FontWeight.w400,
-    color: Theme.of(context).colorScheme.onBackground,
+    color: Theme.of(context).colorScheme.onSurface,
     height: 1.4,
   );
 }

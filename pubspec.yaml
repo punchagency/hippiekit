@@ -32,6 +32,8 @@ dependencies:
   equatable: ^2.0.5
   json_annotation: ^4.8.1
   dartz: ^0.10.1
+  flutter_gen_runner: ^5.0.0
+  build_runner: ^2.0.0
 
 dev_dependencies:
   flutter_test:
@@ -50,6 +52,7 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/fonts/
+    - assets/logo/
   
   # Fonts
   fonts:

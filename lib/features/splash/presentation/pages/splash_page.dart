@@ -95,19 +95,12 @@ class _SplashPageState extends State<SplashPage>
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isDark
-                ? [
-                    AppColors.darkBackground,
-                    AppColors.darkSurface,
-                    AppColors.primary.withOpacity(0.1),
-                  ]
-                : [
-                    AppColors.background,
-                    AppColors.surface,
-                    AppColors.primary.withOpacity(0.1),
-                  ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              const Color(0xFF01C063), // #01C063
+              const Color(0xFF650084), // #650084
+            ],
           ),
         ),
         child: Center(
@@ -122,27 +115,32 @@ class _SplashPageState extends State<SplashPage>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       // App Logo/Icon
-                      Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            colors: [AppColors.primary, AppColors.secondary],
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withOpacity(0.3),
-                              blurRadius: 20,
-                              spreadRadius: 5,
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.eco,
-                          size: 60,
-                          color: AppColors.onPrimary,
-                        ),
+                      // Container(
+                      //   width: 120,
+                      //   height: 120,
+                      //   decoration: BoxDecoration(
+                      //     shape: BoxShape.circle,
+                      //     gradient: LinearGradient(
+                      //       colors: [AppColors.primary, AppColors.secondary],
+                      //     ),
+                      //     boxShadow: [
+                      //       BoxShadow(
+                      //         color: AppColors.primary.withOpacity(0.3),
+                      //         blurRadius: 20,
+                      //         spreadRadius: 5,
+                      //       ),
+                      //     ],
+                      //   ),
+                      //   child: const Icon(
+                      //     Icons.eco,
+                      //     size: 60,
+                      //     color: AppColors.onPrimary,
+                      //   ),
+                      // ),
+                      Image.asset(
+                        "assets/logo/logo.png",
+                        width: 150,
+                        height: 150,
                       ),
                       const SizedBox(height: 32),
 
@@ -150,11 +148,10 @@ class _SplashPageState extends State<SplashPage>
 
                       // App Tagline
                       Text(
-                        'WHO ARE WE NOT TO\N CHANGE THE WORLD?',
+                        'WHO ARE WE NOT TO\n CHANGE THE WORLD?',
                         style: AppTextStyles.decorativeLarge(context).copyWith(
-                          color: isDark
-                              ? AppColors.darkOnSurfaceVariant
-                              : AppColors.onSurfaceVariant,
+                          color:  AppColors.darkOnSurfaceVariant,
+                          fontSize:20
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -164,8 +161,8 @@ class _SplashPageState extends State<SplashPage>
                       Positioned(
                         bottom: 0,
                         child: SizedBox(
-                          width: 40,
-                          height: 40,
+                          width: 20,
+                          height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 3,
                             valueColor: AlwaysStoppedAnimation<Color>(
