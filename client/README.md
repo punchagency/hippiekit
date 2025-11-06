@@ -43,7 +43,6 @@ Backend setup coming soon...
 ## Tech Stack
 
 ### Frontend
-
 - React 18
 - TypeScript
 - Vite
@@ -53,7 +52,6 @@ Backend setup coming soon...
 - shadcn/ui components
 
 ### Backend (Coming Soon)
-
 - Node.js
 - Express
 - MongoDB/PostgreSQL
