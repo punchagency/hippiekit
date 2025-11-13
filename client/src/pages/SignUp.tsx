@@ -27,6 +27,8 @@ import { TitleSubtitle } from '@/components/auth/title-subtitle';
 import { useAuth } from '@/context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { signInWithGoogle, signInWithFacebook } from '@/lib/auth';
+import EmailVerificationModal from '@/components/EmailVerificationModal';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters long'),
@@ -40,6 +42,33 @@ function SignUp() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
+
+  const handleGoogleSignUp = async () => {
+    try {
+      setError('');
+      setIsLoading(true);
+      await signInWithGoogle();
+      // Session will be checked when redirected back
+    } catch {
+      setIsLoading(false);
+      setError('Failed to sign up with Google. Please try again.');
+    }
+  };
+
+  const handleFacebookSignUp = async () => {
+    try {
+      setError('');
+      setIsLoading(true);
+      await signInWithFacebook();
+      // Session will be checked when redirected back
+    } catch {
+      setIsLoading(false);
+      setError('Failed to sign up with Facebook. Please try again.');
+    }
+  };
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -63,14 +92,21 @@ function SignUp() {
         phoneNumber: data.phone,
       });
 
-      // Redirect to profile page after successful registration
-      navigate('/profile');
+      // Show email verification modal
+      setRegisteredEmail(data.email);
+      setShowEmailModal(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
       setIsLoading(false);
     }
   }
+
+  const handleModalClose = () => {
+    setShowEmailModal(false);
+    // Optionally redirect to sign-in page
+    navigate('/signin');
+  };
   return (
     <section className="mt-20 mx-[25.45px] font-family-poppins text-[#222]">
       <TitleSubtitle title="Create Account" subtitle="Sign up to get started" />
@@ -186,13 +222,16 @@ function SignUp() {
                     <InputGroupInput
                       {...field}
                       id="password"
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       aria-invalid={fieldState.invalid}
                       placeholder="Enter Password"
                       autoComplete="off"
                     />
                     <InputGroupAddon align="inline-end">
-                      <InputGroupText>
+                      <InputGroupText
+                        className="cursor-pointer"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
                         <EyeIcon />
                       </InputGroupText>
                     </InputGroupAddon>
@@ -222,12 +261,20 @@ function SignUp() {
           <p className="font-medium">Sign up with</p>
 
           <div className="flex gap-4">
-            <div className="flex items-center justify-center gap-4 w-[122px] h-[45px] bg-[#FFFFFF] rounded-[51px] font-medium">
+            <button
+              type="button"
+              onClick={handleGoogleSignUp}
+              className="flex items-center justify-center gap-4 w-[122px] h-[45px] bg-[#FFFFFF] rounded-[51px] font-medium shadow-md hover:shadow-lg transition-shadow cursor-pointer border border-gray-200"
+            >
               <GoogleIcon /> Google
-            </div>
-            <div className="flex items-center justify-center gap-4 w-[122px] h-[45px] bg-[#FFFFFF] rounded-[51px] font-medium">
+            </button>
+            <button
+              type="button"
+              onClick={handleFacebookSignUp}
+              className="flex items-center justify-center gap-4 w-[122px] h-[45px] bg-[#FFFFFF] rounded-[51px] font-medium shadow-md hover:shadow-lg transition-shadow cursor-pointer border border-gray-200"
+            >
               <FacebookIcon /> Facebook
-            </div>
+            </button>
           </div>
 
           <div className="mt-10">
@@ -238,6 +285,13 @@ function SignUp() {
           </div>
         </div>
       </div>
+
+      {/* Email Verification Modal */}
+      <EmailVerificationModal
+        isOpen={showEmailModal}
+        onClose={handleModalClose}
+        email={registeredEmail}
+      />
     </section>
   );
 }

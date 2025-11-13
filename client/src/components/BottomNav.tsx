@@ -44,8 +44,14 @@ const BottomNav = () => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[440px] h-[60px] bg-white rounded-tl-[20px] rounded-tr-[20px] shadow-[0_-2px_10px_rgba(0,0,0,0.1)] z-30">
-      <ul className="flex justify-around items-center h-full px-2">
+    <nav
+      className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[440px] bg-white rounded-tl-[20px] rounded-tr-[20px] shadow-[0_-2px_10px_rgba(0,0,0,0.1)] z-30"
+      style={{
+        height: 'calc(60px + env(safe-area-inset-bottom))',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}
+    >
+      <ul className="flex justify-around items-center h-[60px] px-2">
         {navItems.map((item) => (
           <li key={item.path} className="flex-1">
             <NavLink

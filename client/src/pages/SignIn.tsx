@@ -14,11 +14,18 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { LockIcon, EyeIcon, UserIcon } from '@/assets/icons';
+import {
+  UserIcon,
+  LockIcon,
+  GoogleIcon,
+  FacebookIcon,
+  EyeIcon,
+} from '@/assets/icons';
+import { signInWithGoogle, signInWithFacebook } from '@/lib/auth';
 import { TitleSubtitle } from '@/components/auth/title-subtitle';
 import { useAuth } from '@/context/AuthContext';
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 const formSchema = z.object({
   email: z.email('Invalid email address'),
@@ -29,8 +36,55 @@ function SignIn() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showVerificationSuccess, setShowVerificationSuccess] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
+  const [searchParams] = useSearchParams();
+
+  // Check if user was redirected after email verification or password reset
+  useEffect(() => {
+    if (searchParams.get('verified') === 'true') {
+      setShowVerificationSuccess(true);
+      // Auto-hide the success message after 10 seconds
+      const timer = setTimeout(() => {
+        setShowVerificationSuccess(false);
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+
+    if (searchParams.get('reset') === 'success') {
+      setShowVerificationSuccess(true);
+      // Auto-hide the success message after 10 seconds
+      const timer = setTimeout(() => {
+        setShowVerificationSuccess(false);
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setError('');
+      setLoading(true);
+      await signInWithGoogle();
+      // Session will be checked when redirected back
+    } catch {
+      setLoading(false);
+      setError('Failed to sign in with Google. Please try again.');
+    }
+  };
+
+  const handleFacebookSignIn = async () => {
+    try {
+      setError('');
+      setLoading(true);
+      await signInWithFacebook();
+      // Session will be checked when redirected back
+    } catch {
+      setLoading(false);
+      setError('Failed to sign in with Facebook. Please try again.');
+    }
+  };
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -80,6 +134,42 @@ function SignIn() {
   return (
     <section className="mt-12 sm:mt-20 mx-4 sm:mx-[25.45px] font-family-poppins text-[#222] pb-20">
       <TitleSubtitle title="Login" subtitle="Login to get started" />
+
+      {showVerificationSuccess && (
+        <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm flex items-start gap-3">
+          <svg
+            className="w-5 h-5 flex-shrink-0 mt-0.5"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fillRule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <div>
+            <p className="font-semibold">
+              {searchParams.get('verified') === 'true'
+                ? 'Email verified successfully!'
+                : 'Password reset successfully!'}
+            </p>
+            <p className="mt-1">You can now log in with your credentials.</p>
+          </div>
+          <button
+            onClick={() => setShowVerificationSuccess(false)}
+            className="ml-auto text-green-700 hover:text-green-900"
+          >
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
@@ -204,10 +294,40 @@ function SignIn() {
         </Button>
       </div>
 
-      <div className="mt-8 sm:mt-10 flex justify-center text-sm sm:text-base">
-        <Link to="/sign-up" className="text-[#222] hover:text-[#7B61FF]">
-          Create account
-        </Link>
+      <div className="mt-8 sm:mt-10">
+        <div className="flex flex-col justify-center gap-4 items-center">
+          <p className="text-gray-600">OR</p>
+          <p className="font-medium">Sign in with</p>
+
+          <div className="flex gap-4">
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+              className="flex items-center justify-center gap-4 w-[122px] h-[45px] bg-[#FFFFFF] rounded-[51px] font-medium shadow-md hover:shadow-lg transition-shadow cursor-pointer border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <GoogleIcon /> Google
+            </button>
+            <button
+              type="button"
+              onClick={handleFacebookSignIn}
+              disabled={loading}
+              className="flex items-center justify-center gap-4 w-[122px] h-[45px] bg-[#FFFFFF] rounded-[51px] font-medium shadow-md hover:shadow-lg transition-shadow cursor-pointer border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FacebookIcon /> Facebook
+            </button>
+          </div>
+
+          <div className="mt-6 text-sm sm:text-base">
+            <span className="text-gray-600">Don't have an account? </span>
+            <Link
+              to="/signup"
+              className="text-[#222] font-semibold hover:text-[#7B61FF]"
+            >
+              Create account
+            </Link>
+          </div>
+        </div>
       </div>
     </section>
   );

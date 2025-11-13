@@ -6,6 +6,7 @@ import App from './App.tsx';
 import SignIn from './pages/SignIn.tsx';
 import SignUp from './pages/SignUp.tsx';
 import ResetPassword from './pages/ResetPassword.tsx';
+import ResetPasswordConfirm from './pages/ResetPasswordConfirm.tsx';
 import OtpVerification from './pages/OtpVerification.tsx';
 import Onboarding from './pages/Onboarding.tsx';
 import Profile from './pages/Profile.tsx';
@@ -27,12 +28,22 @@ import KitchenItems from './pages/KitchenItems.tsx';
 import MonthlySpecials from './pages/MonthlySpecials.tsx';
 import Notifications from './pages/Notifications.tsx';
 import { ZeroPlastic } from './pages/ZeroPlastic.tsx';
+import TermsOfUse from './pages/TermsOfUse.tsx';
+import PrivacyPolicy from './pages/PrivacyPolicy.tsx';
+import OAuthCallback from './pages/OAuthCallback.tsx';
+import { useStatusBar } from './hooks/useStatusBar.ts';
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
+// Root component that initializes Capacitor features
+function Root() {
+  useStatusBar(); // Initialize status bar configuration
+
+  return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          {/* OAuth Callback Route - Public (no auth check needed) */}
+          <Route path="/oauth-callback" element={<OAuthCallback />} />
+
           {/* Public Routes WITHOUT bottom nav - redirect to home if authenticated */}
           <Route
             path="/onboarding"
@@ -63,6 +74,14 @@ createRoot(document.getElementById('root')!).render(
             element={
               <PublicRoute>
                 <ResetPassword />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/reset-password/confirm"
+            element={
+              <PublicRoute>
+                <ResetPasswordConfirm />
               </PublicRoute>
             }
           />
@@ -173,6 +192,22 @@ createRoot(document.getElementById('root')!).render(
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/terms-of-use"
+            element={
+              <ProtectedRoute>
+                <TermsOfUse />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/privacy-policy"
+            element={
+              <ProtectedRoute>
+                <PrivacyPolicy />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Protected Routes WITH bottom nav */}
           <Route
@@ -193,5 +228,11 @@ createRoot(document.getElementById('root')!).render(
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+  );
+}
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <Root />
   </StrictMode>
 );

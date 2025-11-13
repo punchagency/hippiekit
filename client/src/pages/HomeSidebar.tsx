@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
+import profileImgSample from '@/assets/profileImgSample.jpg';
 import newProductsIcon from '@/assets/newProducts.svg';
-import preferencesIcon from '@/assets/preferences.svg';
 import notifications from '@/assets/notificationsIcon.svg';
 import shoppingListIcon from '@/assets/shoppingList.svg';
 import iconDescriptionIcon from '@/assets/iconDescIcon.svg';
 import helpCenterIcon from '@/assets/helpCenter.svg';
+import favoritesIcon from '@/assets/favoritesIcon.svg';
 import logoutImage from '@/assets/logoutImage.svg';
 import { useAuth } from '@/context/AuthContext';
 
@@ -19,9 +20,23 @@ const HomeSidebar = ({ open, onOpenChange }: HomeSidebarProps) => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const { user, logout } = useAuth();
 
+  // Prevent body scroll when sidebar is open
+  useEffect(() => {
+    if (open) {
+      document.body.classList.add('overflow-hidden');
+    } else {
+      document.body.classList.remove('overflow-hidden');
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.classList.remove('overflow-hidden');
+    };
+  }, [open]);
+
   const menuItems = [
     { icon: newProductsIcon, label: 'New Products', path: '/monthly-specials' },
-    { icon: preferencesIcon, label: 'Preferences', path: '/preferences' },
+    { icon: favoritesIcon, label: 'Favorites', path: '/favorites' },
     {
       icon: notifications,
       label: 'Notifications',
@@ -52,6 +67,7 @@ const HomeSidebar = ({ open, onOpenChange }: HomeSidebarProps) => {
     setShowLogoutModal(false);
   };
 
+  const [imgError, setImgError] = useState(false);
   return (
     <>
       {/* Backdrop Overlay */}
@@ -65,7 +81,7 @@ const HomeSidebar = ({ open, onOpenChange }: HomeSidebarProps) => {
 
       {/* Sidebar */}
       <div
-        className={`absolute top-0 left-0 h-full w-[260px] sm:w-[280px] bg-white z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`absolute top-0 left-0 h-full max-w-[80%] bg-white z-50 transform transition-transform duration-300 ease-in-out ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{ height: '100vh' }}
@@ -75,16 +91,23 @@ const HomeSidebar = ({ open, onOpenChange }: HomeSidebarProps) => {
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2.5 sm:gap-3">
               {/* Avatar */}
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/20 flex items-center justify-center text-white font-semibold text-sm sm:text-base">
-                CL
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/20 flex items-center justify-center text-white font-semibold text-sm sm:text-base overflow-hidden">
+                <img
+                  src={imgError || !user?.image ? profileImgSample : user.image}
+                  alt="Profile"
+                  className="w-full h-full object-cover rounded-full"
+                  onError={() => setImgError(true)}
+                  referrerPolicy="no-referrer"
+                  crossOrigin="anonymous"
+                />
               </div>
 
               {/* User Info */}
               <div className="text-white text-left">
                 <h3 className="font-semibold text-sm sm:text-base">
-                  {user?.username}
+                  {user?.name}
                 </h3>
-                <p className="text-[11px] sm:text-xs opacity-90">
+                <p className="text-[11px] sm:text-xs opacity-90 line-clamp-3 ">
                   {user?.email}
                 </p>
               </div>
@@ -123,7 +146,7 @@ const HomeSidebar = ({ open, onOpenChange }: HomeSidebarProps) => {
               onClick={() => onOpenChange(false)}
               className="flex items-center gap-3 sm:gap-4 px-5 sm:px-6 py-2.5 sm:py-3 hover:bg-purple-50 transition-colors"
             >
-              <div className="rounded-[10px] p-1.5 sm:p-2 w-fit h-fit bg-gray-300">
+              <div className="rounded-[10px] p-1.5 sm:p-2 w-fit h-fit bg-[#F5F5F5]">
                 <div className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center">
                   <img
                     src={item.icon}
@@ -143,7 +166,7 @@ const HomeSidebar = ({ open, onOpenChange }: HomeSidebarProps) => {
             onClick={handleLogout}
             className="flex items-center gap-3 sm:gap-4 px-5 sm:px-6 py-2.5 sm:py-3 w-full hover:bg-purple-50 transition-colors text-left"
           >
-            <div className="rounded-[10px] p-1.5 sm:p-2 w-fit h-fit bg-gray-300">
+            <div className="rounded-[10px] p-1.5 sm:p-2 w-fit h-fit bg-[#F5F5F5]">
               <div className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -181,7 +204,7 @@ const HomeSidebar = ({ open, onOpenChange }: HomeSidebarProps) => {
                 <img
                   src={logoutImage}
                   alt="Logout illustration"
-                  className="w-[160px] h-[160px] sm:w-[200px] sm:h-[200px]"
+                  className="w-40 h-40 sm:w-[200px] sm:h-[200px]"
                 />
               </div>
 

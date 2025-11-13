@@ -55,7 +55,7 @@ const Favorites = () => {
 
           <button>see all</button>
         </div>
-        <Categories products={categories} />
+        <Categories topCat products={categories} />
       </section>
 
       <div className="mt-3.5 flex flex-col gap-2.5">

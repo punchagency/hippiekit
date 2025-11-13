@@ -1,3 +1,21 @@
+/**
+ * ⚠️ DEPRECATED - NOT IN USE
+ *
+ * This auth controller is no longer used. We've migrated to Better Auth.
+ * All authentication is now handled by Better Auth via /api/auth/* endpoints.
+ *
+ * Better Auth provides:
+ * - Email/password authentication
+ * - Email verification
+ * - Password reset
+ * - OAuth (Google, Facebook)
+ * - Session management with secure cookies
+ *
+ * Kept for reference only. Do not use in new code.
+ *
+ * See: server/lib/auth.ts for Better Auth configuration
+ */
+
 import { Request, Response } from 'express';
 import User from '../models/User.js';
 import generateToken from '../utils/generateToken.js';

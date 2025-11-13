@@ -1,3 +1,22 @@
+/**
+ * ⚠️ DEPRECATED - NOT IN USE
+ *
+ * This User model is no longer used. We've migrated to Better Auth which
+ * automatically manages user authentication, sessions, and database schemas.
+ *
+ * Better Auth handles:
+ * - User authentication (email/password)
+ * - Email verification
+ * - Password reset
+ * - OAuth (Google, Facebook)
+ * - Session management
+ * - Database schema (user, session, account, verification collections)
+ *
+ * Kept for reference only. Do not use in new code.
+ *
+ * See: server/lib/auth.ts for Better Auth configuration
+ */
+
 import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
 

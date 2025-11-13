@@ -37,7 +37,30 @@ interface AuthResponse {
   resetToken?: string;
 }
 
-const API_URL = 'http://localhost:8000/api/auth';
+/**
+ * ⚠️ DEPRECATED - NOT IN USE
+ *
+ * This auth service is no longer used. We've migrated to Better Auth.
+ * All authentication is now handled by Better Auth client (lib/auth.ts).
+ *
+ * Better Auth provides:
+ * - authClient.signUp.email() - Register with email/password
+ * - authClient.signIn.email() - Login with email/password
+ * - authClient.signIn.social() - OAuth login (Google, Facebook)
+ * - authClient.signOut() - Logout
+ * - authClient.useSession() - Get current session (React hook)
+ * - authClient.sendVerificationEmail() - Send verification email
+ * - authClient.resetPassword() - Password reset
+ *
+ * Better Auth uses secure HTTP-only cookies instead of localStorage tokens.
+ *
+ * Kept for reference only. Do not use in new code.
+ *
+ * See: client/src/lib/auth.ts for Better Auth client configuration
+ * See: client/src/context/AuthContext.tsx for auth state management
+ */
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 // Create axios instance
 const api = axios.create({

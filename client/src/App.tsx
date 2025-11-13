@@ -21,12 +21,12 @@ function App() {
   const navigate = useNavigate();
   // Sample product data - replace with your actual data
   const products = [
-    { id: 1, name: 'Product 1', price: '$29.99', image: logo, items: '50' },
-    { id: 2, name: 'Product 2', price: '$39.99', image: logo, items: '50' },
-    { id: 3, name: 'Product 3', price: '$24.99', image: logo, items: '50' },
-    { id: 4, name: 'Product 4', price: '$49.99', image: logo, items: '50' },
-    { id: 5, name: 'Product 5', price: '$19.99', image: logo, items: '50' },
-    { id: 6, name: 'Product 6', price: '$34.99', image: logo, items: '50' },
+    { id: 1, name: 'Product 1',category: 'Category 1', price: '$29.99', image: logo, items: '50' },
+    { id: 2, name: 'Product 2',category: 'Category 2', price: '$39.99', image: logo, items: '50' },
+    { id: 3, name: 'Product 3',category: 'Category 3', price: '$24.99', image: logo, items: '50' },
+    { id: 4, name: 'Product 4',category: 'Category 4', price: '$49.99', image: logo, items: '50' },
+    { id: 5, name: 'Product 5',category: 'Category 5', price: '$19.99', image: logo, items: '50' },
+    { id: 6, name: 'Product 6',category: 'Category 6', price: '$34.99', image: logo, items: '50' },
   ];
 
   const productsGridData = [
@@ -142,12 +142,12 @@ function App() {
               Scan QR or upload photo
             </span>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-2.5 w-full font-family-poppins font-semibold text-sm sm:text-base">
-            <div className="flex flex-1 p-2 sm:p-2.5 justify-center items-center gap-2 sm:gap-4 rounded-md bg-primary">
+          <div className="flex sm:flex-row gap-2 sm:gap-2.5 w-full font-family-poppins font-semibold text-sm sm:text-base">
+            <div className="flex flex-1 p-2 justify-center items-center gap-2 sm:gap-4 rounded-md bg-primary">
               <QRIcon />
               <span className="text-white">Scan QR Code</span>
             </div>
-            <div className="flex flex-1 p-2 sm:p-2.5 justify-center items-center gap-2 sm:gap-4 border border-primary rounded-md bg-transparency">
+            <div className="flex flex-1 p-2 justify-center items-center gap-2 sm:gap-4 border border-primary rounded-md bg-transparency">
               <CameraIcon />
               <span className="text-primary font-medium">Browse Photo</span>
             </div>
@@ -166,10 +166,10 @@ function App() {
             className="text-[#848484] underline text-sm sm:text-base"
             onClick={() => navigate('/all-categories')}
           >
-            See all
+            <Link to="/all-categories">See all</Link>
           </button>
         </div>
-        <Categories products={products} />
+        <Categories topCat products={products} />
       </section>
 
       {/* Products Grid */}
@@ -178,7 +178,7 @@ function App() {
           New Product Corner
         </h2>
 
-        <Products data={productsGridData} />
+        <Products data={productsGridData} horizontal />
       </section>
     </div>
   );

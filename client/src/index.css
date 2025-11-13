@@ -1,6 +1,15 @@
 /* Google Fonts Import */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Lato:wght@300;400;700;900&family=Roboto:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
+@font-face {
+  font-family: 'SegoePR';
+  src: url('./assets/fonts/segoepr.ttf') format('truetype'); /* adjust path if needed */
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+
 @import 'tailwindcss';
 
 @import 'tw-animate-css';
@@ -11,7 +20,7 @@
   --color-primary: #650084;
   --color-secondary: #00a555;
 
-  --font-family-segoe: 'Segoe Print', cursive, sans-serif;
+  --font-family-segoe: 'SegoePR', 'Segoe Print', cursive, sans-serif;
   --font-family-poppins: 'Poppins', sans-serif;
   --font-family-lato: 'Lato', sans-serif;
   --font-family-roboto: 'Roboto', sans-serif;
@@ -22,6 +31,8 @@ html,
 body {
   @apply bg-gray-900 m-0 p-0;
   height: 100vh;
+  /* Support for iOS safe areas */
+  height: 100svh; /* Small viewport height for better mobile support */
 }
 
 #root {
@@ -29,9 +40,14 @@ body {
   width: 100%;
   max-width: 440px;
   min-height: 100vh;
+  min-height: 100svh;
   height: auto;
   box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
   background-color: #f5f5f5;
+
+  /* Safe area insets for notched devices */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 @media (min-width: 441px) {
@@ -81,4 +97,15 @@ body {
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
