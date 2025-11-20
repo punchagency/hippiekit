@@ -16,7 +16,7 @@ export const OnboardingCard = ({
   description,
 }: Props) => {
   return (
-    <div className="relative w-full flex flex-col items-center">
+    <div className="relative w-full flex flex-col items-center ">
       {/* Icon Container */}
       <div className="relative w-full h-[300px] flex items-center justify-center overflow-hidden max-[400px]:h-[250px]">
         <div className="absolute z-0 max-[400px]:scale-90">

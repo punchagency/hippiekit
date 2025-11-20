@@ -32,6 +32,7 @@ import TermsOfUse from './pages/TermsOfUse.tsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.tsx';
 import OAuthCallback from './pages/OAuthCallback.tsx';
 import { useStatusBar } from './hooks/useStatusBar.ts';
+import Splash from './pages/Splash.tsx';
 
 // Root component that initializes Capacitor features
 function Root() {
@@ -100,6 +101,14 @@ function Root() {
             element={
               <ProtectedRoute>
                 <Search />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/splash"
+            element={
+              <ProtectedRoute>
+                <Splash />
               </ProtectedRoute>
             }
           />

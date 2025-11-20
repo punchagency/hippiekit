@@ -5,12 +5,12 @@ const config: CapacitorConfig = {
   appName: 'hippiekit',
   webDir: 'dist', // keep as your build output
   server: {
-    url: 'http://192.168.1.24:5173', // your React dev server IP
+    url: 'http://192.168.1.36:5173', // your React dev server IP
     cleartext: true, // allows HTTP requests
   },
   plugins: {
     StatusBar: {
-      style: 'light',
+      style: 'dark',
       backgroundColor: '#650084',
       overlaysWebView: false,
     },

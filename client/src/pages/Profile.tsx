@@ -19,6 +19,7 @@ const Profile = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  console.log('users phone number', user);
   return (
     <section className="bg-white font-family-roboto pb-20">
       <div className="relative font-family-roboto pb-20">

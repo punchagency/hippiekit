@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import logo from '@/assets/profileImgSample.jpg';
-import logoactual from '@/assets/logo.jpg';
+import logoactual from '@/assets/logoUpdate.svg';
 import {
   SearchIcon,
   FilterIcon,
@@ -21,12 +21,54 @@ function App() {
   const navigate = useNavigate();
   // Sample product data - replace with your actual data
   const products = [
-    { id: 1, name: 'Product 1',category: 'Category 1', price: '$29.99', image: logo, items: '50' },
-    { id: 2, name: 'Product 2',category: 'Category 2', price: '$39.99', image: logo, items: '50' },
-    { id: 3, name: 'Product 3',category: 'Category 3', price: '$24.99', image: logo, items: '50' },
-    { id: 4, name: 'Product 4',category: 'Category 4', price: '$49.99', image: logo, items: '50' },
-    { id: 5, name: 'Product 5',category: 'Category 5', price: '$19.99', image: logo, items: '50' },
-    { id: 6, name: 'Product 6',category: 'Category 6', price: '$34.99', image: logo, items: '50' },
+    {
+      id: 1,
+      name: 'Product 1',
+      category: 'Category 1',
+      price: '$29.99',
+      image: logo,
+      items: '50',
+    },
+    {
+      id: 2,
+      name: 'Product 2',
+      category: 'Category 2',
+      price: '$39.99',
+      image: logo,
+      items: '50',
+    },
+    {
+      id: 3,
+      name: 'Product 3',
+      category: 'Category 3',
+      price: '$24.99',
+      image: logo,
+      items: '50',
+    },
+    {
+      id: 4,
+      name: 'Product 4',
+      category: 'Category 4',
+      price: '$49.99',
+      image: logo,
+      items: '50',
+    },
+    {
+      id: 5,
+      name: 'Product 5',
+      category: 'Category 5',
+      price: '$19.99',
+      image: logo,
+      items: '50',
+    },
+    {
+      id: 6,
+      name: 'Product 6',
+      category: 'Category 6',
+      price: '$34.99',
+      image: logo,
+      items: '50',
+    },
   ];
 
   const productsGridData = [
@@ -118,15 +160,19 @@ function App() {
               <input
                 type="text"
                 placeholder="Search Here For Specific Item"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                // value={searchQuery}
+                // onChange={(e) => setSearchQuery(e.target.value)}
+                onClick={() => navigate('/search')}
                 className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-lg border border-gray-200 focus:outline-none focus:border-primary bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]"
               />
               <div className="absolute left-3 top-1/2 -translate-y-1/2">
                 <SearchIcon />
               </div>
             </div>
-            <button className="p-2.5 sm:p-3 bg-white rounded-lg border border-gray-200">
+            <button
+              onClick={() => navigate('/search')}
+              className="p-2.5 sm:p-3 bg-white rounded-lg border border-gray-200"
+            >
               <FilterIcon />
             </button>
           </div>

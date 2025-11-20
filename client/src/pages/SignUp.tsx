@@ -33,8 +33,28 @@ import EmailVerificationModal from '@/components/EmailVerificationModal';
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters long'),
   email: z.string().email('Invalid email address'),
-  phone: z.string().optional(),
-  password: z.string().min(6, 'Password must be at least 6 characters long'),
+  phone: z
+    .string()
+    .min(10, 'Phone number must be at least 10 digits')
+    .max(15, 'Phone number must be at most 15 digits')
+    .regex(
+      /^\+?[0-9]*$/,
+      'Phone number can only contain digits and optional +'
+    ),
+  password: z
+    .string()
+    .min(6, { message: 'Password must be at least 6 characters long.' })
+    .max(100, { message: 'Password cannot exceed 100 characters.' })
+    .regex(/[A-Z]/, {
+      message: 'Password must contain at least one uppercase letter.',
+    })
+    .regex(/[a-z]/, {
+      message: 'Password must contain at least one lowercase letter.',
+    })
+    .regex(/[0-9]/, { message: 'Password must contain at least one number.' })
+    .regex(/[^a-zA-Z0-9]/, {
+      message: 'Password must contain at least one special character.',
+    }),
 });
 
 function SignUp() {
@@ -108,7 +128,7 @@ function SignUp() {
     navigate('/signin');
   };
   return (
-    <section className="mt-20 mx-[25.45px] font-family-poppins text-[#222]">
+    <section className="mx-[25.45px] font-family-poppins text-[#222]">
       <TitleSubtitle title="Create Account" subtitle="Sign up to get started" />
 
       <div>

@@ -3,6 +3,8 @@ import { useState } from 'react';
 import clock from '@/assets/clock.svg';
 import { NotificationIcon, SearchDisplayIcon } from '@/assets/icons';
 import backButton from '@/assets/backButton.svg';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 const history = [
   { id: 1, name: 'Sample Item', date: '2024-06-01' },
@@ -12,22 +14,29 @@ const history = [
 ];
 
 export const Search = () => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   return (
     <section className="relative pt-6 mx-7">
       <div className="flex items-center justify-between mb-4">
-        <div className="rounded-[7px] p-2.5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]">
+        <Button
+          onClick={() => navigate(-1)}
+          className="rounded-[7px] p-2.5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]"
+        >
           <img src={backButton} alt="" />
-        </div>
+        </Button>
 
         <div className="mt-10 flex p-2.5 items-center gap-[7px] ">
           <span className="font-family-segoe text-primary text-[18px] font-bold">
             Search Here
           </span>
         </div>
-        <div className="rounded-[7px] p-2.5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]">
+        <button
+          onClick={() => navigate('/notifications')}
+          className="rounded-[7px] p-2 sm:p-2.5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]"
+        >
           <NotificationIcon />
-        </div>
+        </button>
       </div>
 
       {/* Search Bar */}

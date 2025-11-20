@@ -279,9 +279,54 @@ function getAuth() {
             type: 'string',
             required: false,
           },
-          profileImage: {
-            type: 'string',
-            required: false,
+        },
+        changeEmail: {
+          enabled: true,
+          sendChangeEmailVerification: async ({ user, newEmail, url }) => {
+            // Send verification email to current email to approve the change
+            await sendEmail({
+              to: user.email,
+              subject: 'Approve email change - Hippiekit',
+              text: `Hi ${
+                user.name || 'there'
+              },\n\nYou requested to change your email to ${newEmail}.\n\nClick the link below to approve this change:\n\n${url}\n\nThis link will expire in 1 hour.\n\nIf you didn't request this change, please ignore this email and contact support.\n\nBest regards,\nThe Hippiekit Team`,
+              html: `
+                <!DOCTYPE html>
+                <html>
+                  <head>
+                    <meta charset="utf-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  </head>
+                  <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <div style="background-color: #650084; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                      <h1 style="color: white; margin: 0; font-size: 28px;">Hippiekit</h1>
+                    </div>
+                    <div style="background-color: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+                      <div style="background-color: white; padding: 30px; border-radius: 5px;">
+                        <h2 style="color: #650084; margin-top: 0;">Approve Email Change</h2>
+                        <p>Hi ${user.name || 'there'},</p>
+                        <p>You requested to change your email address to:</p>
+                        <div style="text-align: center; margin: 20px 0;">
+                          <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; display: inline-block;">
+                            <span style="font-size: 16px; font-weight: bold; color: #650084;">${newEmail}</span>
+                          </div>
+                        </div>
+                        <p>Click the button below to approve this change:</p>
+                        <div style="text-align: center; margin: 30px 0;">
+                          <a href="${url}" style="background-color: #650084; color: white; padding: 14px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">Approve Email Change</a>
+                        </div>
+                        <p style="color: #666; font-size: 14px;">Or copy and paste this link into your browser:</p>
+                        <p style="color: #666; font-size: 12px; word-break: break-all; background-color: #f5f5f5; padding: 10px; border-radius: 3px;">${url}</p>
+                        <p style="color: #999; font-size: 12px; margin-top: 30px;">This link will expire in 1 hour. If you didn't request this change, please ignore this email and contact support immediately.</p>
+                      </div>
+                      <p style="text-align: center; color: #666; font-size: 12px; margin-top: 20px;">
+                        © ${new Date().getFullYear()} Hippiekit. All rights reserved.
+                      </p>
+                    </div>
+                  </body>
+                </html>
+              `,
+            });
           },
         },
       },

@@ -32,8 +32,8 @@ const Onboarding = () => {
   const currentData = onboardingIconsMap[currentStep];
 
   return (
-    <div className="w-full h-full bg-white absolute inset-0 overflow-hidden">
-      {/* Skip Button */}
+    <div className="w-full relative h-[calc(100vh_-_(env(safe-area-inset-top))_-_(env(safe-area-inset-bottom)))] bg-white flex flex-col">
+      {/* Skip Button - Fixed at top */}
       <div className="flex justify-end p-4 max-[400px]:p-3">
         <Button
           onClick={handleSkip}
@@ -43,8 +43,8 @@ const Onboarding = () => {
         </Button>
       </div>
 
-      {/* Onboarding Card - Add bottom padding to prevent overlap */}
-      <div className="pb-44">
+      {/* Onboarding Card - Fills remaining space */}
+      <div className="flex-1 overflow-hidden">
         <OnboardingCard
           OnboardingIcon={currentData.icon}
           OnboardingIconBg={currentData.iconBg}
@@ -55,10 +55,10 @@ const Onboarding = () => {
         />
       </div>
 
-      {/* Progress Dots & Navigation - Fixed at Bottom */}
-      <div className="absolute bottom-0 left-0 right-0 pb-8 bg-white max-[400px]:pb-6">
+      {/* Progress Dots & Navigation - Fixed at bottom */}
+      <div className="pb-6 bg-white max-[400px]:pb-4">
         {/* Navigation Buttons and Progress Dots on Same Level */}
-        <div className="flex justify-between items-center px-6 max-[400px]:px-4">
+        <div className="flex justify-between items-center px-6 ">
           <Button
             onClick={handleBack}
             disabled={currentStep === 0}

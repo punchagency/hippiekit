@@ -14,7 +14,7 @@ export const Categories = ({ products, topCat }: Props) => {
   const displayProducts = topCat ? products.slice(0, 4) : products;
 
   return (
-    <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 sm:gap-7.5 justify-items-center">
+    <div className="grid grid-cols-4 gap-4 sm:gap-7.5 justify-items-center">
       {displayProducts.map((category, index) => (
         <div
           key={index}

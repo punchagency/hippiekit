@@ -97,9 +97,30 @@ const EditProfile = () => {
       setError('');
       setSuccess('');
 
-      // Update user profile using Better Auth
+      // Check if email changed
+      const emailChanged = user?.email !== data.email;
+
+      if (emailChanged) {
+        // Use changeEmail method for email updates
+        const emailResponse = await authClient.changeEmail({
+          newEmail: data.email,
+          callbackURL: `${window.location.origin}/profile`,
+        });
+
+        if (emailResponse.error) {
+          setError(emailResponse.error.message || 'Failed to change email');
+          return;
+        }
+
+        setSuccess(
+          'A verification email has been sent to your current email address. Please check your inbox to approve the email change.'
+        );
+      }
+
+      // Update other profile fields (name, phoneNumber, image)
       const response = await authClient.updateUser({
         name: data.name,
+        phoneNumber: data.phoneNumber,
         image: data.image || undefined,
       });
 
@@ -111,12 +132,13 @@ const EditProfile = () => {
       // Refresh user data in context
       await refreshSession();
 
-      setSuccess('Profile updated successfully!');
-
-      // Redirect to profile page after 2 seconds
-      setTimeout(() => {
-        navigate('/profile');
-      }, 2000);
+      if (!emailChanged) {
+        setSuccess('Profile updated successfully!');
+        // Redirect to profile page after 2 seconds
+        setTimeout(() => {
+          navigate('/profile');
+        }, 2000);
+      }
     } catch (err) {
       setError('Failed to update profile. Please try again.');
       console.error('Update profile error:', err);
@@ -242,7 +264,6 @@ const EditProfile = () => {
                       aria-invalid={fieldState.invalid}
                       placeholder="Enter Email"
                       autoComplete="email"
-                      disabled={true}
                     />
                   </InputGroup>
                   {fieldState.invalid && (

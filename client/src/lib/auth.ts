@@ -1,9 +1,21 @@
 import { createAuthClient } from 'better-auth/react';
-import { emailOTPClient } from 'better-auth/client/plugins';
+import {
+  emailOTPClient,
+  inferAdditionalFields,
+} from 'better-auth/client/plugins';
 
 export const authClient = createAuthClient({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000', // Your backend URL
-  plugins: [emailOTPClient()],
+  plugins: [
+    emailOTPClient(),
+    inferAdditionalFields({
+      user: {
+        phoneNumber: {
+          type: 'string',
+        },
+      },
+    }),
+  ],
 });
 
 export const { signIn, signUp, signOut, useSession } = authClient;

@@ -27,7 +27,7 @@ const PORT = process.env.PORT || 8000;
 const app = express();
 
 const allowedOrigins = [
-  'http://192.168.1.24:5173', // your browser dev server
+  'http://192.168.1.36:5173', // your browser dev server
   'capacitor://localhost', // required for Android/iOS
 ];
 

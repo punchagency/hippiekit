@@ -7,7 +7,7 @@ interface User {
   id: string;
   name: string;
   email: string;
-  phoneNumber?: string;
+  phoneNumber: string;
   image?: string;
   emailVerified?: boolean;
   createdAt?: Date;
@@ -29,7 +29,7 @@ interface RegisterData {
   username: string;
   email: string;
   password: string;
-  phoneNumber?: string;
+  phoneNumber: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -128,6 +128,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email: userData.email,
         password: userData.password,
         name: userData.username,
+        phoneNumber: userData.phoneNumber,
       });
 
       if (response.data) {

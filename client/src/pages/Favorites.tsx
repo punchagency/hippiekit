@@ -6,9 +6,10 @@ import productGridImage from '@/assets/productGridImage.png';
 import { useState } from 'react';
 
 import heartIcon from '@/assets/heartIcon.svg';
+import { Link, useNavigate } from 'react-router-dom';
 const Favorites = () => {
   const [searchQuery, setSearchQuery] = useState('');
-
+  const navigate = useNavigate();
   const categories = Array.from({ length: 8 }, (_, i) => ({
     id: i + 1,
     name: `Category ${i + 1}`,
@@ -53,7 +54,12 @@ const Favorites = () => {
             Top Categories
           </h2>
 
-          <button>see all</button>
+          <button
+            className="text-[#848484] underline text-sm sm:text-base"
+            onClick={() => navigate('/all-categories')}
+          >
+            <Link to="/all-categories">See all</Link>
+          </button>
         </div>
         <Categories topCat products={categories} />
       </section>
