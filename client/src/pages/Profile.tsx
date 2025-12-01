@@ -36,7 +36,11 @@ const Profile = () => {
         </div>
         <div className="w-20 h-20 sm:w-[100px] sm:h-[100px] rounded-[63px] border-4 sm:border-[6px] border-[#FFF] object-cover mx-auto -mt-10 sm:mt-[-50px] overflow-hidden">
           <img
-            src={imgError || !user?.image ? profileImgSample : user.image}
+            src={
+              imgError || !user?.profileImage
+                ? profileImgSample
+                : user.profileImage
+            }
             alt="Profile"
             className="w-full h-full object-cover"
             onError={() => setImgError(true)}

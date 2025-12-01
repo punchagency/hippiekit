@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Types
 interface RegisterData {
-  username: string;
+  name: string;
   email: string;
   password: string;
   phoneNumber?: string;
@@ -14,7 +14,7 @@ interface LoginCredentials {
 }
 
 interface UpdateProfileData {
-  username?: string;
+  name?: string;
   email?: string;
   password?: string;
   phoneNumber?: string;
@@ -23,7 +23,7 @@ interface UpdateProfileData {
 
 interface User {
   _id: string;
-  username: string;
+  name: string;
   email: string;
   phoneNumber?: string;
   profileImage?: string;

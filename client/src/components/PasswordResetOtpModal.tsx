@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/context/AuthContext';
 
 interface PasswordResetOtpModalProps {
   isOpen: boolean;
@@ -15,11 +16,12 @@ export default function PasswordResetOtpModal({
   onVerified,
   email,
 }: PasswordResetOtpModalProps) {
-  const [otp, setOtp] = useState(['', '', '', '']);
-  const [timer, setTimer] = useState(300); // 5 minutes in seconds (matching OTP expiry)
+  const [otp, setOtp] = useState(['', '', '', '', '', '']); // 6 digits for custom OTP
+  const [timer, setTimer] = useState(600); // 10 minutes in seconds (matching OTP expiry)
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState('');
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const { verifyOtp, forgotPassword } = useAuth();
 
   // Countdown timer effect
   useEffect(() => {
@@ -47,7 +49,7 @@ export default function PasswordResetOtpModal({
     setOtp(newOtp);
 
     // Auto-focus next input
-    if (value && index < 3) {
+    if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
   };
@@ -62,12 +64,15 @@ export default function PasswordResetOtpModal({
   const handlePaste = async () => {
     try {
       const text = await navigator.clipboard.readText();
-      const digits = text.replace(/\D/g, '').slice(0, 4);
-      const newOtp = digits.split('').concat(['', '', '', '']).slice(0, 4);
+      const digits = text.replace(/\D/g, '').slice(0, 6);
+      const newOtp = digits
+        .split('')
+        .concat(['', '', '', '', '', ''])
+        .slice(0, 6);
       setOtp(newOtp);
 
       // Focus the last filled input or first empty
-      const nextIndex = Math.min(digits.length, 3);
+      const nextIndex = Math.min(digits.length, 5);
       inputRefs.current[nextIndex]?.focus();
     } catch (err) {
       console.error('Failed to read clipboard:', err);
@@ -76,33 +81,23 @@ export default function PasswordResetOtpModal({
 
   const handleVerify = async () => {
     const otpValue = otp.join('');
-    if (otpValue.length !== 4) return;
+    if (otpValue.length !== 6) return;
 
     setIsVerifying(true);
     setError('');
 
     try {
-      // Import authClient at the top if not already imported
-      const { authClient } = await import('@/lib/auth');
-
-      // Verify OTP using Better Auth
-      const result = await authClient.emailOtp.checkVerificationOtp({
-        email,
-        otp: otpValue,
-        type: 'forget-password',
-      });
-
-      if (result.error) {
-        setError(
-          result.error.message || 'Invalid verification code. Please try again.'
-        );
-        return;
-      }
+      // Verify OTP using custom auth API
+      await verifyOtp(email, otpValue);
 
       // Call the parent callback with verified OTP
       await onVerified(otpValue);
     } catch (err) {
-      setError('Invalid verification code. Please try again.');
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Invalid verification code. Please try again.'
+      );
       console.error('OTP verification error:', err);
     } finally {
       setIsVerifying(false);
@@ -112,27 +107,21 @@ export default function PasswordResetOtpModal({
   const handleResend = async () => {
     try {
       setError('');
-      const { authClient } = await import('@/lib/auth');
 
-      // Resend OTP using Better Auth
-      const result = await authClient.forgetPassword.emailOtp({
-        email,
-      });
-
-      if (result.error) {
-        setError(
-          result.error.message || 'Failed to resend code. Please try again.'
-        );
-        return;
-      }
+      // Resend OTP using custom auth API
+      await forgotPassword(email);
 
       // Reset state
-      setTimer(300); // Reset to 5 minutes
-      setOtp(['', '', '', '']);
+      setTimer(600); // Reset to 10 minutes
+      setOtp(['', '', '', '', '', '']);
       // Focus first input
       inputRefs.current[0]?.focus();
     } catch (err) {
-      setError('Failed to resend code. Please try again.');
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Failed to resend code. Please try again.'
+      );
       console.error('Resend OTP error:', err);
     }
   };
@@ -152,7 +141,7 @@ export default function PasswordResetOtpModal({
           </div>
 
           <p className="mt-6 text-[14px]">
-            Enter the 4 digit code sent to{' '}
+            Enter the 6 digit code sent to{' '}
             <span className="font-semibold">{email}</span>{' '}
             <span
               className="underline font-medium cursor-pointer"

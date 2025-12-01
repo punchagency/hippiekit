@@ -1,17 +1,3 @@
-/**
- * ⚠️ DEPRECATED - NOT IN USE
- *
- * This auth middleware is no longer used. We've migrated to Better Auth.
- * Better Auth handles authentication and session management automatically.
- *
- * Better Auth uses secure HTTP-only cookies for session management,
- * which is more secure than JWT tokens in localStorage.
- *
- * Kept for reference only. Do not use in new code.
- *
- * See: server/lib/auth.ts for Better Auth configuration
- */
-
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import User, { IUser } from '../models/User.js';

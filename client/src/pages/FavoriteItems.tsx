@@ -6,8 +6,56 @@ import heartIconReg from '@/assets/heartIconReg.svg';
 
 import OptionIcon from '@/assets/optionsIcon.svg';
 import { Products } from '@/components/Products';
+import { useState, useRef, useEffect } from 'react';
 
 const FavoriteItems = () => {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
+
+  // Carousel images (duplicated for demo)
+  const carouselImages = [
+    favoriteItemsMain,
+    favoriteItemsMain,
+    favoriteItemsMain,
+  ];
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartX.current - touchEndX.current > 50) {
+      // Swipe left - next image
+      setCurrentImageIndex((prev) =>
+        prev === carouselImages.length - 1 ? 0 : prev + 1
+      );
+    }
+
+    if (touchEndX.current - touchStartX.current > 50) {
+      // Swipe right - previous image
+      setCurrentImageIndex((prev) =>
+        prev === 0 ? carouselImages.length - 1 : prev - 1
+      );
+    }
+  };
+
+  // Auto-scroll carousel container when index changes
+  useEffect(() => {
+    if (carouselRef.current) {
+      const imageWidth = carouselRef.current.offsetWidth;
+      carouselRef.current.scrollTo({
+        left: currentImageIndex * imageWidth,
+        behavior: 'smooth',
+      });
+    }
+  }, [currentImageIndex]);
+
   const productsGridData = [
     {
       id: 1,
@@ -74,16 +122,47 @@ const FavoriteItems = () => {
 
       <div className="w-full h-[408px] rounded-[14px] bg-white p-3.5 gap-4 flex flex-col">
         <div className="rounded-[14px] p-3.5 flex flex-col gap-4 shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]">
-          <div className="relative h-[202px] w-[379px] ">
-            <img
-              src={favoriteItemsMain}
-              alt=""
-              className="w-full h-full object-cover"
-            />
+          <div
+            className="relative h-[202px] w-full overflow-hidden"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            {/* Carousel Container */}
+            <div
+              ref={carouselRef}
+              className="flex h-full overflow-x-scroll scrollbar-hide snap-x snap-mandatory"
+              style={{ scrollSnapType: 'x mandatory' }}
+            >
+              {carouselImages.map((image, index) => (
+                <div key={index} className="min-w-full h-full snap-start">
+                  <img
+                    src={image}
+                    alt={`Product ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
 
-            <button className="absolute top-2.5 right-3 bg-[rgba(255,255,255,0.3)] p-[5px] rounded-sm shadow-[0px_2px_16px_0px_rgba(6,51,54,0.1)]">
+            {/* Heart Icon */}
+            <button className="absolute top-2.5 right-3 bg-[rgba(255,255,255,0.3)] p-[5px] rounded-sm shadow-[0px_2px_16px_0px_rgba(6,51,54,0.1)] z-10">
               <img src={heartIconReg} alt="" />
             </button>
+
+            {/* Progress Indicator */}
+            <div className="absolute bottom-2.5 left-1/2 transform -translate-x-1/2 flex gap-1 z-10">
+              {carouselImages.map((_, index) => (
+                <div
+                  key={index}
+                  className={`h-1 rounded-full transition-all duration-300 ${
+                    index === currentImageIndex
+                      ? 'w-6 bg-secondary'
+                      : 'w-1 bg-gray-300'
+                  }`}
+                />
+              ))}
+            </div>
           </div>
 
           <div className="flex items-start justify-between">

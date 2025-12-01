@@ -1,17 +1,14 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { authClient } from '../lib/auth';
-import Splash from '../pages/Splash';
+import * as authAPI from '../lib/authAPI';
+import { getValidToken, handleOAuthCallback } from '../lib/auth';
 
 interface User {
   id: string;
   name: string;
   email: string;
-  phoneNumber: string;
-  image?: string;
-  emailVerified?: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
+  phoneNumber?: string;
+  profileImage?: string;
 }
 
 interface AuthContextType {
@@ -21,12 +18,20 @@ interface AuthContextType {
   register: (userData: RegisterData) => Promise<void>;
   logout: () => void;
   updateProfile: (userData: Partial<User>) => Promise<void>;
+  forgotPassword: (email: string) => Promise<void>;
+  verifyOtp: (email: string, otp: string) => Promise<void>;
+  resetPassword: (
+    email: string,
+    otp: string,
+    newPassword: string
+  ) => Promise<void>;
+  googleSignIn: (idToken: string) => Promise<void>;
   isAuthenticated: boolean;
   refreshSession: () => Promise<void>;
 }
 
 interface RegisterData {
-  username: string;
+  name: string;
   email: string;
   password: string;
   phoneNumber: string;
@@ -45,43 +50,26 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showSplash, setShowSplash] = useState(true);
 
-  useEffect(() => {
-    fetch('http://192.168.1.24:8000')
-      .then((res) => res.text())
-      .then(console.log)
-      .catch(console.error);
-  }, []);
-
-  // Function to fetch session from Better Auth
+  // Fetch session using JWT token with expiry validation
   const fetchSession = async () => {
     try {
-      const response = await fetch(
-        `${
-          import.meta.env.VITE_API_URL || 'http://192.168.1.24:8000'
-        }/api/auth/get-session`,
-        {
-          credentials: 'include', // Important: send cookies
-        }
-      );
+      // Check if token exists and is not expired
+      const token = getValidToken();
+      if (!token) {
+        setUser(null);
+        return;
+      }
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.user) {
-          setUser({
-            id: data.user.id,
-            name: data.user.name,
-            email: data.user.email,
-            phoneNumber: data.user.phoneNumber,
-            image: data.user.image,
-            emailVerified: data.user.emailVerified,
-            createdAt: data.user.createdAt,
-            updatedAt: data.user.updatedAt,
-          });
-        } else {
-          setUser(null);
-        }
+      const result = await authAPI.getMe();
+      if (result.success && result.data) {
+        setUser({
+          id: result.data._id,
+          name: result.data.name,
+          email: result.data.email,
+          phoneNumber: result.data.phoneNumber,
+          profileImage: result.data.profileImage,
+        });
       } else {
         setUser(null);
       }
@@ -92,85 +80,90 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    // Handle OAuth callback if present
+    const oauthResult = handleOAuthCallback();
+    if (oauthResult.success) {
+      console.log('✅ OAuth callback handled successfully');
+    }
+
     // Check session on mount
     fetchSession().finally(() => setLoading(false));
-
-    // Show splash screen for 2 seconds
-    const timer = setTimeout(() => {
-      setShowSplash(false);
-    }, 2000);
-
-    return () => clearTimeout(timer);
   }, []);
 
   const login = async (email: string, password: string) => {
-    try {
-      const response = await authClient.signIn.email({
-        email,
-        password,
-      });
-
-      if (response.data) {
-        // Fetch updated session after login
-        await fetchSession();
-      } else if (response.error) {
-        throw new Error(response.error.message || 'Login failed');
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Login failed';
-      throw new Error(message);
+    const result = await authAPI.signIn(email, password);
+    if (result.success) {
+      await fetchSession();
+    } else {
+      throw new Error(result.message || 'Login failed');
     }
   };
 
   const register = async (userData: RegisterData) => {
-    try {
-      const response = await authClient.signUp.email({
-        email: userData.email,
-        password: userData.password,
-        name: userData.username,
-        phoneNumber: userData.phoneNumber,
-      });
-
-      if (response.data) {
-        // Fetch updated session after registration
-        await fetchSession();
-      } else if (response.error) {
-        throw new Error(response.error.message || 'Registration failed');
-      }
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Registration failed';
-      throw new Error(message);
+    const result = await authAPI.signUp(
+      userData.name,
+      userData.email,
+      userData.password,
+      userData.phoneNumber
+    );
+    if (result.success) {
+      await fetchSession();
+    } else {
+      throw new Error(result.message || 'Registration failed');
     }
   };
 
-  const logout = async () => {
-    try {
-      // Sign out from Better Auth (clears cookies)
-      await authClient.signOut();
-      setUser(null);
-    } catch (error) {
-      console.error('Better Auth logout failed:', error);
-      setUser(null);
-    }
+  const logout = () => {
+    authAPI.signOut();
+    setUser(null);
   };
 
   const refreshSession = async () => {
     await fetchSession();
   };
 
-  const updateProfile = async (_userData: Partial<User>) => {
-    try {
-      // Better Auth doesn't have a direct updateProfile method
-      // You'll need to implement this using Better Auth's update user endpoint
-      // For now, we'll fetch the session to get updated user data
+  const updateProfile = async (userData: Partial<User>) => {
+    const result = await authAPI.updateProfile(userData);
+    if (result.success) {
       await fetchSession();
+    } else {
+      throw new Error(result.message || 'Update failed');
+    }
+  };
 
-      // TODO: Implement actual profile update via Better Auth API
-      console.warn('Profile update not yet implemented with Better Auth');
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Update failed';
-      throw new Error(message);
+  const forgotPassword = async (email: string) => {
+    const result = await authAPI.forgotPassword(email);
+    if (!result.success) {
+      throw new Error(result.message || 'Failed to send OTP');
+    }
+  };
+
+  const verifyOtp = async (email: string, otp: string) => {
+    const result = await authAPI.verifyOtp(email, otp);
+    if (!result.success) {
+      throw new Error(result.message || 'Invalid OTP');
+    }
+  };
+
+  const resetPassword = async (
+    email: string,
+    otp: string,
+    newPassword: string
+  ) => {
+    const result = await authAPI.resetPassword(email, otp, newPassword);
+    if (result.success) {
+      await fetchSession();
+    } else {
+      throw new Error(result.message || 'Password reset failed');
+    }
+  };
+
+  const googleSignIn = async (idToken: string) => {
+    const result = await authAPI.googleSignIn(idToken);
+    if (result.success) {
+      await fetchSession();
+    } else {
+      throw new Error(result.message || 'Google sign-in failed');
     }
   };
 
@@ -181,14 +174,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     register,
     logout,
     updateProfile,
+    forgotPassword,
+    verifyOtp,
+    resetPassword,
+    googleSignIn,
     isAuthenticated: !!user,
     refreshSession,
   };
-
-  // Show splash screen while initializing
-  if (showSplash) {
-    return <Splash />;
-  }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

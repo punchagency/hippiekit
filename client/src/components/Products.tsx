@@ -1,4 +1,5 @@
 import { StarIcon } from '@/assets/icons';
+import heartIconReg from '@/assets/heartIconReg.svg';
 
 type Props = {
   data: {
@@ -40,19 +41,7 @@ export const Products = ({ data, horizontal = false }: Props) => {
               />
               {/* Favorite Button */}
               <button className="absolute top-2 sm:top-2.5 right-2 sm:right-3 bg-[rgba(255,255,255,0.3)] p-1 sm:p-[5px] rounded-sm shadow-[0px_2px_16px_0px_rgba(6,51,54,0.1)]">
-                <svg
-                  width="11"
-                  height="10"
-                  viewBox="0 0 13 12"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="sm:w-[13px] sm:h-3"
-                >
-                  <path
-                    d="M6.5 0L7.95934 4.1459H12.3237L8.68216 6.7082L10.1415 10.8541L6.5 8.2918L2.85846 10.8541L4.31784 6.7082L0.676299 4.1459H5.04066L6.5 0Z"
-                    fill="white"
-                  />
-                </svg>
+                <img src={heartIconReg} alt="Favorite" />
               </button>
             </div>
 
@@ -63,7 +52,7 @@ export const Products = ({ data, horizontal = false }: Props) => {
                 <h3 className="font-roboto font-semibold text-[14px] sm:text-[16px] text-black capitalize leading-tight sm:leading-normal line-clamp-1">
                   {productName}
                 </h3>
-                <p className="font-roboto font-normal text-[12px] sm:text-[14px] text-[#4e4e4e] leading-tight sm:leading-normal line-clamp-2">
+                <p className="font-roboto font-normal text-[12px] sm:text-[14px] text-[#4e4e4e] leading-tight sm:leading-normal line-clamp-1">
                   {description}
                 </p>
               </div>

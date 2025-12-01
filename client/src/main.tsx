@@ -1,4 +1,4 @@
-import { StrictMode } from 'react';
+import { StrictMode, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import './index.css';
@@ -33,10 +33,19 @@ import PrivacyPolicy from './pages/PrivacyPolicy.tsx';
 import OAuthCallback from './pages/OAuthCallback.tsx';
 import { useStatusBar } from './hooks/useStatusBar.ts';
 import Splash from './pages/Splash.tsx';
+import { initializeGoogleAuth } from './lib/androidAuth.ts';
+import CategoryPage from './pages/CategoryPage.tsx';
 
 // Root component that initializes Capacitor features
 function Root() {
   useStatusBar(); // Initialize status bar configuration
+
+  // Initialize Google Auth for Android/iOS
+  useEffect(() => {
+    initializeGoogleAuth().catch((error) => {
+      console.error('Failed to initialize Google Auth:', error);
+    });
+  }, []);
 
   return (
     <AuthProvider>
@@ -141,6 +150,14 @@ function Root() {
             element={
               <ProtectedRoute>
                 <AllCategories />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/categories/:categoryName"
+            element={
+              <ProtectedRoute>
+                <CategoryPage />
               </ProtectedRoute>
             }
           />

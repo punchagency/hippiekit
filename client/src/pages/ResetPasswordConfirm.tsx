@@ -16,7 +16,7 @@ import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { LockIcon, EyeIcon } from '@/assets/icons';
 import { TitleSubtitle } from '@/components/auth/title-subtitle';
-import { authClient } from '@/lib/auth';
+import { useAuth } from '@/context/AuthContext';
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 
@@ -39,6 +39,7 @@ export default function ResetPasswordConfirm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { resetPassword } = useAuth();
 
   // Get email and OTP from router state (passed from OTP modal)
   const email = location.state?.email;
@@ -70,25 +71,16 @@ export default function ResetPasswordConfirm() {
       setIsLoading(true);
       setError('');
 
-      // Use Better Auth's emailOTP resetPassword method
-      const result = await authClient.emailOtp.resetPassword({
-        email,
-        otp,
-        password: data.password,
-      });
-
-      if (result.error) {
-        setError(
-          result.error.message || 'Failed to reset password. Please try again.'
-        );
-        return;
-      }
+      // Use custom auth API to reset password
+      await resetPassword(email, otp, data.password);
 
       // Redirect to signin with success message
       navigate('/signin?reset=success');
     } catch (err) {
       setError(
-        'Failed to reset password. The code may have expired. Please request a new one.'
+        err instanceof Error
+          ? err.message
+          : 'Failed to reset password. The code may have expired. Please request a new one.'
       );
       console.error('Reset password error:', err);
     } finally {

@@ -27,7 +27,7 @@ import { TitleSubtitle } from '@/components/auth/title-subtitle';
 import { useAuth } from '@/context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { signInWithGoogle, signInWithFacebook } from '@/lib/auth';
+import { signInWithGoogle } from '@/lib/auth';
 import EmailVerificationModal from '@/components/EmailVerificationModal';
 
 const formSchema = z.object({
@@ -71,23 +71,19 @@ function SignUp() {
       setError('');
       setIsLoading(true);
       await signInWithGoogle();
-      // Session will be checked when redirected back
-    } catch {
+      // Navigation handled by OAuth callback or native flow
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : 'Failed to sign up with Google.'
+      );
+    } finally {
       setIsLoading(false);
-      setError('Failed to sign up with Google. Please try again.');
     }
   };
 
   const handleFacebookSignUp = async () => {
-    try {
-      setError('');
-      setIsLoading(true);
-      await signInWithFacebook();
-      // Session will be checked when redirected back
-    } catch {
-      setIsLoading(false);
-      setError('Failed to sign up with Facebook. Please try again.');
-    }
+    // Placeholder – native Facebook sign-in not implemented.
+    setError('Facebook sign-up is not available yet.');
   };
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -106,7 +102,7 @@ function SignUp() {
       setError('');
 
       await registerUser({
-        username: data.name,
+        name: data.name,
         email: data.email,
         password: data.password,
         phoneNumber: data.phone,

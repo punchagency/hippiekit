@@ -16,7 +16,7 @@ import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { MailIcon } from '@/assets/icons';
 import { TitleSubtitle } from '@/components/auth/title-subtitle';
-import { authClient } from '@/lib/auth';
+import { useAuth } from '@/context/AuthContext';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PasswordResetOtpModal from '@/components/PasswordResetOtpModal';
@@ -31,6 +31,7 @@ export default function ResetPassword() {
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const navigate = useNavigate();
+  const { forgotPassword } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -44,23 +45,18 @@ export default function ResetPassword() {
       setIsLoading(true);
       setError('');
 
-      // Use Better Auth's emailOTP plugin to send OTP
-      const result = await authClient.forgetPassword.emailOtp({
-        email: data.email,
-      });
-
-      if (result.error) {
-        setError(
-          result.error.message || 'Failed to send reset code. Please try again.'
-        );
-        return;
-      }
+      // Use custom auth API to send OTP
+      await forgotPassword(data.email);
 
       // Show OTP modal on success
       setUserEmail(data.email);
       setShowOtpModal(true);
     } catch (err) {
-      setError('Failed to send reset code. Please try again.');
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Failed to send reset code. Please try again.'
+      );
       console.error('Reset password error:', err);
     } finally {
       setIsLoading(false);

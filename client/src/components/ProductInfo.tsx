@@ -1,0 +1,42 @@
+import heartIcon from '@/assets/heartIcon.svg';
+import productGridImage from '@/assets/productGridImage.png';
+
+type Props = {
+  name: string;
+  description: string;
+  img: string;
+};
+
+export default function ProductInfo({ name, description, img }: Props) {
+  return (
+    <div className="flex flex-col gap-2.5 ">
+      <div className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex gap-3">
+        {/* Product Image */}
+        <div className="relative w-[60px] h-[60px] rounded-lg overflow-hidden">
+          <img
+            src={img || productGridImage}
+            alt="Product Name"
+            className="w-[60px] h-[60px] object-cover"
+          />
+        </div>
+
+        {/* Product Info */}
+        <div className="flex flex-col flex-1 gap-3.5">
+          {/* Product Name & Description */}
+          <div className="flex flex-col gap-2">
+            <h3 className="font-roboto font-semibold text-[16px] text-black capitalize leading-normal">
+              {name}
+            </h3>
+            <p className="font-roboto font-normal text-[14px] text-[#4e4e4e] leading-normal">
+              {description}
+            </p>
+          </div>
+        </div>
+        {/* Favorite Button */}
+        <button className="w-[22px] h-[22px] bg-[rgba(255,255,255,0.3)] p-[5px] rounded-sm shadow-[0px_2px_16px_0px_rgba(6,51,54,0.1)]">
+          <img src={heartIcon} alt="" />
+        </button>
+      </div>
+    </div>
+  );
+}

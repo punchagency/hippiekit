@@ -93,7 +93,11 @@ const HomeSidebar = ({ open, onOpenChange }: HomeSidebarProps) => {
               {/* Avatar */}
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/20 flex items-center justify-center text-white font-semibold text-sm sm:text-base overflow-hidden">
                 <img
-                  src={imgError || !user?.image ? profileImgSample : user.image}
+                  src={
+                    imgError || !user?.profileImage
+                      ? profileImgSample
+                      : user.profileImage
+                  }
                   alt="Profile"
                   className="w-full h-full object-cover rounded-full"
                   onError={() => setImgError(true)}

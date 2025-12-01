@@ -21,11 +21,14 @@ import {
   FacebookIcon,
   EyeIcon,
 } from '@/assets/icons';
-import { signInWithGoogle, signInWithFacebook } from '@/lib/auth';
+// Placeholder for future social sign-in (Better Auth removed)
+// Remove any stale imports from deprecated auth client
+// Native Google sign-in now handled via androidAuth.ts if needed
 import { TitleSubtitle } from '@/components/auth/title-subtitle';
 import { useAuth } from '@/context/AuthContext';
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { signInWithGoogle } from '@/lib/auth';
 
 const formSchema = z.object({
   email: z.email('Invalid email address'),
@@ -67,10 +70,11 @@ function SignIn() {
       setError('');
       setLoading(true);
       await signInWithGoogle();
-      // Session will be checked when redirected back
-    } catch {
-      setLoading(false);
+      // Navigation is handled by OAuth callback or native flow
+    } catch (err) {
+      console.error('Google sign-in error:', err);
       setError('Failed to sign in with Google. Please try again.');
+      setLoading(false);
     }
   };
 
@@ -78,9 +82,10 @@ function SignIn() {
     try {
       setError('');
       setLoading(true);
-      await signInWithFacebook();
-      // Session will be checked when redirected back
-    } catch {
+      // You can add Firebase Facebook auth here later
+      setLoading(false);
+      setError('Facebook login is not yet implemented with Firebase');
+    } catch (err) {
       setLoading(false);
       setError('Failed to sign in with Facebook. Please try again.');
     }

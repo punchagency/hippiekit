@@ -1,27 +1,8 @@
-/**
- * ⚠️ DEPRECATED - NOT IN USE
- *
- * This User model is no longer used. We've migrated to Better Auth which
- * automatically manages user authentication, sessions, and database schemas.
- *
- * Better Auth handles:
- * - User authentication (email/password)
- * - Email verification
- * - Password reset
- * - OAuth (Google, Facebook)
- * - Session management
- * - Database schema (user, session, account, verification collections)
- *
- * Kept for reference only. Do not use in new code.
- *
- * See: server/lib/auth.ts for Better Auth configuration
- */
-
 import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 export interface IUser extends Document {
-  username: string;
+  name: string;
   email: string;
   password: string;
   profileImage?: string;
@@ -38,12 +19,12 @@ export interface IUser extends Document {
 
 const userSchema = new Schema<IUser>(
   {
-    username: {
+    name: {
       type: String,
-      required: [true, 'Please provide a username'],
+      required: [true, 'Please provide a name'],
       unique: true,
       trim: true,
-      minlength: [3, 'Username must be at least 3 characters long'],
+      minlength: [3, 'Name must be at least 3 characters long'],
     },
     email: {
       type: String,

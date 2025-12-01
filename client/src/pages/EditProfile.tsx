@@ -18,7 +18,6 @@ import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { authClient } from '@/lib/auth';
 import { useNavigate } from 'react-router-dom';
 
 const formSchema = z.object({
@@ -29,7 +28,7 @@ const formSchema = z.object({
 });
 
 const EditProfile = () => {
-  const { user, refreshSession } = useAuth();
+  const { user, updateProfile } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -55,9 +54,9 @@ const EditProfile = () => {
         name: user.name || '',
         email: user.email || '',
         phoneNumber: user.phoneNumber || '',
-        image: user.image || '',
+        image: user.profileImage || '',
       });
-      setProfileImage(user.image || '');
+      setProfileImage(user.profileImage || '');
     }
   }, [user, form]);
 
@@ -97,50 +96,26 @@ const EditProfile = () => {
       setError('');
       setSuccess('');
 
-      // Check if email changed
-      const emailChanged = user?.email !== data.email;
-
-      if (emailChanged) {
-        // Use changeEmail method for email updates
-        const emailResponse = await authClient.changeEmail({
-          newEmail: data.email,
-          callbackURL: `${window.location.origin}/profile`,
-        });
-
-        if (emailResponse.error) {
-          setError(emailResponse.error.message || 'Failed to change email');
-          return;
-        }
-
-        setSuccess(
-          'A verification email has been sent to your current email address. Please check your inbox to approve the email change.'
-        );
-      }
-
-      // Update other profile fields (name, phoneNumber, image)
-      const response = await authClient.updateUser({
+      // Update profile using custom auth API
+      await updateProfile({
         name: data.name,
+        email: data.email,
         phoneNumber: data.phoneNumber,
-        image: data.image || undefined,
+        profileImage: data.image || undefined,
       });
 
-      if (response.error) {
-        setError(response.error.message || 'Failed to update profile');
-        return;
-      }
+      setSuccess('Profile updated successfully!');
 
-      // Refresh user data in context
-      await refreshSession();
-
-      if (!emailChanged) {
-        setSuccess('Profile updated successfully!');
-        // Redirect to profile page after 2 seconds
-        setTimeout(() => {
-          navigate('/profile');
-        }, 2000);
-      }
+      // Redirect to profile page after 2 seconds
+      setTimeout(() => {
+        navigate('/profile');
+      }, 2000);
     } catch (err) {
-      setError('Failed to update profile. Please try again.');
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Failed to update profile. Please try again.'
+      );
       console.error('Update profile error:', err);
     } finally {
       setIsLoading(false);

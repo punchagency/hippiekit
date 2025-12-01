@@ -1,60 +1,92 @@
 import dotenv from 'dotenv';
-
-// Load environment variables FIRST before any other imports that use them
 dotenv.config();
-
-// Debug: Check if env vars are loaded
-console.log('🔍 Environment check:');
-console.log(
-  '- RESEND_API_KEY:',
-  process.env.RESEND_API_KEY ? '✅ Found' : '❌ Missing'
-);
-console.log(
-  '- MONGODB_URI:',
-  process.env.MONGODB_URI ? '✅ Found' : '❌ Missing'
-);
-console.log('- CLIENT_URL:', process.env.CLIENT_URL || 'Using default');
 
 import express, { Request, Response } from 'express';
 import cors from 'cors';
-import { toNodeHandler } from 'better-auth/node';
-import { auth } from './lib/auth.js';
-
-// MongoDB connection is handled by Better Auth's MongoDB adapter
-// No need for separate connectDB()
+import authRoutes from './routes/auth.js';
+import connectDB from './config/db.js';
 
 const PORT = process.env.PORT || 8000;
 const app = express();
 
+// === Allowed origins for CORS ===
 const allowedOrigins = [
-  'http://192.168.1.36:5173', // your browser dev server
-  'capacitor://localhost', // required for Android/iOS
-];
+  'http://localhost:5173', // Vite dev server
+  'capacitor://localhost', // Capacitor WebView
+  'https://localhost', // Capacitor HTTPS
+  'https://slyvia-spaviet-suzy.ngrok-free.dev', // Ngrok URL for testing
+].filter(Boolean);
 
-// CORS configuration - allow credentials for Better Auth
+// === Environment validation ===
+const requiredEnv = ['JWT_SECRET', 'ATLAS_URL'];
+requiredEnv.forEach((key) => {
+  if (!process.env[key]) {
+    console.error(`❌ Missing required environment variable: ${key}`);
+  }
+});
+if (!process.env.JWT_SECRET || !process.env.ATLAS_URL) {
+  console.warn(
+    '⚠️ Server starting with missing env vars may cause runtime failures (token generation or DB connection).'
+  );
+}
+
+// === Middleware ===
+// CORS configuration - bearer token auth doesn't need credentials
 app.use(
   cors({
-    origin: allowedOrigins,
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, Postman, curl)
+      if (!origin) return callback(null, true);
+
+      // Allow whitelisted origins
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // Log rejected origin but still allow it (for debugging)
+      console.log('⚠️ Origin not in whitelist but allowing:', origin);
+      return callback(null, true);
+    },
+    credentials: false, // Disabled - using bearer tokens instead of cookies
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'ngrok-skip-browser-warning',
+      'X-Requested-With',
+      'Accept',
+    ],
+    exposedHeaders: [
+      'set-auth-token', // Bearer token header
+      'Authorization',
+    ],
   })
 );
 
-// Mount Better Auth handler BEFORE express.json() middleware
-// This is critical - express.json() will cause Better Auth to hang
-// Express v5 uses *splat instead of * for catch-all routes
-app.all('/api/auth/*splat', toNodeHandler(auth));
+// Add middleware to handle ngrok browser warning bypass
+app.use((req, res, next) => {
+  // Set header to help with ngrok browser warning
+  if (req.headers['ngrok-skip-browser-warning']) {
+    res.setHeader('ngrok-skip-browser-warning', 'true');
+  }
+  next();
+});
 
-// Mount express.json() AFTER Better Auth handler
+// Parse JSON bodies
 app.use(express.json());
 
-// Health check route
+// Connect to MongoDB
+connectDB();
+
+// === Custom Authentication Routes ===
+app.use('/api/auth', authRoutes);
+
+// Health check
 app.get('/', (_req: Request, res: Response) => {
   res.json({ message: 'API is running...' });
 });
 
-// start the Express server
+// Start the Express server
 app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+  console.log(`✅ Server running on http://localhost:${PORT}`);
 });

@@ -1,6 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { mongodbAdapter } from 'better-auth/adapters/mongodb';
-import { emailOTP } from 'better-auth/plugins';
+import { emailOTP, bearer } from 'better-auth/plugins';
 import { MongoClient } from 'mongodb';
 import { sendEmail } from './emailService';
 
@@ -24,6 +24,7 @@ function getAuth() {
       baseURL: process.env.APP_URL || 'http://localhost:8000',
       database: mongodbAdapter(client.db()),
       plugins: [
+        bearer(),
         emailOTP({
           otpLength: 4,
           expiresIn: 300, // 5 minutes
@@ -272,6 +273,9 @@ function getAuth() {
       session: {
         expiresIn: 60 * 60 * 24 * 7, // 7 days
         updateAge: 60 * 60 * 24, // 1 day (update session every day)
+        cookieCache: {
+          enabled: false, // Disable cookie-based sessions - using bearer tokens only
+        },
       },
       user: {
         additionalFields: {
@@ -332,13 +336,18 @@ function getAuth() {
       },
       trustedOrigins: [
         process.env.CLIENT_URL as string,
+        process.env.APP_URL as string,
         'http://localhost:5173',
-      ],
+        'https://localhost',
+        'capacitor://localhost',
+        'http://localhost',
+      ].filter(Boolean),
       advanced: {
-        useSecureCookies: false, // Set to true in production with HTTPS
+        useSecureCookies: false, // Cookies disabled - using bearer tokens
         crossSubDomainCookies: {
           enabled: false,
         },
+        disableCSRFCheck: true, // Not needed for bearer token auth
       },
     });
   }
