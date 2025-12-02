@@ -5,9 +5,17 @@ type Props = {
   name: string;
   description: string;
   img: string;
+  isFavorite?: boolean;
+  onToggleFavorite?: () => void;
 };
 
-export default function ProductInfo({ name, description, img }: Props) {
+export default function ProductInfo({
+  name,
+  description,
+  img,
+  isFavorite = false,
+  onToggleFavorite,
+}: Props) {
   return (
     <div className="flex flex-col gap-2.5 ">
       <div className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex gap-3">
@@ -33,8 +41,18 @@ export default function ProductInfo({ name, description, img }: Props) {
           </div>
         </div>
         {/* Favorite Button */}
-        <button className="w-[22px] h-[22px] bg-[rgba(255,255,255,0.3)] p-[5px] rounded-sm shadow-[0px_2px_16px_0px_rgba(6,51,54,0.1)]">
-          <img src={heartIcon} alt="" />
+        <button
+          onClick={onToggleFavorite}
+          className="w-[22px] h-[22px] bg-[rgba(255,255,255,0.3)] p-[5px] rounded-sm shadow-[0px_2px_16px_0px_rgba(6,51,54,0.1)] transition-opacity hover:opacity-70"
+        >
+          <img
+            src={heartIcon}
+            alt="Favorite"
+            className="transition-all"
+            style={{
+              filter: isFavorite ? 'none' : 'grayscale(100%) brightness(1.5)',
+            }}
+          />
         </button>
       </div>
     </div>

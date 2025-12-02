@@ -61,11 +61,25 @@ export const Categories = ({
           }
         >
           <div className="w-[55px] h-[55px] sm:w-[60px] sm:h-[60px] rounded-[10px] overflow-hidden relative">
-            <img
-              src={category.image}
-              alt={category.name}
-              className="w-full h-full object-cover"
-            />
+            {category.image ? (
+              <img
+                src={category.image}
+                alt={category.name}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  console.error(
+                    'Failed to load image for',
+                    category.name,
+                    category.image
+                  );
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            ) : (
+              <div className="w-full h-full bg-gray-200 flex items-center justify-center text-xs text-gray-500">
+                {category.name.substring(0, 2).toUpperCase()}
+              </div>
+            )}
             {selection === 'filter' && categoryParam === category.slug && (
               <button
                 onClick={handleDeselectClick}

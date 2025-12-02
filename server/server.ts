@@ -4,6 +4,7 @@ dotenv.config();
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import authRoutes from './routes/auth.js';
+import favoriteRoutes from './routes/favorites.js';
 import connectDB from './config/db.js';
 
 const PORT = process.env.PORT || 8000;
@@ -80,6 +81,8 @@ connectDB();
 
 // === Custom Authentication Routes ===
 app.use('/api/auth', authRoutes);
+// === Favorites Routes ===
+app.use('/api/favorites', favoriteRoutes);
 
 // Health check
 app.get('/', (_req: Request, res: Response) => {

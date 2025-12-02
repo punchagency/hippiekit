@@ -39,7 +39,9 @@ export interface Product {
 
 export const fetchCategories = async (): Promise<Category[]> => {
   try {
-    const response = await fetch(`${WP_API_URL}/product-categories/`);
+    const response = await fetch(
+      `${WP_API_URL}/product-categories?per_page=100`
+    );
 
     if (!response.ok) {
       throw new Error('Failed to fetch categories');

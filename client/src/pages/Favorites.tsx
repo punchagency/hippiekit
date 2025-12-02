@@ -7,18 +7,25 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import productGridImage from '@/assets/productGridImage.png';
 
 import {
-  fetchCategories,
-  fetchProductsPaginated,
-  searchCategoriesAndProducts,
-  type Product,
-  type Category,
-} from '@/services/categoryService';
+  listFavorites,
+  listFavoriteCategories,
+  removeFavorite,
+  type FavoriteItem,
+} from '@/services/favoriteService';
 import ProductInfo from '@/components/ProductInfo';
 const Favorites = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<
+    Array<{
+      id: number;
+      name: string;
+      slug: string;
+      count: number;
+      image?: string;
+    }>
+  >([]);
+  const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -26,7 +33,6 @@ const Favorites = () => {
   const [hasMore, setHasMore] = useState(true);
   const navigate = useNavigate();
   const observerTarget = useRef<HTMLDivElement>(null);
-  const searchTimeoutRef = useRef<number | null>(null);
 
   const categoryParam: string = searchParams.get('category') || '';
   const searchParam: string = searchParams.get('search') || '';
@@ -36,61 +42,74 @@ const Favorites = () => {
     setSearchQuery(searchParam);
   }, [searchParam]);
 
+  // Load favorite categories
   useEffect(() => {
     const loadCategories = async () => {
       try {
         setIsLoadingCategories(true);
-        const categoriesData = await fetchCategories();
-        setCategories(categoriesData);
+        const response = await listFavoriteCategories();
+        if (response.success) {
+          setCategories(response.data);
+        } else {
+          setCategories([]);
+        }
       } catch (error) {
-        console.error('Failed to load categories:', error);
+        console.error('Failed to load favorite categories:', error);
+        setCategories([]);
       } finally {
         setIsLoadingCategories(false);
       }
     };
     loadCategories();
-  }, []);
+  }, [favorites]); // Reload categories when favorites change
 
-  // Debounced search effect
-  useEffect(() => {
-    // Clear existing timeout
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-
-    // If search query is empty and no category selected, reset to initial state
-    if (!searchQuery.trim() && !categoryParam) {
-      return;
-    }
-
-    // Set debounce timeout for search
-    if (searchQuery.trim()) {
-      searchTimeoutRef.current = setTimeout(async () => {
-        try {
+  // Load favorites function
+  const loadFavorites = useCallback(
+    async (pageNum: number, reset: boolean = false) => {
+      try {
+        if (reset) {
           setIsLoadingProducts(true);
-
-          const results = await searchCategoriesAndProducts(
-            searchQuery.trim(),
-            categoryParam || undefined
-          );
-          // Only update products, keep categories as is
-          setProducts(results.products);
-          setHasMore(false); // Disable infinite scroll for search results
-        } catch (error) {
-          console.error('Search failed:', error);
-        } finally {
-          setIsLoadingProducts(false);
+        } else {
+          setIsLoadingMore(true);
         }
-      }, 500); // 500ms debounce delay
-    }
 
-    // Cleanup function
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
+        const response = await listFavorites({
+          page: pageNum,
+          limit: 15,
+          category: categoryParam || undefined,
+          search: searchQuery.trim() || undefined,
+        });
+
+        if (response.success) {
+          setHasMore(response.meta.hasMore);
+          setFavorites((prev) =>
+            reset ? response.data : [...prev, ...response.data]
+          );
+        } else {
+          setFavorites([]);
+          setHasMore(false);
+        }
+      } catch (error) {
+        console.error('Failed to load favorites:', error);
+        if (reset) {
+          setFavorites([]);
+        }
+        setHasMore(false);
+      } finally {
+        setIsLoadingProducts(false);
+        setIsLoadingMore(false);
       }
-    };
-  }, [searchQuery, categoryParam]);
+    },
+    [categoryParam, searchQuery]
+  );
+
+  // Load initial favorites when category or search changes
+  useEffect(() => {
+    setFavorites([]);
+    setPage(1);
+    setHasMore(true);
+    loadFavorites(1, true);
+  }, [categoryParam, searchQuery, loadFavorites]);
 
   const handleCategoryClick = (categoryName: string) => {
     const newParams: Record<string, string> = { category: categoryName };
@@ -105,47 +124,6 @@ const Favorites = () => {
     setSearchParams(newParams);
   };
 
-  // Load products function
-  const loadProducts = useCallback(
-    async (pageNum: number, categorySlug: string, reset: boolean = false) => {
-      try {
-        if (reset) {
-          setIsLoadingProducts(true);
-        } else {
-          setIsLoadingMore(true);
-        }
-
-        const productsData = await fetchProductsPaginated(
-          pageNum,
-          15,
-          categorySlug || undefined
-        );
-
-        if (productsData.length < 15) {
-          setHasMore(false);
-        }
-
-        setProducts((prev) =>
-          reset ? productsData : [...prev, ...productsData]
-        );
-      } catch (error) {
-        console.error('Failed to load products:', error);
-      } finally {
-        setIsLoadingProducts(false);
-        setIsLoadingMore(false);
-      }
-    },
-    []
-  );
-
-  // Load initial products when category changes or on mount
-  useEffect(() => {
-    setProducts([]);
-    setPage(1);
-    setHasMore(true);
-    loadProducts(1, categoryParam, true);
-  }, [categoryParam, loadProducts]);
-
   // Infinite scroll observer
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -158,7 +136,7 @@ const Favorites = () => {
         ) {
           const nextPage = page + 1;
           setPage(nextPage);
-          loadProducts(nextPage, categoryParam, false);
+          loadFavorites(nextPage, false);
         }
       },
       { threshold: 0.1 }
@@ -174,14 +152,7 @@ const Favorites = () => {
         observer.unobserve(currentTarget);
       }
     };
-  }, [
-    hasMore,
-    isLoadingMore,
-    isLoadingProducts,
-    page,
-    categoryParam,
-    loadProducts,
-  ]);
+  }, [hasMore, isLoadingMore, isLoadingProducts, page, loadFavorites]);
 
   // Transform categories for the Categories component
   const categoryProducts = categories.map((cat) => ({
@@ -189,7 +160,7 @@ const Favorites = () => {
     name: cat.name,
     slug: cat.slug,
     price: '', // Not applicable for categories
-    image: cat.meta.featured_image || productGridImage, // Use featured image or fallback
+    image: cat.image || productGridImage, // Use category image or fallback
     items: cat.count.toString(),
   }));
 
@@ -201,23 +172,29 @@ const Favorites = () => {
       ]
     : categoryProducts;
 
-  // Helper function to strip HTML tags
-  const stripHtml = (html: string) => {
-    const tmp = document.createElement('div');
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || '';
+  // Handle removing favorite
+  const handleToggleFavorite = async (productId: number) => {
+    // Optimistic update: remove from UI immediately
+    const previousFavorites = [...favorites];
+    setFavorites((prev) => prev.filter((fav) => fav.productId !== productId));
+
+    try {
+      await removeFavorite(productId);
+    } catch (error) {
+      console.error('Error removing favorite:', error);
+      // Rollback on error
+      setFavorites(previousFavorites);
+    }
   };
 
-  // Transform products for the Products component
-  const productsGridData = products.map((product) => ({
-    id: product.id,
-    image:
-      product._embedded?.['wp:featuredmedia']?.[0]?.source_url ||
-      profileSampleImage,
-    price: product.meta.cta_button_text || 'View Product',
-    productName: product.title.rendered,
-    description: stripHtml(product.content.rendered).substring(0, 100),
-    rating: 4.5, // WordPress doesn't provide ratings by default
+  // Transform favorites for the ProductInfo component
+  const productsGridData = favorites.map((favorite) => ({
+    id: favorite.productId,
+    image: favorite.product.image || profileSampleImage,
+    price: favorite.product.priceText || 'View Product',
+    productName: favorite.product.title,
+    description: favorite.product.title, // Use title as description since we don't have full content
+    rating: 4.5,
   }));
 
   return (
@@ -335,6 +312,8 @@ const Favorites = () => {
                   name={product.productName}
                   description={product.description}
                   img={product.image}
+                  isFavorite={true}
+                  onToggleFavorite={() => handleToggleFavorite(product.id)}
                 />
               </div>
             ))}
