@@ -19,14 +19,13 @@ const Onboarding = () => {
     setServerStatus('Testing...');
     try {
       const apiUrl =
-        import.meta.env.VITE_API_URL ||
-        'https://slyvia-spaviet-suzy.ngrok-free.dev';
+        import.meta.env.VITE_API_URL || 'http://localhost:8000';
       console.log('Testing server at:', apiUrl);
 
       const response = await fetch(`${apiUrl}/`, {
         method: 'GET',
         headers: {
-          'ngrok-skip-browser-warning': 'true', // Skip ngrok browser warning
+
         },
       });
 

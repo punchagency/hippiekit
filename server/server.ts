@@ -15,7 +15,7 @@ const allowedOrigins = [
   'http://localhost:5173', // Vite dev server
   'capacitor://localhost', // Capacitor WebView
   'https://localhost', // Capacitor HTTPS
-  'https://slyvia-spaviet-suzy.ngrok-free.dev', // Ngrok URL for testing
+  process.env.APP_URL, // Production URL (Heroku or custom domain)
 ].filter(Boolean);
 
 // === Environment validation ===
@@ -53,7 +53,6 @@ app.use(
     allowedHeaders: [
       'Content-Type',
       'Authorization',
-      'ngrok-skip-browser-warning',
       'X-Requested-With',
       'Accept',
     ],
@@ -63,15 +62,6 @@ app.use(
     ],
   })
 );
-
-// Add middleware to handle ngrok browser warning bypass
-app.use((req, res, next) => {
-  // Set header to help with ngrok browser warning
-  if (req.headers['ngrok-skip-browser-warning']) {
-    res.setHeader('ngrok-skip-browser-warning', 'true');
-  }
-  next();
-});
 
 // Parse JSON bodies
 app.use(express.json());

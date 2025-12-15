@@ -25,7 +25,6 @@ export const apiClient = async (
 
   const requestHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
-    'ngrok-skip-browser-warning': 'true',
     ...(headers as Record<string, string>),
   };
 

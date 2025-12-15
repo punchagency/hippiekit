@@ -45,7 +45,7 @@ export async function signUp(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'ngrok-skip-browser-warning': 'true',
+
     },
     body: JSON.stringify({
       name,
@@ -85,7 +85,7 @@ export async function signIn(
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
-        'ngrok-skip-browser-warning': 'true',
+
       },
       body: JSON.stringify({ email, password }),
     });
@@ -135,7 +135,7 @@ export async function getMe(): Promise<UserResponse> {
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: 'application/json',
-        'ngrok-skip-browser-warning': 'true',
+
       },
     });
     rawText = await response.text();
@@ -183,7 +183,7 @@ export async function updateProfile(updates: {
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
-      'ngrok-skip-browser-warning': 'true',
+
     },
     body: JSON.stringify(updates),
   });
@@ -212,7 +212,7 @@ export async function forgotPassword(email: string): Promise<MessageResponse> {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'ngrok-skip-browser-warning': 'true',
+
     },
     body: JSON.stringify({ email }),
   });
@@ -229,7 +229,7 @@ export async function verifyOtp(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'ngrok-skip-browser-warning': 'true',
+
     },
     body: JSON.stringify({ email, otp }),
   });
@@ -247,7 +247,7 @@ export async function resetPassword(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'ngrok-skip-browser-warning': 'true',
+
     },
     body: JSON.stringify({ email, otp, newPassword }),
   });
@@ -274,7 +274,7 @@ export async function googleSignIn(idToken: string): Promise<AuthResponse> {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'ngrok-skip-browser-warning': 'true',
+
     },
     body: JSON.stringify({ idToken }),
   });

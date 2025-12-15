@@ -25,7 +25,6 @@ export const addFavorite = async (productId: number) => {
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
-      'ngrok-skip-browser-warning': 'true',
     },
   });
   if (!res.ok && res.status !== 200 && res.status !== 201) {
@@ -42,7 +41,6 @@ export const removeFavorite = async (productId: number) => {
     method: 'DELETE',
     headers: {
       Authorization: `Bearer ${token}`,
-      'ngrok-skip-browser-warning': 'true',
     },
   });
   if (!res.ok && res.status !== 204) {
@@ -76,7 +74,6 @@ export const listFavorites = async (params?: {
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
-      'ngrok-skip-browser-warning': 'true',
     },
   });
   if (!res.ok) {
@@ -113,7 +110,6 @@ export const listFavoriteCategories = async (): Promise<{
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
-      'ngrok-skip-browser-warning': 'true',
     },
   });
   if (!res.ok) {
