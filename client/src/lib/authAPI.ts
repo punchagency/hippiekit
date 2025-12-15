@@ -60,8 +60,8 @@ export async function signUp(
   const data = await response.json();
 
   if (data.success && data.data?.token) {
-    tokenStore.setToken(data.data.token);
-    tokenStore.setUser({
+    await tokenStore.setToken(data.data.token);
+    await tokenStore.setUser({
       id: data.data._id,
       username: data.data.username,
       email: data.data.email,
@@ -104,8 +104,8 @@ export async function signIn(
       };
     }
     if (data.success && data.data?.token) {
-      tokenStore.setToken(data.data.token);
-      tokenStore.setUser({
+      await tokenStore.setToken(data.data.token);
+      await tokenStore.setUser({
         id: data.data._id,
         username: data.data.name,
         email: data.data.email,
@@ -125,7 +125,7 @@ export async function signIn(
 
 // Get current user
 export async function getMe(): Promise<UserResponse> {
-  const token = tokenStore.getToken();
+  const token = await tokenStore.getToken();
   if (!token) {
     return { success: false };
   }
@@ -173,7 +173,7 @@ export async function updateProfile(updates: {
   profileImage?: string;
   password?: string;
 }): Promise<AuthResponse> {
-  const token = tokenStore.getToken();
+  const token = await tokenStore.getToken();
   if (!token) {
     return { success: false, message: 'Not authenticated' };
   }
@@ -191,7 +191,7 @@ export async function updateProfile(updates: {
   const data = await response.json();
 
   if (data.success && data.data) {
-    tokenStore.setUser({
+    await tokenStore.setUser({
       id: data.data._id,
       username: data.data.username,
       email: data.data.email,
@@ -199,7 +199,7 @@ export async function updateProfile(updates: {
       profileImage: data.data.profileImage,
     });
     if (data.data.token) {
-      tokenStore.setToken(data.data.token);
+      await tokenStore.setToken(data.data.token);
     }
   }
 
@@ -255,8 +255,8 @@ export async function resetPassword(
   const data = await response.json();
 
   if (data.success && data.data?.token) {
-    tokenStore.setToken(data.data.token);
-    tokenStore.setUser({
+    await tokenStore.setToken(data.data.token);
+    await tokenStore.setUser({
       id: data.data._id,
       username: data.data.username,
       email: data.data.email,
@@ -282,8 +282,8 @@ export async function googleSignIn(idToken: string): Promise<AuthResponse> {
   const data = await response.json();
 
   if (data.success && data.data?.token) {
-    tokenStore.setToken(data.data.token);
-    tokenStore.setUser({
+    await tokenStore.setToken(data.data.token);
+    await tokenStore.setUser({
       id: data.data._id,
       username: data.data.username,
       email: data.data.email,
@@ -296,6 +296,6 @@ export async function googleSignIn(idToken: string): Promise<AuthResponse> {
 }
 
 // Sign out
-export function signOut(): void {
-  tokenStore.clear();
+export async function signOut(): Promise<void> {
+  await tokenStore.clear();
 }

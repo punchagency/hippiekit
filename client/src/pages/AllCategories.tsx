@@ -2,32 +2,55 @@ import { Categories } from '@/components/Categories';
 // import profileSampleImage from '@/assets/profileImgSample.jpg';
 import logo from '@/assets/profileImgSample.jpg';
 import { Title } from '@/components/Title';
-import { useEffect, useState } from 'react';
-import { fetchCategories, type Category } from '@/services/categoryService';
+import { useCategories } from '@/services/categoryService';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { listFavoriteCategories } from '@/services/favoriteService';
+import { useState, useEffect } from 'react';
 
 const AllCategories = () => {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const fromFavorites = searchParams.get('from') === 'favorites';
 
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        setIsLoadingCategories(true);
-        const data = await fetchCategories();
-        setCategories(data);
-      } catch (error) {
-        console.error('Failed to load categories:', error);
-      } finally {
-        setIsLoadingCategories(false);
-      }
-    };
+  // Use cached query for regular categories
+  const { data: wpCategories = [], isLoading: isLoadingWPCategories } =
+    useCategories();
 
-    loadCategories();
-  }, []);
+  // State for favorite categories
+  const [favoriteCategories, setFavoriteCategories] = useState<
+    Array<{
+      id: number;
+      name: string;
+      slug: string;
+      count: number;
+      image?: string;
+    }>
+  >([]);
+  const [isLoadingFavoriteCategories, setIsLoadingFavoriteCategories] =
+    useState(false);
+
+  // Load favorite categories if coming from favorites
+  useEffect(() => {
+    if (fromFavorites) {
+      const loadFavoriteCategories = async () => {
+        try {
+          setIsLoadingFavoriteCategories(true);
+          const response = await listFavoriteCategories();
+          if (response.success) {
+            setFavoriteCategories(response.data);
+          } else {
+            setFavoriteCategories([]);
+          }
+        } catch (error) {
+          console.error('Failed to load favorite categories:', error);
+          setFavoriteCategories([]);
+        } finally {
+          setIsLoadingFavoriteCategories(false);
+        }
+      };
+      loadFavoriteCategories();
+    }
+  }, [fromFavorites]);
 
   const handleCategoryClick = (categorySlug: string) => {
     if (fromFavorites) {
@@ -37,6 +60,12 @@ const AllCategories = () => {
     // Otherwise, default link behavior will navigate to category page
   };
 
+  // Use favorite categories when from favorites, otherwise use WP categories
+  const categories = fromFavorites ? favoriteCategories : wpCategories;
+  const isLoadingCategories = fromFavorites
+    ? isLoadingFavoriteCategories
+    : isLoadingWPCategories;
+
   // Transform categories for the Categories component
   const categoryProducts = categories.map((cat) => ({
     id: cat.id,
@@ -44,7 +73,9 @@ const AllCategories = () => {
     slug: cat.slug,
     category: cat.name,
     price: '', // Not applicable for categories
-    image: cat.meta.featured_image || logo, // Use featured image or fallback
+    image: fromFavorites
+      ? (cat as any).image || logo
+      : (cat as any).meta?.featured_image || logo,
     items: cat.count.toString(),
   }));
 

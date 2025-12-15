@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchSession = async () => {
     try {
       // Check if token exists and is not expired
-      const token = getValidToken();
+      const token = await getValidToken();
       if (!token) {
         setUser(null);
         return;
@@ -80,14 +80,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    // Handle OAuth callback if present
-    const oauthResult = handleOAuthCallback();
-    if (oauthResult.success) {
-      console.log('✅ OAuth callback handled successfully');
-    }
-
-    // Check session on mount
-    fetchSession().finally(() => setLoading(false));
+    // Handle OAuth callback if present, then fetch session
+    (async () => {
+      const oauthResult = await handleOAuthCallback();
+      if (oauthResult.success) {
+        console.log('✅ OAuth callback handled successfully');
+        // Fetch session after OAuth token is stored
+        await fetchSession();
+      } else {
+        // No OAuth callback, just check existing session
+        await fetchSession();
+      }
+      setLoading(false);
+    })();
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -113,8 +118,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const logout = () => {
-    authAPI.signOut();
+  const logout = async () => {
+    await authAPI.signOut();
     setUser(null);
   };
 

@@ -4,6 +4,7 @@ import { OnboardingCard } from '@/components/OnboardingCard';
 import { Button } from '@/components/ui/button';
 import { onboardingIconsMap } from '@/constants';
 import { ArrowLeft, ArrowRight } from '@/assets/onboardingIcons';
+import { SafeAreaLayout } from '@/components/layouts/SafeAreaLayout';
 
 const Onboarding = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -80,7 +81,7 @@ const Onboarding = () => {
   const currentData = onboardingIconsMap[currentStep];
 
   return (
-    <div className="w-full relative h-[calc(100vh_-_(env(safe-area-inset-top))_-_(env(safe-area-inset-bottom)))] bg-white flex flex-col">
+    <SafeAreaLayout className="bg-white">
       {/* Skip Button and Test Server - Fixed at top */}
       <div className="flex justify-between items-center p-4 max-[400px]:p-3">
         <Button
@@ -171,7 +172,7 @@ const Onboarding = () => {
           </Button>
         </div>
       </div>
-    </div>
+    </SafeAreaLayout>
   );
 };
 

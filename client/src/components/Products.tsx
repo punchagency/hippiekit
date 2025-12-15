@@ -26,10 +26,10 @@ export const Products = ({ data, horizontal = false }: Props) => {
   const [loadingIds, setLoadingIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
-    const token = getValidToken();
-    if (!token) return;
     // Load user's favorites once to mark hearts
     (async () => {
+      const token = await getValidToken();
+      if (!token) return;
       try {
         const resp = await listFavorites({ page: 1, limit: 200 });
         const ids = new Set<number>(resp.data.map((f) => f.productId));
@@ -42,7 +42,7 @@ export const Products = ({ data, horizontal = false }: Props) => {
   }, []);
 
   const handleToggle = async (productId: number) => {
-    const token = getValidToken();
+    const token = await getValidToken();
     if (!token) {
       alert('Please sign in to manage favorites');
       return;

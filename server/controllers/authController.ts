@@ -3,7 +3,11 @@ import User from '../models/User.js';
 import generateToken from '../utils/generateToken.js';
 import crypto from 'crypto';
 import { AuthRequest } from '../middleware/auth.js';
-import { sendEmail } from '../lib/emailService.js';
+import {
+  sendEmail,
+  sendVerificationEmail,
+  sendOTPEmail,
+} from '../lib/emailService.js';
 import connectDB from '../config/db.js';
 import mongoose from 'mongoose';
 import Account from '../models/Account.js';
@@ -36,6 +40,10 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    // Generate verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
     // Create new user (password hashing handled by pre-save hook)
     const [user] = await User.create(
       [
@@ -44,6 +52,9 @@ export const register = async (req: Request, res: Response): Promise<void> => {
           email,
           password: provider === 'credentials' ? password : undefined,
           phoneNumber,
+          isVerified: false,
+          verificationToken,
+          verificationTokenExpiry,
         },
       ],
       { session }
@@ -72,16 +83,25 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     await session.commitTransaction();
     session.endSession();
 
+    // Send verification email
+    try {
+      await sendVerificationEmail(email, verificationToken);
+      console.log('✅ Verification email sent to:', email);
+    } catch (emailError) {
+      console.error('⚠️ Failed to send verification email:', emailError);
+      // Continue - user can request resend later
+    }
+
     res.status(201).json({
       success: true,
+      message:
+        'Registration successful! Please check your email to verify your account.',
       data: {
         _id: user._id,
         name: user.name,
         email: user.email,
         phoneNumber: user.phoneNumber,
-        token: generateToken(String(user._id)),
       },
-      message: 'User registered successfully',
     });
     return;
   } catch (error) {
@@ -137,6 +157,19 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       res.status(401).json({
         success: false,
         message: 'Invalid email or password',
+      });
+      return;
+    }
+
+    // Check if email is verified
+    if (!user.isVerified) {
+      console.log('❌ Email not verified for:', email);
+      await session.abortTransaction();
+      session.endSession();
+      res.status(403).json({
+        success: false,
+        message:
+          'Please verify your email before logging in. Check your inbox for the verification link.',
       });
       return;
     }
@@ -286,150 +319,6 @@ export const updateProfile = async (
         message: 'User not found',
       });
     }
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error instanceof Error ? error.message : 'An error occurred',
-    });
-  }
-};
-
-// @desc    Request password reset
-// @route   POST /api/auth/forgot-password
-// @access  Public
-export const forgotPassword = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const { email } = req.body;
-
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      res.status(404).json({
-        success: false,
-        message: 'User not found',
-      });
-      return;
-    }
-
-    // Generate 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    user.resetPasswordToken = crypto
-      .createHash('sha256')
-      .update(otp)
-      .digest('hex');
-    user.resetPasswordExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-    await user.save();
-
-    // Send OTP via email
-    await sendEmail({
-      to: user.email,
-      subject: 'Password Reset OTP',
-      text: `Your OTP for password reset is: ${otp}\n\nThis OTP will expire in 10 minutes.\n\nIf you didn't request this, please ignore this email.`,
-      html: `
-        <h2>Password Reset Request</h2>
-        <p>Your OTP for password reset is: <strong>${otp}</strong></p>
-        <p>This OTP will expire in 10 minutes.</p>
-        <p>If you didn't request this, please ignore this email.</p>
-      `,
-    });
-
-    res.status(200).json({
-      success: true,
-      message: 'OTP sent to your email',
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error instanceof Error ? error.message : 'An error occurred',
-    });
-  }
-};
-
-// @desc    Reset password
-// @route   POST /api/auth/reset-password
-// @access  Public
-export const resetPassword = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const { email, otp, newPassword } = req.body;
-
-    const resetPasswordToken = crypto
-      .createHash('sha256')
-      .update(otp)
-      .digest('hex');
-
-    const user = await User.findOne({
-      email,
-      resetPasswordToken,
-      resetPasswordExpiry: { $gt: Date.now() },
-    });
-
-    if (!user) {
-      res.status(400).json({
-        success: false,
-        message: 'Invalid or expired OTP',
-      });
-      return;
-    }
-
-    // Set new password
-    user.password = newPassword;
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpiry = undefined;
-
-    await user.save();
-
-    res.status(200).json({
-      success: true,
-      message: 'Password reset successful',
-      data: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        token: generateToken(String(user._id)),
-      },
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error instanceof Error ? error.message : 'An error occurred',
-    });
-  }
-};
-
-// @desc    Verify OTP
-// @route   POST /api/auth/verify-otp
-// @access  Public
-export const verifyOTP = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { email, otp } = req.body;
-
-    const hashedOTP = crypto.createHash('sha256').update(otp).digest('hex');
-
-    const user = await User.findOne({
-      email,
-      resetPasswordToken: hashedOTP,
-      resetPasswordExpiry: { $gt: Date.now() },
-    });
-
-    if (!user) {
-      res.status(400).json({
-        success: false,
-        message: 'Invalid or expired OTP',
-      });
-      return;
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'OTP verified successfully',
-    });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -788,5 +677,275 @@ export const googleOAuthCallback = async (
     console.error('Google OAuth callback error:', error);
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
     res.redirect(`${clientUrl}?error=oauth_failed`);
+  }
+};
+
+// @desc    Verify email with token
+// @route   GET /api/auth/verify-email/:token
+// @access  Public
+export const verifyEmail = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  await connectDB();
+
+  try {
+    const { token } = req.params;
+
+    if (!token) {
+      res.status(400).json({
+        success: false,
+        message: 'Verification token is required',
+      });
+      return;
+    }
+
+    // Find user by verification token
+    const user = await User.findOne({
+      verificationToken: token,
+      verificationTokenExpiry: { $gt: new Date() }, // Token must not be expired
+    });
+
+    if (!user) {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid or expired verification token',
+      });
+      return;
+    }
+
+    // Mark email as verified
+    user.isVerified = true;
+    user.verificationToken = undefined;
+    user.verificationTokenExpiry = undefined;
+    await user.save();
+
+    console.log('✅ Email verified for:', user.email);
+
+    res.status(200).json({
+      success: true,
+      message: 'Email verified successfully! You can now login.',
+      data: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+    });
+    return;
+  } catch (error) {
+    console.error('Email verification error:', error);
+    res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'An error occurred',
+    });
+    return;
+  }
+};
+
+// @desc    Request password reset (generates and sends OTP)
+// @route   POST /api/auth/forgot-password
+// @access  Public
+export const forgotPassword = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  await connectDB();
+
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      res.status(400).json({
+        success: false,
+        message: 'Email is required',
+      });
+      return;
+    }
+
+    // Find user by email
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      // For security, don't reveal if user exists
+      res.status(200).json({
+        success: true,
+        message:
+          'If an account exists with this email, you will receive a password reset code.',
+      });
+      return;
+    }
+
+    // Generate 6-digit OTP
+    const otp = crypto.randomInt(100000, 999999).toString();
+    const resetOTPExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    // Save OTP to user
+    user.resetOTP = otp;
+    user.resetOTPExpiry = resetOTPExpiry;
+    await user.save();
+
+    // Send OTP email
+    try {
+      await sendOTPEmail(email, otp);
+      console.log('✅ Password reset OTP sent to:', email);
+    } catch (emailError) {
+      console.error('⚠️ Failed to send OTP email:', emailError);
+      // Still return success to prevent email enumeration
+    }
+
+    res.status(200).json({
+      success: true,
+      message:
+        'If an account exists with this email, you will receive a password reset code.',
+    });
+    return;
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'An error occurred',
+    });
+    return;
+  }
+};
+
+// @desc    Verify OTP for password reset
+// @route   POST /api/auth/verify-otp
+// @access  Public
+export const verifyOTP = async (req: Request, res: Response): Promise<void> => {
+  await connectDB();
+
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      res.status(400).json({
+        success: false,
+        message: 'Email and OTP are required',
+      });
+      return;
+    }
+
+    // Find user by email
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      res.status(400).json({
+        success: false,
+        message: 'User not found',
+      });
+      return;
+    }
+
+    // Check if OTP matches and is not expired
+    if (
+      user.resetOTP !== otp ||
+      !user.resetOTPExpiry ||
+      new Date() > user.resetOTPExpiry
+    ) {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid or expired OTP',
+      });
+      return;
+    }
+
+    // OTP is valid - return success (don't clear OTP yet, wait for reset-password)
+    res.status(200).json({
+      success: true,
+      message: 'OTP verified successfully. You can now reset your password.',
+    });
+    return;
+  } catch (error) {
+    console.error('OTP verification error:', error);
+    res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'An error occurred',
+    });
+    return;
+  }
+};
+
+// @desc    Reset password with verified OTP
+// @route   POST /api/auth/reset-password
+// @access  Public
+export const resetPassword = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  await connectDB();
+
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+      res.status(400).json({
+        success: false,
+        message: 'Email, OTP, and new password are required',
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters',
+      });
+      return;
+    }
+
+    // Find user by email
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      res.status(400).json({
+        success: false,
+        message: 'User not found',
+      });
+      return;
+    }
+
+    // Verify OTP
+    if (
+      user.resetOTP !== otp ||
+      !user.resetOTPExpiry ||
+      new Date() > user.resetOTPExpiry
+    ) {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid or expired OTP',
+      });
+      return;
+    }
+
+    // Update password and clear OTP
+    user.password = newPassword;
+    user.resetOTP = undefined;
+    user.resetOTPExpiry = undefined;
+    await user.save(); // pre-save hook will hash the password
+
+    console.log('✅ Password reset for:', email);
+
+    // Generate JWT token for auto-login
+    const jwtToken = generateToken(String(user._id));
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successfully. You are now logged in.',
+      data: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        token: jwtToken,
+      },
+    });
+    return;
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'An error occurred',
+    });
+    return;
   }
 };

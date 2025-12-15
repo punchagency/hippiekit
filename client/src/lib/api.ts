@@ -31,9 +31,22 @@ export const apiClient = async (
 
   // Add bearer token if required
   if (requiresAuth) {
-    const token = tokenStore.getToken();
+    const token = await tokenStore.getToken();
     if (token) {
+      console.log(
+        '🔍 Sending token (first 20 chars):',
+        token.substring(0, 20) + '...'
+      );
+      console.log('🔍 Token length:', token.length);
+      console.log(
+        '🔍 Token format check:',
+        token.split('.').length === 3
+          ? 'Valid JWT format'
+          : 'INVALID JWT FORMAT'
+      );
       requestHeaders['Authorization'] = `Bearer ${token}`;
+    } else {
+      console.log('⚠️ No token found for authenticated request');
     }
   }
 
@@ -46,7 +59,7 @@ export const apiClient = async (
 
   // Handle 401 responses - clear invalid tokens
   if (response.status === 401 && requiresAuth) {
-    tokenStore.clear();
+    await tokenStore.clear();
   }
 
   return response;

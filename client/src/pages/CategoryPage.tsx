@@ -1,9 +1,6 @@
 import { Products } from '@/components/Products';
-import {
-  fetchProductsByCategory,
-  type Product,
-} from '@/services/categoryService';
-import { useEffect, useState } from 'react';
+import { useInfiniteProductsByCategory } from '@/services/categoryService';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import profileSampleImage from '@/assets/profileImgSample.jpg';
 import { useParams } from 'react-router-dom';
 
@@ -15,8 +12,25 @@ import { Title } from '@/components/Title';
 
 export default function CategoryPage() {
   const { categoryName } = useParams();
-  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
-  const [products, setProducts] = useState<Product[]>([]);
+
+  // Use infinite scroll query
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: isLoadingProducts,
+  } = useInfiniteProductsByCategory(categoryName || '', 15);
+
+  // Flatten all pages of products with useMemo
+  const products = useMemo(() => {
+    if (!data) return [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (data as any).pages.flatMap((page: any) => page.products);
+  }, [data]);
+
+  // Intersection observer ref for infinite scroll
+  const observerTarget = useRef<HTMLDivElement>(null);
 
   // Format category name for display (convert slug to title case)
   const displayCategoryName = categoryName
@@ -28,7 +42,29 @@ export default function CategoryPage() {
 
   const [currentProductIndex, setCurrentProductIndex] = useState(0);
   const [isImageFading, setIsImageFading] = useState(false);
-  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [featuredProducts, setFeaturedProducts] = useState<typeof products>([]);
+
+  // Setup intersection observer for infinite scroll
+  const handleObserver = useCallback(
+    (entries: IntersectionObserverEntry[]) => {
+      const [target] = entries;
+      if (target.isIntersecting && hasNextPage && !isFetchingNextPage) {
+        fetchNextPage();
+      }
+    },
+    [fetchNextPage, hasNextPage, isFetchingNextPage]
+  );
+
+  useEffect(() => {
+    const element = observerTarget.current;
+    if (!element) return;
+
+    const option = { threshold: 0 };
+    const observer = new IntersectionObserver(handleObserver, option);
+    observer.observe(element);
+
+    return () => observer.unobserve(element);
+  }, [handleObserver]);
 
   // Select 3 random products for featured section when products load
   useEffect(() => {
@@ -55,23 +91,6 @@ export default function CategoryPage() {
     return () => clearInterval(interval);
   }, [featuredProducts.length]);
 
-  useEffect(() => {
-    const loadProductsBasedOnCategory = async () => {
-      try {
-        setIsLoadingProducts(true);
-        const productsData = await fetchProductsByCategory(categoryName!);
-        setProducts(productsData);
-      } catch (error) {
-        console.error('Failed to load products by category:', error);
-      } finally {
-        setIsLoadingProducts(false);
-      }
-    };
-    if (categoryName) {
-      loadProductsBasedOnCategory();
-    }
-  }, [categoryName]);
-
   // Helper function to strip HTML tags
   const stripHtml = (html: string) => {
     const tmp = document.createElement('div');
@@ -80,7 +99,7 @@ export default function CategoryPage() {
   };
 
   // Transform products for the Products component
-  const productsGridData = products.map((product) => ({
+  const productsGridData = products.map((product: (typeof products)[0]) => ({
     id: product.id,
     image:
       product._embedded?.['wp:featuredmedia']?.[0]?.source_url ||
@@ -142,7 +161,7 @@ export default function CategoryPage() {
 
                 {/* Progress Indicator */}
                 <div className="absolute bottom-2.5 left-1/2 transform -translate-x-1/2 flex gap-1 z-10">
-                  {featuredProducts.map((_, index) => (
+                  {featuredProducts.map((_: unknown, index: number) => (
                     <div
                       key={index}
                       className={`h-1 rounded-full transition-all duration-300 ${
@@ -201,7 +220,23 @@ export default function CategoryPage() {
             ))}
           </div>
         ) : productsGridData.length > 0 ? (
-          <Products data={productsGridData} />
+          <>
+            <Products data={productsGridData} />
+
+            {/* Infinite scroll trigger */}
+            <div ref={observerTarget} className="w-full py-4">
+              {isFetchingNextPage && (
+                <div className="flex justify-center items-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+                </div>
+              )}
+              {!hasNextPage && products.length > 0 && (
+                <div className="flex justify-center items-center">
+                  <p className="text-gray-500 text-sm">No more products</p>
+                </div>
+              )}
+            </div>
+          </>
         ) : (
           <div className="flex justify-center items-center py-8">
             <p className="text-gray-500">No products available</p>

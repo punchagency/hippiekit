@@ -9,12 +9,8 @@ const config: CapacitorConfig = {
     CapacitorHttp: {
       enabled: true,
     },
-    server: {
-      url: 'http://192.168.1.25:5173', // your local network IP address
-      cleartext: true,
-    },
     StatusBar: {
-      style: 'dark',
+      style: 'LIGHT',
       backgroundColor: '#650084',
       overlaysWebView: false,
     },
@@ -23,6 +19,11 @@ const config: CapacitorConfig = {
       style: 'dark',
       resizeOnFullScreen: true,
     },
+  },
+  // Live reload on device: serve from your LAN Vite dev server
+  server: {
+    url: 'http://192.168.1.52:5173', // your local network IP address
+    cleartext: true,
   },
 };
 

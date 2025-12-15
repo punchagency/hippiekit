@@ -1,3 +1,12 @@
+import { CapacitorHttp } from '@capacitor/core';
+import type { HttpResponse } from '@capacitor/core';
+import {
+  useQuery,
+  useInfiniteQuery,
+  type UseQueryResult,
+  type UseInfiniteQueryResult,
+} from '@tanstack/react-query';
+
 const WP_API_URL =
   'https://dodgerblue-otter-660921.hostingersite.com/wp-json/wp/v2';
 
@@ -37,37 +46,35 @@ export interface Product {
   };
 }
 
+const httpGetJson = async <T>(url: string): Promise<T> => {
+  const response: HttpResponse = await CapacitorHttp.get({ url });
+  if (response.status < 200 || response.status >= 300) {
+    throw new Error(`Request failed: ${response.status}`);
+  }
+  return response.data as T;
+};
+
 export const fetchCategories = async (): Promise<Category[]> => {
   try {
-    const response = await fetch(
+    const data = await httpGetJson<Category[]>(
       `${WP_API_URL}/product-categories?per_page=100`
     );
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch categories');
-    }
-
-    const data = await response.json();
-
-    // Fetch featured images for categories that have them
     const categoriesWithImages = await Promise.all(
       data.map(async (category: Category) => {
-        if (category.meta.featured_image) {
+        if (category.meta?.featured_image) {
           try {
-            const mediaResponse = await fetch(
+            const mediaData = await httpGetJson<{ source_url?: string }>(
               `${WP_API_URL}/media/${category.meta.featured_image}`
             );
-            if (mediaResponse.ok) {
-              const mediaData = await mediaResponse.json();
-              return {
-                ...category,
-                meta: {
-                  ...category.meta,
-                  featured_image:
-                    mediaData.source_url || category.meta.featured_image,
-                },
-              };
-            }
+            return {
+              ...category,
+              meta: {
+                ...category.meta,
+                featured_image:
+                  mediaData.source_url || category.meta.featured_image,
+              },
+            };
           } catch {
             console.error('Failed to fetch media for category:', category.id);
           }
@@ -87,16 +94,9 @@ export const fetchProducts = async (
   perPage: number = 10
 ): Promise<Product[]> => {
   try {
-    const response = await fetch(
+    return await httpGetJson<Product[]>(
       `${WP_API_URL}/products?per_page=${perPage}&_embed`
     );
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch products');
-    }
-
-    const data = await response.json();
-    return data;
   } catch (error) {
     console.error('Error fetching products:', error);
     throw error;
@@ -113,15 +113,9 @@ export const fetchProductsPaginated = async (
 
     // If category slug is provided, fetch by category
     if (categorySlug) {
-      const categoryResponse = await fetch(
+      const categories = await httpGetJson<Category[]>(
         `${WP_API_URL}/product-categories?slug=${categorySlug}`
       );
-
-      if (!categoryResponse.ok) {
-        throw new Error('Failed to fetch category');
-      }
-
-      const categories = await categoryResponse.json();
 
       if (!categories || categories.length === 0) {
         return [];
@@ -131,14 +125,7 @@ export const fetchProductsPaginated = async (
       url = `${WP_API_URL}/products?page=${page}&per_page=${perPage}&product-categories=${categoryId}&_embed`;
     }
 
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch products');
-    }
-
-    const data = await response.json();
-    return data;
+    return await httpGetJson<Product[]>(url);
   } catch (error) {
     console.error('Error fetching products:', error);
     throw error;
@@ -154,15 +141,9 @@ export const fetchProductsByCategory = async (
     }
 
     // First, fetch the category to get its ID
-    const categoryResponse = await fetch(
+    const categories = await httpGetJson<Category[]>(
       `${WP_API_URL}/product-categories?slug=${categorySlug}`
     );
-
-    if (!categoryResponse.ok) {
-      throw new Error('Failed to fetch category');
-    }
-
-    const categories = await categoryResponse.json();
 
     if (!categories || categories.length === 0) {
       return [];
@@ -171,16 +152,9 @@ export const fetchProductsByCategory = async (
     const categoryId = categories[0].id;
 
     // Then fetch products by category ID
-    const productsResponse = await fetch(
+    return await httpGetJson<Product[]>(
       `${WP_API_URL}/products?product-categories=${categoryId}&_embed`
     );
-
-    if (!productsResponse.ok) {
-      throw new Error('Failed to fetch products by category');
-    }
-
-    const data = await productsResponse.json();
-    return data;
   } catch (error) {
     console.error('Error fetching products by category:', error);
     throw error;
@@ -202,38 +176,25 @@ export const searchCategoriesAndProducts = async (
 
     // If searching within a category, get category ID first
     if (categorySlug) {
-      const categoryResponse = await fetch(
+      const categories = await httpGetJson<Category[]>(
         `${WP_API_URL}/product-categories?slug=${categorySlug}`
       );
-
-      if (categoryResponse.ok) {
-        const categories = await categoryResponse.json();
-        if (categories && categories.length > 0) {
-          const categoryId = categories[0].id;
-          productUrl = `${WP_API_URL}/products?search=${encodeURIComponent(
-            searchTerm
-          )}&product-categories=${categoryId}&per_page=15&_embed`;
-        }
+      if (categories && categories.length > 0) {
+        const categoryId = categories[0].id;
+        productUrl = `${WP_API_URL}/products?search=${encodeURIComponent(
+          searchTerm
+        )}&product-categories=${categoryId}&per_page=15&_embed`;
       }
     }
 
     // Search categories and products in parallel
-    const [categoriesResponse, productsResponse] = await Promise.all([
-      fetch(
+    const [categoriesData, productsData] = await Promise.all([
+      httpGetJson<Category[]>(
         `${WP_API_URL}/product-categories?search=${encodeURIComponent(
           searchTerm
         )}`
       ),
-      fetch(productUrl),
-    ]);
-
-    if (!categoriesResponse.ok || !productsResponse.ok) {
-      throw new Error('Failed to search');
-    }
-
-    const [categoriesData, productsData] = await Promise.all([
-      categoriesResponse.json(),
-      productsResponse.json(),
+      httpGetJson<Product[]>(productUrl),
     ]);
 
     // Fetch featured images for categories
@@ -241,20 +202,17 @@ export const searchCategoriesAndProducts = async (
       categoriesData.map(async (category: Category) => {
         if (category.meta.featured_image) {
           try {
-            const mediaResponse = await fetch(
+            const mediaData = await httpGetJson<{ source_url?: string }>(
               `${WP_API_URL}/media/${category.meta.featured_image}`
             );
-            if (mediaResponse.ok) {
-              const mediaData = await mediaResponse.json();
-              return {
-                ...category,
-                meta: {
-                  ...category.meta,
-                  featured_image:
-                    mediaData.source_url || category.meta.featured_image,
-                },
-              };
-            }
+            return {
+              ...category,
+              meta: {
+                ...category.meta,
+                featured_image:
+                  mediaData.source_url || category.meta.featured_image,
+              },
+            };
           } catch {
             console.error('Failed to fetch media for category:', category.id);
           }
@@ -271,4 +229,186 @@ export const searchCategoriesAndProducts = async (
     console.error('Error searching:', error);
     throw error;
   }
+};
+
+// ==================== TanStack Query Hooks ====================
+
+/**
+ * Hook to fetch all categories with caching
+ */
+export const useCategories = (): UseQueryResult<Category[], Error> => {
+  return useQuery({
+    queryKey: ['categories'],
+    queryFn: fetchCategories,
+  });
+};
+
+/**
+ * Hook to fetch products with caching
+ * @param perPage - Number of products to fetch (default: 10)
+ */
+export const useProducts = (
+  perPage: number = 10
+): UseQueryResult<Product[], Error> => {
+  return useQuery({
+    queryKey: ['products', perPage],
+    queryFn: () => fetchProducts(perPage),
+  });
+};
+
+/**
+ * Hook to fetch paginated products with optional category filter
+ * @param page - Page number (default: 1)
+ * @param perPage - Products per page (default: 15)
+ * @param categorySlug - Optional category slug to filter by
+ */
+export const useProductsPaginated = (
+  page: number = 1,
+  perPage: number = 15,
+  categorySlug?: string
+): UseQueryResult<Product[], Error> => {
+  return useQuery({
+    queryKey: ['products', 'paginated', page, perPage, categorySlug],
+    queryFn: () => fetchProductsPaginated(page, perPage, categorySlug),
+  });
+};
+
+/**
+ * Hook to fetch products by category slug
+ * @param categorySlug - Category slug to filter products
+ */
+export const useProductsByCategory = (
+  categorySlug: string
+): UseQueryResult<Product[], Error> => {
+  return useQuery({
+    queryKey: ['products', 'category', categorySlug],
+    queryFn: () => fetchProductsByCategory(categorySlug),
+    enabled: !!categorySlug, // Only run query if categorySlug exists
+  });
+};
+
+/**
+ * Hook to search categories and products
+ * @param searchTerm - Search term
+ * @param categorySlug - Optional category slug to filter search
+ */
+export const useSearchCategoriesAndProducts = (
+  searchTerm: string,
+  categorySlug?: string
+): UseQueryResult<{ categories: Category[]; products: Product[] }, Error> => {
+  return useQuery({
+    queryKey: ['search', searchTerm, categorySlug],
+    queryFn: () => searchCategoriesAndProducts(searchTerm, categorySlug),
+    enabled: !!searchTerm && searchTerm.trim() !== '', // Only run query if search term exists
+  });
+};
+
+// ==================== Infinite Scroll Hooks ====================
+
+/**
+ * Hook to fetch products with infinite scroll by category
+ * @param categorySlug - Category slug to filter products
+ * @param perPage - Products per page (default: 15)
+ */
+export const useInfiniteProductsByCategory = (
+  categorySlug: string,
+  perPage: number = 15
+): UseInfiniteQueryResult<
+  {
+    products: Product[];
+    nextPage: number | undefined;
+  },
+  Error
+> => {
+  return useInfiniteQuery({
+    queryKey: ['products', 'infinite', 'category', categorySlug],
+    queryFn: async ({ pageParam = 1 }) => {
+      const products = await fetchProductsPaginated(
+        pageParam,
+        perPage,
+        categorySlug
+      );
+      return {
+        products,
+        nextPage: products.length === perPage ? pageParam + 1 : undefined,
+      };
+    },
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    initialPageParam: 1,
+    enabled: !!categorySlug,
+  });
+};
+
+/**
+ * Hook to fetch products with infinite scroll (all products)
+ * @param perPage - Products per page (default: 15)
+ */
+export const useInfiniteProducts = (
+  perPage: number = 15
+): UseInfiniteQueryResult<
+  {
+    products: Product[];
+    nextPage: number | undefined;
+  },
+  Error
+> => {
+  return useInfiniteQuery({
+    queryKey: ['products', 'infinite', 'all'],
+    queryFn: async ({ pageParam = 1 }) => {
+      const products = await fetchProductsPaginated(pageParam, perPage);
+      return {
+        products,
+        nextPage: products.length === perPage ? pageParam + 1 : undefined,
+      };
+    },
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    initialPageParam: 1,
+  });
+};
+
+/**
+ * Hook to search products with infinite scroll
+ * @param searchTerm - Search term
+ * @param categorySlug - Optional category slug to filter search
+ * @param perPage - Products per page (default: 15)
+ */
+export const useInfiniteSearchProducts = (
+  searchTerm: string,
+  categorySlug?: string,
+  perPage: number = 15
+): UseInfiniteQueryResult<
+  {
+    products: Product[];
+    categories: Category[];
+    nextPage: number | undefined;
+  },
+  Error
+> => {
+  return useInfiniteQuery({
+    queryKey: ['search', 'infinite', searchTerm, categorySlug],
+    queryFn: async ({ pageParam = 1 }) => {
+      // For first page, get both categories and products
+      if (pageParam === 1) {
+        const result = await searchCategoriesAndProducts(
+          searchTerm,
+          categorySlug
+        );
+        return {
+          products: result.products.slice(0, perPage),
+          categories: result.categories,
+          nextPage: result.products.length > perPage ? 2 : undefined,
+        };
+      }
+      // For subsequent pages, only get products
+      // Note: WordPress search API doesn't support pagination well, so we return empty
+      return {
+        products: [],
+        categories: [],
+        nextPage: undefined,
+      };
+    },
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    initialPageParam: 1,
+    enabled: !!searchTerm && searchTerm.trim() !== '',
+  });
 };

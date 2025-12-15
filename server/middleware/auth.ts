@@ -26,6 +26,23 @@ export const protect = async (
       // Get token from header
       token = req.headers.authorization.split(' ')[1];
 
+      console.log(
+        '🔍 Server received Authorization header:',
+        req.headers.authorization.substring(0, 30) + '...'
+      );
+      console.log(
+        '🔍 Extracted token (first 20 chars):',
+        token?.substring(0, 20) + '...'
+      );
+      console.log('🔍 Token length:', token?.length);
+      console.log('🔍 Token type:', typeof token);
+      console.log(
+        '🔍 Token format check:',
+        token?.split('.').length === 3
+          ? 'Valid JWT format'
+          : 'INVALID JWT FORMAT'
+      );
+
       if (!process.env.JWT_SECRET) {
         res.status(500).json({
           success: false,

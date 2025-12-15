@@ -18,7 +18,7 @@ export type FavoritesResponse = {
 };
 
 export const addFavorite = async (productId: number) => {
-  const token = getValidToken();
+  const token = await getValidToken();
   if (!token) throw new Error('Not authorized');
   const res = await fetch(`${API_URL}/api/favorites/${productId}`, {
     method: 'POST',
@@ -36,7 +36,7 @@ export const addFavorite = async (productId: number) => {
 };
 
 export const removeFavorite = async (productId: number) => {
-  const token = getValidToken();
+  const token = await getValidToken();
   if (!token) throw new Error('Not authorized');
   const res = await fetch(`${API_URL}/api/favorites/${productId}`, {
     method: 'DELETE',
@@ -58,7 +58,7 @@ export const listFavorites = async (params?: {
   category?: string;
   search?: string;
 }): Promise<FavoritesResponse> => {
-  const token = getValidToken();
+  const token = await getValidToken();
   if (!token) {
     console.warn('No valid token for favorites');
     return {
@@ -104,7 +104,7 @@ export const listFavoriteCategories = async (): Promise<{
     image?: string;
   }>;
 }> => {
-  const token = getValidToken();
+  const token = await getValidToken();
   if (!token) {
     console.warn('No valid token for favorites categories');
     return { success: false, data: [] };

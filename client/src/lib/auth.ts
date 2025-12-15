@@ -17,11 +17,11 @@ export const isTokenExpired = (token: string): boolean => {
 };
 
 // Get valid token or null if expired
-export const getValidToken = (): string | null => {
-  const token = tokenStore.getToken();
+export const getValidToken = async (): Promise<string | null> => {
+  const token = await tokenStore.getToken();
   if (!token) return null;
   if (isTokenExpired(token)) {
-    tokenStore.clear();
+    await tokenStore.clear();
     return null;
   }
   return token;
@@ -42,8 +42,8 @@ export const login = async (email: string, password: string) => {
 
   const data = await response.json();
   if (data.success && data.data.token) {
-    tokenStore.setToken(data.data.token);
-    tokenStore.setUser(data.data);
+    await tokenStore.setToken(data.data.token);
+    await tokenStore.setUser(data.data);
   }
   return data;
 };
@@ -66,19 +66,35 @@ export const register = async (userData: {
   }
 
   const data = await response.json();
+  // Note: After registration, user needs to verify email before token is issued
   if (data.success && data.data.token) {
-    tokenStore.setToken(data.data.token);
-    tokenStore.setUser(data.data);
+    await tokenStore.setToken(data.data.token);
+    await tokenStore.setUser(data.data);
   }
   return data;
 };
 
-export const logout = () => {
-  tokenStore.clear();
+// Verify email with token from email link
+export const verifyEmail = async (token: string) => {
+  const response = await fetch(`${API_URL}/api/auth/verify-email/${token}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Email verification failed');
+  }
+
+  return await response.json();
+};
+
+export const logout = async () => {
+  await tokenStore.clear();
 };
 
 export const getCurrentUser = async () => {
-  const token = getValidToken();
+  const token = await getValidToken();
   if (!token) return null;
 
   const response = await fetch(`${API_URL}/api/auth/me`, {
@@ -89,7 +105,7 @@ export const getCurrentUser = async () => {
 
   if (!response.ok) {
     if (response.status === 401) {
-      tokenStore.clear();
+      await tokenStore.clear();
     }
     return null;
   }
@@ -112,7 +128,7 @@ export const signInWithGoogle = async () => {
 };
 
 // Handle OAuth callback (extract token from URL)
-export const handleOAuthCallback = () => {
+export const handleOAuthCallback = async () => {
   const params = new URLSearchParams(window.location.search);
   const token = params.get('token');
   const error = params.get('error');
@@ -123,7 +139,26 @@ export const handleOAuthCallback = () => {
   }
 
   if (token) {
-    tokenStore.setToken(token);
+    console.log(
+      '🔍 Token received from OAuth callback:',
+      token.substring(0, 20) + '...'
+    );
+    console.log('🔍 Token length:', token.length);
+    console.log(
+      '🔍 Token format check:',
+      token.split('.').length === 3 ? 'Valid JWT format' : 'INVALID JWT FORMAT'
+    );
+
+    await tokenStore.setToken(token);
+
+    // Verify token was stored correctly
+    const storedToken = await tokenStore.getToken();
+    console.log(
+      '🔍 Token after storage:',
+      storedToken?.substring(0, 20) + '...'
+    );
+    console.log('🔍 Tokens match:', token === storedToken);
+
     // Clean URL
     window.history.replaceState({}, document.title, window.location.pathname);
     return { success: true };
