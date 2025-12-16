@@ -191,9 +191,7 @@ export const searchCategoriesAndProducts = async (
     // Search categories and products in parallel
     const [categoriesData, productsData] = await Promise.all([
       httpGetJson<Category[]>(
-        `${WP_API_URL}/categories?search=${encodeURIComponent(
-          searchTerm
-        )}`
+        `${WP_API_URL}/categories?search=${encodeURIComponent(searchTerm)}`
       ),
       httpGetJson<Product[]>(productUrl),
     ]);
