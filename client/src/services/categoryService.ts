@@ -7,8 +7,9 @@ import {
   type UseInfiniteQueryResult,
 } from '@tanstack/react-query';
 
-const WP_API_URL =
-  'https://dodgerblue-otter-660921.hostingersite.com/wp-json/wp/v2';
+// Use backend proxy to avoid SSL cert issues with WordPress
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const WP_API_URL = `${API_URL}/api/wordpress`;
 
 export interface Category {
   id: number;
@@ -57,7 +58,7 @@ const httpGetJson = async <T>(url: string): Promise<T> => {
 export const fetchCategories = async (): Promise<Category[]> => {
   try {
     const data = await httpGetJson<Category[]>(
-      `${WP_API_URL}/product-categories?per_page=100`
+      `${WP_API_URL}/categories?per_page=100`
     );
 
     const categoriesWithImages = await Promise.all(
@@ -95,7 +96,7 @@ export const fetchProducts = async (
 ): Promise<Product[]> => {
   try {
     return await httpGetJson<Product[]>(
-      `${WP_API_URL}/products?per_page=${perPage}&_embed`
+      `${WP_API_URL}/products?per_page=${perPage}`
     );
   } catch (error) {
     console.error('Error fetching products:', error);
@@ -109,12 +110,12 @@ export const fetchProductsPaginated = async (
   categorySlug?: string
 ): Promise<Product[]> => {
   try {
-    let url = `${WP_API_URL}/products?page=${page}&per_page=${perPage}&_embed`;
+    let url = `${WP_API_URL}/products?page=${page}&per_page=${perPage}`;
 
     // If category slug is provided, fetch by category
     if (categorySlug) {
       const categories = await httpGetJson<Category[]>(
-        `${WP_API_URL}/product-categories?slug=${categorySlug}`
+        `${WP_API_URL}/categories?slug=${categorySlug}`
       );
 
       if (!categories || categories.length === 0) {
@@ -122,7 +123,7 @@ export const fetchProductsPaginated = async (
       }
 
       const categoryId = categories[0].id;
-      url = `${WP_API_URL}/products?page=${page}&per_page=${perPage}&product-categories=${categoryId}&_embed`;
+      url = `${WP_API_URL}/products?page=${page}&per_page=${perPage}&category_id=${categoryId}`;
     }
 
     return await httpGetJson<Product[]>(url);
@@ -142,7 +143,7 @@ export const fetchProductsByCategory = async (
 
     // First, fetch the category to get its ID
     const categories = await httpGetJson<Category[]>(
-      `${WP_API_URL}/product-categories?slug=${categorySlug}`
+      `${WP_API_URL}/categories?slug=${categorySlug}`
     );
 
     if (!categories || categories.length === 0) {
@@ -153,7 +154,7 @@ export const fetchProductsByCategory = async (
 
     // Then fetch products by category ID
     return await httpGetJson<Product[]>(
-      `${WP_API_URL}/products?product-categories=${categoryId}&_embed`
+      `${WP_API_URL}/products?category_id=${categoryId}`
     );
   } catch (error) {
     console.error('Error fetching products by category:', error);
@@ -172,25 +173,25 @@ export const searchCategoriesAndProducts = async (
 
     let productUrl = `${WP_API_URL}/products?search=${encodeURIComponent(
       searchTerm
-    )}&per_page=15&_embed`;
+    )}&per_page=15`;
 
     // If searching within a category, get category ID first
     if (categorySlug) {
       const categories = await httpGetJson<Category[]>(
-        `${WP_API_URL}/product-categories?slug=${categorySlug}`
+        `${WP_API_URL}/categories?slug=${categorySlug}`
       );
       if (categories && categories.length > 0) {
         const categoryId = categories[0].id;
         productUrl = `${WP_API_URL}/products?search=${encodeURIComponent(
           searchTerm
-        )}&product-categories=${categoryId}&per_page=15&_embed`;
+        )}&category_id=${categoryId}&per_page=15`;
       }
     }
 
     // Search categories and products in parallel
     const [categoriesData, productsData] = await Promise.all([
       httpGetJson<Category[]>(
-        `${WP_API_URL}/product-categories?search=${encodeURIComponent(
+        `${WP_API_URL}/categories?search=${encodeURIComponent(
           searchTerm
         )}`
       ),

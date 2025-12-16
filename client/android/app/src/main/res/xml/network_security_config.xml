@@ -1,12 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-  <base-config cleartextTrafficPermitted="true">
-    <trust-anchors>
-      <certificates src="system" />
-    </trust-anchors>
-  </base-config>
+    <!-- Default: HTTPS only, trust system CAs -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
 
-  <domain-config cleartextTrafficPermitted="true">
-    <domain includeSubdomains="true">192.168.1.11</domain>
-  </domain-config>
+    <!-- Allow localhost HTTP for dev emulators/devices -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+    </domain-config>
+
+    <!-- ⚠️ DEV ONLY: Trust user certificates in debug builds (allows self-signed SSL certs) -->
+    <!-- This allows HTTPS to work even with invalid/self-signed certificates during development -->
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </debug-overrides>
 </network-security-config>

@@ -22,7 +22,6 @@ const config: CapacitorConfig = {
   },
   // Live reload on device: serve from your LAN Vite dev server
   server: {
-    url: 'http://192.168.1.52:5173', // your local network IP address
     cleartext: true,
   },
 };
