@@ -1,86 +1,29 @@
-# Documentation files (internal notes)
-AUTH_SETUP.md
-TYPESCRIPT_MIGRATION.md
-OAUTH_QUICKSTART.md
-OAUTH_SETUP.md
-TESTING_AUTH.md
-EMAIL_VERIFICATION_SETUP.md
-ANDROID_DEPLOYMENT.md
-MOBILE_SAFE_AREAS.md
-OAUTH_REDIRECT_FIX.md
-ANDROID_OAUTH_IMPLEMENTATION.md
-ANDROID_OAUTH_SETUP.md
-BEARER_AUTH_MIGRATION.md
-FIREBASE_SETUP.md
-GOOGLE_ANDROID_OAUTH.md
-GOOGLE_OAUTH_QUICKSTART.md
-NGROK_QUICKSTART.md
-AI_IMPLEMENTATION_SUMMARY.md
-AI_SCANNING_SETUP.md
-ARCHITECTURE.md
-DEPLOYMENT_CHECKLIST.md
-DOCUMENTATION_INDEX.md
-EMAIL_VERIFICATION_IMPLEMENTATION_SUMMARY.md
-EMAIL_VERIFICATION_IMPLEMENTATION_SUMMARY.md
-EMAIL_VERIFICATION_QUICK_REFERENCE.md
-EMAIL_VERIFICATION_IMPLEMENTATION.md
-GETTING_STARTED.md
-IMPLEMENTATION_CHECKLIST.md
-IMPLEMENTATION_COMPLETE.md
-IMPLEMENTATION_OVERVIEW.md
-QUICK_REFERENCE.md
-start-all.ps1
-SYSTEM_ARCHITECTURE.md
-TROUBLESHOOTING.md
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# Dependencies
-node_modules/
-**/node_modules/
+node_modules
+dist
+dist-ssr
+*.local
 
 # Environment variables
 .env
 .env.local
 .env.*.local
-**/.env
 
-# Build outputs
-dist/
-build/
-*.log
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
 .DS_Store
-Thumbs.db
-
-# Android
-android/build/
-android/.gradle/
-android/app/build/
-android/local.properties
-android/app/release/
-android/app/debug/
-*.apk
-*.aab
-
-# Capacitor
-.capacitor/
-android/app/src/main/assets/public/
-capacitor.config.json
-
-# Testing
-coverage/
-.nyc_output/
-
-# Temporary files
-*.tmp
-*.temp
-
-# Git
-.git/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
