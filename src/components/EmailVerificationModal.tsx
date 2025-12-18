@@ -44,10 +44,31 @@ const EmailVerificationModal = ({
 
   if (!isOpen) return null;
 
-  const handleOpenEmailApp = () => {
-    // Try to open default email app
-    window.location.href = 'mailto:';
-  };
+  // const getEmailProviderUrl = (email: string): string | null => {
+  //   const domain = email.split('@')[1]?.toLowerCase();
+
+  //   if (!domain) return null;
+
+  //   if (domain.includes('gmail')) return 'https://mail.google.com';
+  //   if (domain.includes('outlook') || domain.includes('hotmail') || domain.includes('live'))
+  //     return 'https://outlook.live.com/mail';
+  //   if (domain.includes('yahoo')) return 'https://mail.yahoo.com';
+  //   if (domain.includes('icloud')) return 'https://www.icloud.com/mail';
+  //   if (domain.includes('aol')) return 'https://mail.aol.com';
+
+  //   return null;
+  // };
+
+  // const handleOpenEmailApp = () => {
+  //   const url = getEmailProviderUrl(email);
+
+  //   if (url) {
+  //     window.open(url, '_blank');
+  //   } else {
+  //     // Fallback for unknown providers
+  //     alert('Please open your email app manually to check for the verification email.');
+  //   }
+  // };
 
   const handleResend = async () => {
     if (timeLeft > 0 || isResending) return;
@@ -126,14 +147,7 @@ const EmailVerificationModal = ({
           <p className="text-sm text-gray-700 font-medium break-all">{email}</p>
         </div>
 
-        {/* Open Email Button */}
-        <button
-          onClick={handleOpenEmailApp}
-          className="w-full bg-primary text-white font-semibold py-3 rounded-lg hover:bg-primary/90 transition-colors mb-3"
-        >
-          Open Email App
-        </button>
-
+        
         {/* Resend Message */}
         {resendMessage && (
           <div

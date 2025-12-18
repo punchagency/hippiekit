@@ -40,7 +40,7 @@ export async function signUp(
   name: string,
   email: string,
   password: string,
-  phoneNumber: string
+  phoneNumber?: string
 ): Promise<AuthResponse> {
   // Detect if running on mobile platform
   const platform = Capacitor.isNativePlatform() ? 'mobile' : 'web';
@@ -54,7 +54,8 @@ export async function signUp(
       name,
       email,
       password,
-      phoneNumber,
+      // Include phoneNumber only if provided
+      ...(phoneNumber ? { phoneNumber } : {}),
       provider: 'credentials',
       providerAccountId: email,
       platform, // Add platform parameter

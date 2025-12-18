@@ -7,6 +7,7 @@ type Props = {
   img: string;
   isFavorite?: boolean;
   onToggleFavorite?: () => void;
+  onClick?: () => void;
 };
 
 export default function ProductInfo({
@@ -15,9 +16,10 @@ export default function ProductInfo({
   img,
   isFavorite = false,
   onToggleFavorite,
+  onClick,
 }: Props) {
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="flex flex-col gap-2.5 cursor-pointer" onClick={onClick}>
       <div className="bg-white rounded-[13px] w-full h-[100px] shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex gap-3">
         {/* Product Image */}
         <div className="relative w-[60px] h-[60px] shrink-0 rounded-lg overflow-hidden">
@@ -42,7 +44,10 @@ export default function ProductInfo({
         </div>
         {/* Favorite Button */}
         <button
-          onClick={onToggleFavorite}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite?.();
+          }}
           className="w-[22px] h-[22px] shrink-0 self-start bg-[rgba(255,255,255,0.3)] p-[5px] rounded-sm shadow-[0px_2px_16px_0px_rgba(6,51,54,0.1)] transition-opacity hover:opacity-70"
         >
           <img

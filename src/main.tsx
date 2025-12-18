@@ -38,6 +38,7 @@ import Splash from './pages/Splash.tsx';
 import { initializeGoogleAuth } from './lib/androidAuth.ts';
 import { DeepLinkListener } from './components/DeepLinkListener.tsx';
 import CategoryPage from './pages/CategoryPage.tsx';
+import ProductPage from './pages/ProductPage.tsx';
 
 // Initialize TanStack Query client with caching config
 const queryClient = new QueryClient({
@@ -184,6 +185,14 @@ function Root() {
               element={
                 <ProtectedRoute>
                   <CategoryPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/products/:productId"
+              element={
+                <ProtectedRoute>
+                  <ProductPage />
                 </ProtectedRoute>
               }
             />

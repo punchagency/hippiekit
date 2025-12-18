@@ -2,16 +2,18 @@ import { Products } from '@/components/Products';
 import { useInfiniteProductsByCategory } from '@/services/categoryService';
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import profileSampleImage from '@/assets/profileImgSample.jpg';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import heartIconReg from '@/assets/heartIconReg.svg';
 
 import OptionIcon from '@/assets/optionsIcon.svg';
 import { Title } from '@/components/Title';
+import { openExternalLink } from '@/utils/browserHelper';
 
 export default function CategoryPage() {
   const { categoryName } = useParams();
+  const navigate = useNavigate();
 
   // Use infinite scroll query
   const {
@@ -109,6 +111,15 @@ export default function CategoryPage() {
     description: stripHtml(product.content.rendered).substring(0, 100),
     rating: 4.5, // WordPress doesn't provide ratings by default
   }));
+
+  // // Debug: Log current featured product data
+  // useEffect(() => {
+  //   if (featuredProducts.length > 0 && featuredProducts[currentProductIndex]) {
+  //     console.log('Current Featured Product:', featuredProducts[currentProductIndex]);
+  //     console.log('Amazon Link:', featuredProducts[currentProductIndex].meta?.cta_button_url);
+  //     console.log('Full Meta:', featuredProducts[currentProductIndex].meta);
+  //   }
+  // }, [currentProductIndex, featuredProducts]);
   return (
     <div>
       <Title title={displayCategoryName} />
@@ -191,9 +202,19 @@ export default function CategoryPage() {
                 </button>
               </div>
 
-              <Button className="font-semibold text-[16px] text-white">
-                {featuredProducts[currentProductIndex].meta.cta_button_text ||
-                  'Add to Shopping'}
+              <Button
+                onClick={() => {
+                  const link =
+                    featuredProducts[currentProductIndex]?.meta?.cta_button_url;
+                  if (link) {
+                    openExternalLink(link);
+                  } else {
+                    console.warn('No Amazon link available for this product');
+                  }
+                }}
+                className="font-semibold text-[16px] text-white"
+              >
+                Buy Now
               </Button>
             </div>
           </div>
@@ -221,7 +242,10 @@ export default function CategoryPage() {
           </div>
         ) : productsGridData.length > 0 ? (
           <>
-            <Products data={productsGridData} />
+            <Products
+              data={productsGridData}
+              onProductClick={(productId) => navigate(`/products/${productId}`)}
+            />
 
             {/* Infinite scroll trigger */}
             <div ref={observerTarget} className="w-full py-4">

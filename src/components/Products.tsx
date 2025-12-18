@@ -19,9 +19,14 @@ type Props = {
     rating: number;
   }[];
   horizontal?: boolean;
+  onProductClick?: (productId: number) => void;
 };
 
-export const Products = ({ data, horizontal = false }: Props) => {
+export const Products = ({
+  data,
+  horizontal = false,
+  onProductClick,
+}: Props) => {
   const [favoriteIds, setFavoriteIds] = useState<Set<number>>(new Set());
   const [loadingIds, setLoadingIds] = useState<Set<number>>(new Set());
 
@@ -91,9 +96,10 @@ export const Products = ({ data, horizontal = false }: Props) => {
         return (
           <div
             key={id}
-            className={`bg-white rounded-[13px] shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2 sm:p-2.5 flex flex-col gap-2 sm:gap-2.5 ${
+            className={`bg-white rounded-[13px] shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2 sm:p-2.5 flex flex-col gap-2 sm:gap-2.5 cursor-pointer transition-transform hover:scale-105 ${
               horizontal ? 'shrink-0 w-40 sm:w-[180px]' : ''
             }`}
+            onClick={() => onProductClick?.(id)}
           >
             {/* Product Image */}
             <div className="relative w-full h-[110px] sm:h-[127px] rounded-lg overflow-hidden">
@@ -105,7 +111,10 @@ export const Products = ({ data, horizontal = false }: Props) => {
               {/* Favorite Button */}
               <button
                 className="absolute top-2 sm:top-2.5 right-2 sm:right-3 bg-[rgba(255,255,255,0.3)] p-1 sm:p-[5px] rounded-sm shadow-[0px_2px_16px_0px_rgba(6,51,54,0.1)] disabled:opacity-60"
-                onClick={() => handleToggle(id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleToggle(id);
+                }}
                 disabled={loadingIds.has(id)}
                 aria-pressed={favoriteIds.has(id)}
                 aria-label={

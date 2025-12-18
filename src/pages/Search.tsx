@@ -339,6 +339,7 @@ export const Search = () => {
                 description={product.description}
                 img={product.image}
                 isFavorite={favoriteIds.has(product.id)}
+                onClick={() => navigate(`/products/${product.id}`)}
                 onToggleFavorite={() => handleToggleFavorite(product.id)}
               />
             ))}

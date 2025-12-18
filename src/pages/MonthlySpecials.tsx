@@ -3,8 +3,10 @@ import favoriteItemsMain from '../assets/favoriteItemsHero.png';
 import { Title } from '@/components/Title';
 import logo from '@/assets/profileImgSample.jpg';
 import { Products } from '@/components/Products';
+import { useNavigate } from 'react-router-dom';
 
 const MonthlySpecials = () => {
+  const navigate = useNavigate();
   const productsGridData = [
     {
       id: 1,
@@ -70,7 +72,10 @@ const MonthlySpecials = () => {
       </section>
 
       <section className="mx-4.5 mt-4">
-        <Products data={productsGridData} />
+        <Products
+          data={productsGridData}
+          onProductClick={(productId) => navigate(`/products/${productId}`)}
+        />
       </section>
     </section>
   );

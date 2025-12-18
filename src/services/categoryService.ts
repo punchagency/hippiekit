@@ -32,7 +32,13 @@ export interface Product {
   content: {
     rendered: string;
   };
+  /** Optional excerpt for list items; present on single product */
+  excerpt?: {
+    rendered: string;
+  };
   featured_media: number;
+  /** WordPress permalink (present on single product) */
+  link?: string;
   meta: {
     video_embed_url: string;
     cta_button_text: string;

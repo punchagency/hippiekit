@@ -262,7 +262,11 @@ function App() {
               ))}
             </div>
           ) : productsGridData.length > 0 ? (
-            <Products data={productsGridData} horizontal />
+            <Products
+              data={productsGridData}
+              horizontal
+              onProductClick={(productId) => navigate(`/products/${productId}`)}
+            />
           ) : (
             <div className="flex justify-center items-center py-8">
               <p className="text-gray-500">No products available</p>

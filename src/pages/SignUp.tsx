@@ -38,10 +38,9 @@ const formSchema = z.object({
     .string()
     .min(10, 'Phone number must be at least 10 digits')
     .max(15, 'Phone number must be at most 15 digits')
-    .regex(
-      /^\+?[0-9]*$/,
-      'Phone number can only contain digits and optional +'
-    ),
+    .regex(/^\+?[0-9]*$/, 'Phone number can only contain digits and optional +')
+    .optional()
+    .or(z.literal('')),
   password: z
     .string()
     .min(6, { message: 'Password must be at least 6 characters long.' })
@@ -205,7 +204,7 @@ function SignUp() {
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
                     <FieldLabel className="text-[14px]" htmlFor="phone">
-                      Phone Number (optional)
+                      Phone Number
                     </FieldLabel>
                     <InputGroup className="rounded-none">
                       <InputGroupAddon>

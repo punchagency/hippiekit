@@ -304,18 +304,15 @@ const Favorites = () => {
         ) : productsGridData.length > 0 ? (
           <>
             {productsGridData.map((product, index) => (
-              <div
+              <ProductInfo
                 key={`${product.id}-${index}`}
-                className="flex flex-col gap-2.5 "
-              >
-                <ProductInfo
-                  name={product.productName}
-                  description={product.description}
-                  img={product.image}
-                  isFavorite={true}
-                  onToggleFavorite={() => handleToggleFavorite(product.id)}
-                />
-              </div>
+                name={product.productName}
+                description={product.description}
+                img={product.image}
+                isFavorite={true}
+                onClick={() => navigate(`/products/${product.id}`)}
+                onToggleFavorite={() => handleToggleFavorite(product.id)}
+              />
             ))}
 
             {/* Infinite scroll trigger */}
