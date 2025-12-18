@@ -68,9 +68,9 @@ export default function VerifyEmail() {
           setStatus('success');
           setMessage('Email verified successfully!');
 
-          // Redirect to login after 2 seconds
+          // Redirect to login after 2 seconds with verified parameter
           setTimeout(() => {
-            navigate('/signin', { replace: true });
+            navigate('/signin?verified=true', { replace: true });
           }, 2000);
         } else {
           setStatus('error');
