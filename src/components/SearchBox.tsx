@@ -1,6 +1,6 @@
 import { FilterIcon, SearchIcon } from '@/assets/homeIcons';
 import { useState } from 'react';
-import clock from '@/assets/clock.svg';
+import clock from '@/assets/Clock.svg';
 import { SearchDisplayIcon } from '@/assets/icons';
 
 const history = [
