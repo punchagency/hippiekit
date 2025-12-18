@@ -1,4 +1,6 @@
 import { X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { resendVerification } from '../lib/authAPI';
 
 interface EmailVerificationModalProps {
   isOpen: boolean;
@@ -11,12 +13,72 @@ const EmailVerificationModal = ({
   onClose,
   email,
 }: EmailVerificationModalProps) => {
+  const [timeLeft, setTimeLeft] = useState(120); // 2 minutes in seconds
+  const [isResending, setIsResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState<string>('');
+
+  // Timer countdown effect
+  useEffect(() => {
+    if (!isOpen || timeLeft <= 0) return;
+
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isOpen, timeLeft]);
+
+  // Reset timer when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setTimeLeft(120); // Reset to 2 minutes
+      setResendMessage('');
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleOpenEmailApp = () => {
     // Try to open default email app
     window.location.href = 'mailto:';
   };
+
+  const handleResend = async () => {
+    if (timeLeft > 0 || isResending) return;
+
+    try {
+      setIsResending(true);
+      setResendMessage('');
+
+      const result = await resendVerification(email);
+
+      if (result.success) {
+        setResendMessage('✅ Verification email sent! Check your inbox.');
+        setTimeLeft(120); // Reset timer to 2 minutes
+      } else {
+        setResendMessage('❌ ' + (result.message || 'Failed to resend email'));
+      }
+    } catch (error) {
+      setResendMessage('❌ Failed to resend verification email');
+      console.error('Resend error:', error);
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const canResend = timeLeft === 0 && !isResending;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
@@ -72,12 +134,34 @@ const EmailVerificationModal = ({
           Open Email App
         </button>
 
+        {/* Resend Message */}
+        {resendMessage && (
+          <div
+            className={`text-center text-sm mb-3 px-3 py-2 rounded-lg ${
+              resendMessage.startsWith('✅')
+                ? 'bg-green-50 text-green-700'
+                : 'bg-red-50 text-red-700'
+            }`}
+          >
+            {resendMessage}
+          </div>
+        )}
+
         {/* Resend Link */}
         <button
-          onClick={onClose}
-          className="w-full text-gray-600 text-sm font-medium py-2 hover:text-primary transition-colors"
+          onClick={handleResend}
+          disabled={!canResend}
+          className={`w-full text-sm font-medium py-2 rounded-lg transition-colors ${
+            canResend
+              ? 'text-primary hover:bg-primary/5 cursor-pointer'
+              : 'text-gray-400 cursor-not-allowed'
+          }`}
         >
-          Send Me again (99 sec)
+          {isResending
+            ? 'Sending...'
+            : timeLeft > 0
+            ? `Resend in ${formatTime(timeLeft)}`
+            : 'Send verification email again'}
         </button>
 
         {/* Footer Note */}

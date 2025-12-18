@@ -1,4 +1,5 @@
 import { tokenStore } from './tokenStore';
+import { Capacitor } from '@capacitor/core';
 
 // Base API URL baked at build-time. Must be absolute for mobile (no localhost on device).
 const API_URL = (
@@ -41,11 +42,13 @@ export async function signUp(
   password: string,
   phoneNumber: string
 ): Promise<AuthResponse> {
+  // Detect if running on mobile platform
+  const platform = Capacitor.isNativePlatform() ? 'mobile' : 'web';
+
   const response = await fetch(`${API_URL}/api/auth/register`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-
     },
     body: JSON.stringify({
       name,
@@ -54,6 +57,7 @@ export async function signUp(
       phoneNumber,
       provider: 'credentials',
       providerAccountId: email,
+      platform, // Add platform parameter
     }),
   });
 
@@ -85,7 +89,6 @@ export async function signIn(
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
-
       },
       body: JSON.stringify({ email, password }),
     });
@@ -135,7 +138,6 @@ export async function getMe(): Promise<UserResponse> {
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: 'application/json',
-
       },
     });
     rawText = await response.text();
@@ -183,7 +185,6 @@ export async function updateProfile(updates: {
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
-
     },
     body: JSON.stringify(updates),
   });
@@ -212,7 +213,6 @@ export async function forgotPassword(email: string): Promise<MessageResponse> {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-
     },
     body: JSON.stringify({ email }),
   });
@@ -229,7 +229,6 @@ export async function verifyOtp(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-
     },
     body: JSON.stringify({ email, otp }),
   });
@@ -247,7 +246,6 @@ export async function resetPassword(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-
     },
     body: JSON.stringify({ email, otp, newPassword }),
   });
@@ -268,13 +266,34 @@ export async function resetPassword(
   return data;
 }
 
+// Resend verification email
+export async function resendVerification(
+  email: string
+): Promise<MessageResponse> {
+  // Detect if running on mobile platform
+  const platform = Capacitor.isNativePlatform() ? 'mobile' : 'web';
+
+  const response = await fetch(`${API_URL}/api/auth/resend-verification`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      email,
+      platform, // Add platform parameter
+    }),
+  });
+
+  const data = await response.json();
+  return data;
+}
+
 // Google Sign-In (native)
 export async function googleSignIn(idToken: string): Promise<AuthResponse> {
   const response = await fetch(`${API_URL}/api/auth/google-signin`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-
     },
     body: JSON.stringify({ idToken }),
   });

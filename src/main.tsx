@@ -36,6 +36,7 @@ import VerifyEmail from './pages/VerifyEmail.tsx';
 import { useStatusBar } from './hooks/useStatusBar.ts';
 import Splash from './pages/Splash.tsx';
 import { initializeGoogleAuth } from './lib/androidAuth.ts';
+import { DeepLinkListener } from './components/DeepLinkListener.tsx';
 import CategoryPage from './pages/CategoryPage.tsx';
 
 // Initialize TanStack Query client with caching config
@@ -66,6 +67,7 @@ function Root() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <BrowserRouter>
+          <DeepLinkListener />
           <Routes>
             {/* OAuth Callback Route - Public (no auth check needed) */}
             <Route path="/oauth-callback" element={<OAuthCallback />} />

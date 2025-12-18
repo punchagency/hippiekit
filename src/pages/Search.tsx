@@ -1,6 +1,6 @@
 import { FilterIcon, SearchIcon } from '@/assets/homeIcons';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import clock from '@/assets/clock.svg';
+import clock from '@/assets/Clock.svg';
 import { NotificationIcon, SearchDisplayIcon } from '@/assets/icons';
 import backButton from '@/assets/backButton.svg';
 import { Button } from '@/components/ui/button';
