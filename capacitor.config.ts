@@ -9,11 +9,6 @@ const config: CapacitorConfig = {
     CapacitorHttp: {
       enabled: true,
     },
-    StatusBar: {
-      style: 'LIGHT',
-      backgroundColor: '#650084',
-      overlaysWebView: false,
-    },
     Keyboard: {
       resize: 'native',
       style: 'dark',
@@ -21,9 +16,12 @@ const config: CapacitorConfig = {
     },
   },
   // Live reload on device: serve from your LAN Vite dev server
-  server: {
-    cleartext: true,
-  },
+  // Uncomment and update IP when using live reload during development
+  // Comment out for production builds
+  // server: {
+  //   url: 'http://192.168.1.211:5173',
+  //   cleartext: true,
+  // },
 };
 
 export default config;

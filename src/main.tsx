@@ -16,6 +16,9 @@ import EditProfile from './pages/EditProfile.tsx';
 import { Search } from './pages/Search.tsx';
 import Scan from './pages/Scan.tsx';
 import ProductResults from './pages/ProductResults.tsx';
+import VisionProductResults from './pages/VisionProductResults.tsx';
+import BarcodeProductResults from './pages/BarcodeProductResults.tsx';
+import ProductIdentificationResults from './pages/ProductIdentificationResults.tsx';
 import { Gallery } from './pages/Gallery.tsx';
 import AllCategories from './pages/AllCategories.tsx';
 import Favorites from './pages/Favorites.tsx';
@@ -39,6 +42,7 @@ import { initializeGoogleAuth } from './lib/androidAuth.ts';
 import { DeepLinkListener } from './components/DeepLinkListener.tsx';
 import CategoryPage from './pages/CategoryPage.tsx';
 import ProductPage from './pages/ProductPage.tsx';
+import ProductResultsBefore from './pages/ProductResultsBefore.tsx';
 
 // Initialize TanStack Query client with caching config
 const queryClient = new QueryClient({
@@ -74,6 +78,15 @@ function Root() {
             <Route path="/oauth-callback" element={<OAuthCallback />} />
 
             {/* Public Routes WITHOUT bottom nav - redirect to home if authenticated */}
+
+            <Route
+              path="/productresbef"
+              element={
+                <PublicRoute>
+                  <ProductResultsBefore />
+                </PublicRoute>
+              }
+            />
             <Route
               path="/onboarding"
               element={
@@ -161,6 +174,30 @@ function Root() {
               element={
                 <ProtectedRoute>
                   <ProductResults />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/vision-product-results"
+              element={
+                <ProtectedRoute>
+                  <VisionProductResults />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/barcode-product-results"
+              element={
+                <ProtectedRoute>
+                  <BarcodeProductResults />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/product-identification-results"
+              element={
+                <ProtectedRoute>
+                  <ProductIdentificationResults />
                 </ProtectedRoute>
               }
             />

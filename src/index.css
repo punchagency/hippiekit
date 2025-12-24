@@ -51,6 +51,36 @@ body {
   padding-right: env(safe-area-inset-right);
 }
 
+/* Fixed status bar overlay to prevent content from scrolling behind */
+#root::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top);
+  max-width: 440px;
+  margin: 0 auto;
+  background-color: #f5f5f5;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+/* Fixed navigation bar overlay for bottom safe area */
+body::after {
+  content: '';
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 440px;
+  height: env(safe-area-inset-bottom);
+  background-color: #f5f5f5;
+  z-index: 9999;
+  pointer-events: none;
+}
+
 @media (min-width: 441px) {
   #root {
     height: 956px;
@@ -109,4 +139,14 @@ body {
 .scrollbar-hide {
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
+}
+
+/* Barcode scanner active state - hide background to show camera */
+body.barcode-scanner-active {
+  background: transparent !important;
+}
+
+body.barcode-scanner-active #root {
+  background: transparent !important;
+  visibility: hidden;
 }

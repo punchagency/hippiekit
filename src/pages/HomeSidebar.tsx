@@ -73,21 +73,19 @@ const HomeSidebar = ({ open, onOpenChange }: HomeSidebarProps) => {
       {/* Backdrop Overlay */}
       {open && (
         <div
-          className="absolute inset-0 bg-black/50 z-40 transition-opacity"
+          className="fixed inset-0 bg-black/50 z-[60] transition-opacity"
           onClick={() => onOpenChange(false)}
-          style={{ height: '100vh' }}
         />
       )}
 
       {/* Sidebar */}
       <div
-        className={`absolute top-0 left-0 h-full max-w-[80%] bg-white z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 left-0 h-screen max-w-[80%] bg-white z-[70] transform transition-transform duration-300 ease-in-out ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
-        style={{ height: '100vh' }}
       >
-        {/* Purple Header Section */}
-        <div className="bg-primary p-5 sm:p-6 pb-6 sm:pb-8">
+        {/* Purple Header Section - extends to top of screen */}
+        <div className="bg-primary p-5 sm:p-6 pb-6 sm:pb-8 pt-[calc(env(safe-area-inset-top)+1.25rem)] sm:pt-[calc(env(safe-area-inset-top)+1.5rem)]">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2.5 sm:gap-3">
               {/* Avatar */}
@@ -201,7 +199,7 @@ const HomeSidebar = ({ open, onOpenChange }: HomeSidebarProps) => {
       {showLogoutModal && (
         <>
           {/* Modal Backdrop */}
-          <div className="fixed inset-0 bg-black/50 z-60 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/50 z-[80] flex items-center justify-center p-4">
             <div className="bg-white rounded-[20px] w-full max-w-[340px] p-6 sm:p-8 shadow-lg">
               {/* Illustration */}
               <div className="flex justify-center mb-5 sm:mb-6">

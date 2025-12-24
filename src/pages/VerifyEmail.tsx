@@ -33,7 +33,7 @@ export default function VerifyEmail() {
         // If on mobile web, try to open the app first
         if (isMobileWeb) {
           console.log('📱 Mobile web detected, attempting to open app...');
-          setMessage('Opening Hippiekit app...');
+          setMessage('Checking for Hippiekit app...');
 
           // Try to open the app with deep link
           const deepLink = `hippiekit://verify-email?token=${token}`;
@@ -49,7 +49,8 @@ export default function VerifyEmail() {
           return;
         }
 
-        // On desktop or already in app, verify directly
+        // On desktop web or already in native app, verify directly
+        console.log('🌐 Web verification starting...');
         await performVerification(token);
       } catch (error) {
         setStatus('error');
@@ -66,12 +67,12 @@ export default function VerifyEmail() {
 
         if (result.success) {
           setStatus('success');
-          setMessage('Email verified successfully!');
+          setMessage('Email verified successfully! You can now sign in.');
 
-          // Redirect to login after 2 seconds with verified parameter
+          // Redirect to login after 3 seconds with verified parameter
           setTimeout(() => {
             navigate('/signin?verified=true', { replace: true });
-          }, 2000);
+          }, 3000);
         } else {
           setStatus('error');
           setMessage(result.message || 'Email verification failed');
@@ -109,7 +110,7 @@ export default function VerifyEmail() {
               {showAppPrompt && (
                 <div className="mt-6 pt-6 border-t border-gray-200">
                   <p className="text-sm text-gray-600 mb-3">
-                    If you have the Hippiekit app installed:
+                    Have the Hippiekit app?
                   </p>
                   <button
                     onClick={handleOpenApp}
@@ -118,6 +119,9 @@ export default function VerifyEmail() {
                     <Smartphone className="w-5 h-5" />
                     Open in Hippiekit App
                   </button>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Verifying via web...
+                  </p>
                 </div>
               )}
             </>
@@ -125,30 +129,59 @@ export default function VerifyEmail() {
 
           {status === 'success' && (
             <>
-              <CheckCircle2 className="w-12 h-12 mx-auto mb-4 text-green-600" />
+              <CheckCircle2 className="w-16 h-16 mx-auto mb-4 text-green-600" />
               <h1 className="text-2xl font-bold text-gray-800 mb-2">
-                Success!
+                Email Verified! 🎉
               </h1>
               <p className="text-gray-600 mb-4">{message}</p>
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                <p className="text-sm text-green-700">
+                  Your account has been successfully verified. You can now
+                  access all features of Hippiekit.
+                </p>
+              </div>
               <p className="text-sm text-gray-500">
-                Redirecting to login in 2 seconds...
+                Redirecting to sign in page in 3 seconds...
               </p>
+              <button
+                onClick={() =>
+                  navigate('/signin?verified=true', { replace: true })
+                }
+                className="w-full mt-4 bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition font-medium"
+              >
+                Sign In Now
+              </button>
             </>
           )}
 
           {status === 'error' && (
             <>
-              <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-600" />
+              <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-600" />
               <h1 className="text-2xl font-bold text-gray-800 mb-2">
                 Verification Failed
               </h1>
               <p className="text-gray-600 mb-4">{message}</p>
-              <button
-                onClick={() => navigate('/signin', { replace: true })}
-                className="w-full mt-4 bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition"
-              >
-                Back to Sign In
-              </button>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                <p className="text-sm text-red-700">
+                  {message.includes('expired')
+                    ? 'Your verification link has expired. Please request a new one.'
+                    : 'There was a problem verifying your email. Please try again or contact support.'}
+                </p>
+              </div>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => navigate('/signup', { replace: true })}
+                  className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition font-medium"
+                >
+                  Request New Verification Link
+                </button>
+                <button
+                  onClick={() => navigate('/signin', { replace: true })}
+                  className="w-full bg-gray-200 text-gray-700 py-3 rounded-lg hover:bg-gray-300 transition font-medium"
+                >
+                  Back to Sign In
+                </button>
+              </div>
             </>
           )}
         </div>

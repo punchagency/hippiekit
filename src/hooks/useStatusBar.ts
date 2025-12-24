@@ -5,23 +5,22 @@ import { Capacitor } from '@capacitor/core';
 export const useStatusBar = () => {
   useEffect(() => {
     const setupStatusBar = async () => {
-      // Only run on native platforms
-      if (Capacitor.isNativePlatform()) {
-        try {
-          // Show the status bar
-          await StatusBar.show();
+      if (!Capacitor.isNativePlatform()) return;
 
-          // Set the status bar style
-          await StatusBar.setStyle({ style: Style.Light });
+      try {
+        // 1️⃣ IMPORTANT: prevent overlap FIRST
+        await StatusBar.setOverlaysWebView({ overlay: false });
 
-          // Set the background color (matches your primary color)
-          await StatusBar.setBackgroundColor({ color: '#650084' });
+        // 2️⃣ Set background color
+        await StatusBar.setBackgroundColor({ color: 'purple' });
 
-          // Ensure content doesn't overlap with status bar
-          await StatusBar.setOverlaysWebView({ overlay: false });
-        } catch (error) {
-          console.error('Error setting up status bar:', error);
-        }
+        // 3️⃣ Set correct icon style for dark background
+        await StatusBar.setStyle({ style: Style.Dark });
+
+        // 4️⃣ Ensure it's visible
+        await StatusBar.show();
+      } catch (error) {
+        console.error('Error setting up status bar:', error);
       }
     };
 
