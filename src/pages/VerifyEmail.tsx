@@ -19,7 +19,7 @@ export default function VerifyEmail() {
   const isMobileWeb =
     /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) &&
     !Capacitor.isNativePlatform();
-  
+
   const isNativeApp = Capacitor.isNativePlatform();
 
   useEffect(() => {
@@ -80,14 +80,17 @@ export default function VerifyEmail() {
       }
     };
 
-    const performVerification = async (token: string, platform: 'web' | 'native') => {
+    const performVerification = async (
+      token: string,
+      platform: 'web' | 'native'
+    ) => {
       try {
         setMessage('Verifying your email...');
         const result = await verifyEmail(token);
 
         if (result.success) {
           setStatus('success');
-          
+
           // Different messaging for web vs native
           if (platform === 'native') {
             setMessage('Email verified successfully! You are now logged in.');
@@ -96,7 +99,9 @@ export default function VerifyEmail() {
               navigate('/', { replace: true });
             }, 2000);
           } else {
-            setMessage('Verification successful! You can now proceed to the login page to sign in.');
+            setMessage(
+              'Verification successful! You can now proceed to the login page to sign in.'
+            );
             // No automatic redirect on web - user must click button
           }
         } else {
@@ -175,7 +180,9 @@ export default function VerifyEmail() {
               </p>
               <button
                 onClick={() =>
-                  navigate(isNativeApp ? '/' : '/signin?verified=true', { replace: true })
+                  navigate(isNativeApp ? '/' : '/signin?verified=true', {
+                    replace: true,
+                  })
                 }
                 className="w-full mt-4 bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition font-medium"
               >
