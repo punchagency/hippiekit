@@ -2,7 +2,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import backButton from '@/assets/backButton.svg';
 import heartIconReg from '@/assets/heartIconReg.svg';
 import heartIcon from '@/assets/heartIcon.svg';
 import {
@@ -13,6 +12,9 @@ import {
 import { openExternalLink } from '@/utils/browserHelper';
 import { getValidToken } from '@/lib/auth';
 import { fetchProductById } from '@/services/productService';
+import { toast } from '@/lib/toast.tsx';
+import { stripHtml, decodeHtmlEntities } from '@/utils/textHelpers';
+import { PageHeader } from '@/components/PageHeader';
 
 // WPProduct type imported from categoryService for consistency
 
@@ -57,7 +59,7 @@ const ProductPage = () => {
   const handleToggleFavorite = async () => {
     const token = await getValidToken();
     if (!token) {
-      alert('Please sign in to manage favorites');
+      toast.warning('Please sign in to manage favorites');
       return;
     }
 
@@ -74,7 +76,7 @@ const ProductPage = () => {
       }
     } catch (err) {
       console.error('Error toggling favorite:', err);
-      alert('Failed to update favorites');
+      toast.error('Failed to update favorites');
     } finally {
       setIsLoadingFavorite(false);
     }
@@ -88,12 +90,7 @@ const ProductPage = () => {
     return (
       <div className="min-h-screen bg-[#f5f5f5] pb-6">
         <div className="px-5 pt-6">
-          <button
-            onClick={() => navigate(-1)}
-            className="rounded-[7px] p-2.5 bg-white shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]"
-          >
-            <img src={backButton} alt="Back" />
-          </button>
+          <PageHeader title="Product" onBack={() => navigate(-1)} />
         </div>
         <div className="px-5 mt-6">
           <div className="h-64 bg-white rounded-[14px] animate-pulse" />
@@ -108,12 +105,7 @@ const ProductPage = () => {
     return (
       <div className="min-h-screen bg-[#f5f5f5] pb-6">
         <div className="px-5 pt-6">
-          <button
-            onClick={() => navigate(-1)}
-            className="rounded-[7px] p-2.5 bg-white shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]"
-          >
-            <img src={backButton} alt="Back" />
-          </button>
+          <PageHeader title="Product" onBack={() => navigate(-1)} />
         </div>
         <div className="px-5 mt-6 text-center">
           <p className="text-gray-600">Product not found</p>
@@ -125,14 +117,8 @@ const ProductPage = () => {
     );
   }
 
-  const cleanHtml = (html: string) => {
-    const temp = document.createElement('div');
-    temp.innerHTML = html;
-    return temp.textContent || temp.innerText || '';
-  };
-
-  const productTitle = product.title?.rendered ?? 'Product';
-  const productDescription = cleanHtml(
+  const productTitle = decodeHtmlEntities(product.title?.rendered ?? 'Product');
+  const productDescription = stripHtml(
     product.excerpt?.rendered ?? product.content?.rendered ?? ''
   );
   const buttonText = product.meta?.cta_button_text || 'Buy Now on Amazon';
@@ -142,12 +128,7 @@ const ProductPage = () => {
     <div className="min-h-screen bg-[#f5f5f5] pb-6">
       {/* Header */}
       <div className="sticky top-0 z-10 px-5 pt-6 pb-4 bg-[#f5f5f5]">
-        <button
-          onClick={() => navigate(-1)}
-          className="rounded-[7px] p-2.5 bg-white shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]"
-        >
-          <img src={backButton} alt="Back" />
-        </button>
+        <PageHeader title={productTitle} onBack={() => navigate(-1)} />
       </div>
 
       {/* Product Image */}

@@ -16,7 +16,7 @@ const ProductResultsBefore = () => {
     <section className="relative pt-6 mx-7">
       <div className="flex items-center justify-between mb-4">
         <div className="rounded-[7px] p-2.5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]">
-          <img src={backButton} alt="" />
+          <img src={backButton} alt="" className="w-5 h-5" />
         </div>
 
         <div className="mt-10 flex p-2.5 items-center gap-[7px] ">

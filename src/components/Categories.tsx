@@ -10,11 +10,16 @@ type Props = {
     image: string;
     items: string;
     slug: string;
+    parent?: number;
   }[];
-  onCategoryClick?: (categoryName: string) => void;
+  onCategoryClick?: (
+    categoryId: number,
+    categorySlug: string,
+    hasSubcategories?: boolean
+  ) => void;
   onDeselectCategory?: () => void;
   categoryParam?: string;
-  selection?: 'link' | 'filter';
+  selection?: 'link' | 'filter' | 'hierarchical';
 };
 
 export const Categories = ({
@@ -37,13 +42,26 @@ export const Categories = ({
     onDeselectCategory?.();
   };
 
+  const handleCategoryClickInternal = (category: (typeof products)[0]) => {
+    if (selection === 'hierarchical' && onCategoryClick) {
+      // For hierarchical mode, pass category info to parent to determine if it has subcategories
+      // The parent will check if subcategories exist and handle navigation accordingly
+      const hasSubcategories = true; // Will be checked by parent component
+      onCategoryClick(category.id, category.slug, hasSubcategories);
+    } else if (selection === 'link') {
+      handleCategoryLink(category.slug);
+    } else if (onCategoryClick) {
+      onCategoryClick(category.id, category.slug, false);
+    }
+  };
+
   return (
     <div className="grid grid-cols-4 gap-4 sm:gap-7.5 justify-items-center">
       {displayProducts.map((category, index) => (
         <div
           key={index}
           className={cn(
-            'flex flex-col items-center opacity-100 gap-1.5 sm:gap-2 w-[55px] sm:w-[60px] font-family-Inter',
+            'flex flex-col items-center opacity-100 gap-1.5 sm:gap-2 w-[55px] sm:w-[60px] font-family-Inter fade-in-up',
             {
               'opacity-50':
                 topCat &&
@@ -54,11 +72,8 @@ export const Categories = ({
               'opacity-100': topCat && categoryParam == '',
             }
           )}
-          onClick={
-            selection === 'link'
-              ? () => handleCategoryLink(category.slug)
-              : () => onCategoryClick?.(category.slug)
-          }
+          style={{ animationDelay: `${index * 60}ms` }}
+          onClick={() => handleCategoryClickInternal(category)}
         >
           <div className="w-[55px] h-[55px] sm:w-[60px] sm:h-[60px] rounded-[10px] overflow-hidden relative">
             {category.image ? (

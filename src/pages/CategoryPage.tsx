@@ -3,17 +3,18 @@ import { useInfiniteProductsByCategory } from '@/services/categoryService';
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import profileSampleImage from '@/assets/profileImgSample.jpg';
 import { useParams, useNavigate } from 'react-router-dom';
-
 import { Button } from '@/components/ui/button';
 import heartIconReg from '@/assets/heartIconReg.svg';
-
 import OptionIcon from '@/assets/optionsIcon.svg';
-import { Title } from '@/components/Title';
 import { openExternalLink } from '@/utils/browserHelper';
+import { stripHtml, decodeHtmlEntities } from '@/utils/textHelpers';
+import { PageHeader } from '@/components/PageHeader';
+import { useCategory } from '@/context/CategoryContext';
 
 export default function CategoryPage() {
   const { categoryName } = useParams();
   const navigate = useNavigate();
+  const { selectedCategory } = useCategory();
 
   // Use infinite scroll query
   const {
@@ -34,8 +35,10 @@ export default function CategoryPage() {
   // Intersection observer ref for infinite scroll
   const observerTarget = useRef<HTMLDivElement>(null);
 
-  // Format category name for display (convert slug to title case)
-  const displayCategoryName = categoryName
+  // Use category name from context if available, otherwise parse slug
+  const displayCategoryName = selectedCategory
+    ? decodeHtmlEntities(selectedCategory.name)
+    : categoryName
     ? categoryName
         .split('-')
         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
@@ -93,13 +96,6 @@ export default function CategoryPage() {
     return () => clearInterval(interval);
   }, [featuredProducts.length]);
 
-  // Helper function to strip HTML tags
-  const stripHtml = (html: string) => {
-    const tmp = document.createElement('div');
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || '';
-  };
-
   // Transform products for the Products component
   const productsGridData = products.map((product: (typeof products)[0]) => ({
     id: product.id,
@@ -107,7 +103,7 @@ export default function CategoryPage() {
       product._embedded?.['wp:featuredmedia']?.[0]?.source_url ||
       profileSampleImage,
     price: product.meta.cta_button_text || 'View Product',
-    productName: product.title.rendered,
+    productName: decodeHtmlEntities(product.title.rendered),
     description: stripHtml(product.content.rendered).substring(0, 100),
     rating: 4.5, // WordPress doesn't provide ratings by default
   }));
@@ -121,8 +117,8 @@ export default function CategoryPage() {
   //   }
   // }, [currentProductIndex, featuredProducts]);
   return (
-    <div>
-      <Title title={displayCategoryName} />
+    <div className="px-4">
+      <PageHeader title={displayCategoryName || 'Category'} />
       {isLoadingProducts ? (
         // Featured Products Loading Skeleton
         <div className="w-full h-[408px] rounded-[14px] bg-white p-3.5 gap-4 flex flex-col">

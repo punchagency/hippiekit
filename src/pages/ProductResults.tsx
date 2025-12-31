@@ -57,7 +57,7 @@ const ProductResults = () => {
           onClick={() => navigate('/')}
           className="rounded-[7px] p-2.5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]"
         >
-          <img src={backButton} alt="Back" />
+          <img src={backButton} alt="Back" className="w-5 h-5" />
         </button>
 
         <div className="mt-10 flex p-2.5 items-center gap-[7px] ">

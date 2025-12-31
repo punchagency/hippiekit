@@ -18,6 +18,7 @@ export interface Category {
   slug: string;
   description: string;
   link: string;
+  parent: number; // 0 for top-level categories, parent category ID for subcategories
   meta: {
     featured_image: string;
     excerpt: string;
@@ -67,6 +68,47 @@ export const fetchCategories = async (): Promise<Category[]> => {
       `${WP_API_URL}/categories?per_page=100`
     );
 
+    // Filter only top-level categories (parent === 0)
+    const topLevelCategories = data.filter((cat) => cat.parent === 0);
+
+    const categoriesWithImages = await Promise.all(
+      topLevelCategories.map(async (category: Category) => {
+        if (category.meta?.featured_image) {
+          try {
+            const mediaData = await httpGetJson<{ source_url?: string }>(
+              `${WP_API_URL}/media/${category.meta.featured_image}`
+            );
+            return {
+              ...category,
+              meta: {
+                ...category.meta,
+                featured_image:
+                  mediaData.source_url || category.meta.featured_image,
+              },
+            };
+          } catch {
+            console.error('Failed to fetch media for category:', category.id);
+          }
+        }
+        return category;
+      })
+    );
+
+    return categoriesWithImages;
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    throw error;
+  }
+};
+
+export const fetchSubCategories = async (
+  parentId: number
+): Promise<Category[]> => {
+  try {
+    const data = await httpGetJson<Category[]>(
+      `${WP_API_URL}/categories?parent=${parentId}&per_page=100`
+    );
+
     const categoriesWithImages = await Promise.all(
       data.map(async (category: Category) => {
         if (category.meta?.featured_image) {
@@ -92,7 +134,7 @@ export const fetchCategories = async (): Promise<Category[]> => {
 
     return categoriesWithImages;
   } catch (error) {
-    console.error('Error fetching categories:', error);
+    console.error('Error fetching subcategories:', error);
     throw error;
   }
 };
@@ -135,6 +177,19 @@ export const fetchProductsPaginated = async (
     return await httpGetJson<Product[]>(url);
   } catch (error) {
     console.error('Error fetching products:', error);
+    throw error;
+  }
+};
+
+export const fetchLatestProductsPaginated = async (
+  page: number = 1,
+  perPage: number = 15
+): Promise<Product[]> => {
+  try {
+    const url = `${WP_API_URL}/products?page=${page}&per_page=${perPage}&orderby=date&order=desc`;
+    return await httpGetJson<Product[]>(url);
+  } catch (error) {
+    console.error('Error fetching latest products:', error);
     throw error;
   }
 };
@@ -245,6 +300,20 @@ export const useCategories = (): UseQueryResult<Category[], Error> => {
   return useQuery({
     queryKey: ['categories'],
     queryFn: fetchCategories,
+  });
+};
+
+/**
+ * Hook to fetch subcategories by parent ID
+ * @param parentId - Parent category ID
+ */
+export const useSubCategories = (
+  parentId: number
+): UseQueryResult<Category[], Error> => {
+  return useQuery({
+    queryKey: ['categories', 'subcategories', parentId],
+    queryFn: () => fetchSubCategories(parentId),
+    enabled: !!parentId,
   });
 };
 
@@ -361,6 +430,33 @@ export const useInfiniteProducts = (
     queryKey: ['products', 'infinite', 'all'],
     queryFn: async ({ pageParam = 1 }) => {
       const products = await fetchProductsPaginated(pageParam, perPage);
+      return {
+        products,
+        nextPage: products.length === perPage ? pageParam + 1 : undefined,
+      };
+    },
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    initialPageParam: 1,
+  });
+};
+
+/**
+ * Hook to fetch newest products with infinite scroll (ordered by publish date desc)
+ * @param perPage - Products per page (default: 15)
+ */
+export const useInfiniteLatestProducts = (
+  perPage: number = 15
+): UseInfiniteQueryResult<
+  {
+    products: Product[];
+    nextPage: number | undefined;
+  },
+  Error
+> => {
+  return useInfiniteQuery({
+    queryKey: ['products', 'infinite', 'latest'],
+    queryFn: async ({ pageParam = 1 }) => {
+      const products = await fetchLatestProductsPaginated(pageParam, perPage);
       return {
         products,
         nextPage: products.length === perPage ? pageParam + 1 : undefined,

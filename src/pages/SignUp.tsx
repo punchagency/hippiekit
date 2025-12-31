@@ -22,6 +22,7 @@ import {
   GoogleIcon,
   FacebookIcon,
   EyeIcon,
+  EyeOffIcon,
 } from '@/assets/icons';
 import { TitleSubtitle } from '@/components/auth/title-subtitle';
 import { useAuth } from '@/context/AuthContext';
@@ -36,11 +37,14 @@ const formSchema = z.object({
   email: z.string().email('Invalid email address'),
   phone: z
     .string()
-    .min(10, 'Phone number must be at least 10 digits')
-    .max(15, 'Phone number must be at most 15 digits')
-    .regex(/^\+?[0-9]*$/, 'Phone number can only contain digits and optional +')
-    .optional()
-    .or(z.literal('')),
+    .refine(
+      (val) => !val || (val.length >= 10 && val.length <= 15),
+      'Phone number must be between 10 and 15 digits if provided'
+    )
+    .refine(
+      (val) => !val || /^\+?[0-9]*$/.test(val),
+      'Phone number can only contain digits and optional +'
+    ),
   password: z
     .string()
     .min(6, { message: 'Password must be at least 6 characters long.' })
@@ -204,7 +208,7 @@ function SignUp() {
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
                     <FieldLabel className="text-[14px]" htmlFor="phone">
-                      Phone Number
+                      Phone Number (optional)
                     </FieldLabel>
                     <InputGroup className="rounded-none">
                       <InputGroupAddon>
@@ -252,7 +256,7 @@ function SignUp() {
                           className="cursor-pointer"
                           onClick={() => setShowPassword(!showPassword)}
                         >
-                          <EyeIcon />
+                          {showPassword ? <EyeIcon /> : <EyeOffIcon />}
                         </InputGroupText>
                       </InputGroupAddon>
                     </InputGroup>

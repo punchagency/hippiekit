@@ -1,8 +1,7 @@
-import cancelButton from '../assets/cancel.svg';
 import lightningButton from '../assets/bolt.svg';
 import scanPhoto from '../assets/scanPhoto.png';
 import { Button } from '@/components/ui/button';
-import { ScanIcon } from '@/assets/homeIcons';
+// import { ScanIcon } from '@/assets/homeIcons';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { takePicture } from '@/lib/cameraService';
@@ -10,6 +9,8 @@ import { lookupBarcode, identifyProduct } from '@/services/scanService';
 import { ScanningLoader } from '@/components/ScanningLoader';
 import { barcodeService } from '@/services/barcodeService';
 import { Barcode, Sparkles } from 'lucide-react';
+import { toast } from '@/lib/toast.tsx';
+import { PageHeader } from '@/components/PageHeader';
 
 export const Scan = () => {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ export const Scan = () => {
   // Handle manual barcode entry (for testing)
   const handleManualBarcodeSubmit = async () => {
     if (!manualBarcode.trim()) {
-      alert('Please enter a barcode');
+      toast.warning('Please enter a barcode');
       return;
     }
 
@@ -40,14 +41,14 @@ export const Scan = () => {
           },
         });
       } else {
-        alert(
+        toast.warning(
           lookupResult.message ||
             'Product not found in our database. Try a different barcode.'
         );
       }
     } catch (error) {
       console.error('Error looking up barcode:', error);
-      alert('Failed to lookup barcode. Please try again.');
+      toast.error('Failed to lookup barcode. Please try again.');
     } finally {
       setIsScanning(false);
     }
@@ -62,7 +63,7 @@ export const Scan = () => {
       const scanResult = await barcodeService.scanBarcode();
 
       if (!scanResult.success || !scanResult.barcode) {
-        alert(scanResult.error || 'Failed to scan barcode');
+        toast.error(scanResult.error || 'Failed to scan barcode');
         setIsScanning(false);
         return;
       }
@@ -82,14 +83,14 @@ export const Scan = () => {
         });
       } else {
         // Product not found in barcode databases
-        alert(
+        toast.warning(
           lookupResult.message ||
             'Product not found in our database. Try scanning the product image instead.'
         );
       }
     } catch (error) {
       console.error('Error scanning barcode:', error);
-      alert('Failed to scan barcode. Please try again.');
+      toast.error('Failed to scan barcode. Please try again.');
     } finally {
       setIsScanning(false);
     }
@@ -110,9 +111,9 @@ export const Scan = () => {
     } catch (e) {
       console.error('Product identification error:', e);
       if (e instanceof Error) {
-        alert(e.message);
+        toast.error(e.message);
       } else {
-        alert('Failed to identify product. Please try again.');
+        toast.error('Failed to identify product. Please try again.');
       }
     } finally {
       setIsScanning(false);
@@ -125,29 +126,20 @@ export const Scan = () => {
     return <ScanningLoader isVisible={isScanning} />;
   }
   return (
-    <div className="mx-[24.5px]">
-      <div className="flex items-center justify-between mb-4 pb-4">
-        <button
-          onClick={() => navigate('/')}
-          className="rounded-[7px] p-2.5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]"
-        >
-          <img src={cancelButton} alt="" />
-        </button>
-
-        <div className="mt-10 flex p-2.5 items-center gap-[15px] ">
-          <ScanIcon className="w-[29px] height=[26px]" />
-          <span className="font-family-segoe text-primary text-[18px] font-bold">
-            Scan Product
-          </span>
-        </div>
-        <div className="rounded-[7px] p-2.5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]">
-          <div>
+    <header className="px-5 pt-6 pb-4">
+      <PageHeader
+        title="Scan Product"
+        titleIconSrc={undefined}
+        showBack={true}
+        onBack={() => navigate('/')}
+        rightSlot={
+          <button className="rounded-[7px] p-2.5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]">
             <img src={lightningButton} alt="" />
-          </div>
-        </div>
-      </div>
+          </button>
+        }
+      />
 
-      <div className="h-[641px] flex flex-col gap-5">
+      <div className="h-[641px] flex flex-col gap-5 mt-4">
         <img src={capturedPhoto || scanPhoto} alt="" />
 
         <Button
@@ -201,7 +193,7 @@ export const Scan = () => {
           </p>
         </div>
       </div>
-    </div>
+    </header>
   );
 };
 

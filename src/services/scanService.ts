@@ -124,6 +124,7 @@ export interface ProductIdentificationResponse {
   ingredients: string;
   marketing_claims: string[];
   certifications_visible: string[];
+  barcode?: string;
   container_info: {
     material: string;
     type: string;
@@ -378,6 +379,86 @@ export const getBarcodeRecommendations = async (
     return null;
   } catch (error) {
     console.error('Error getting barcode recommendations:', error);
+    return null;
+  }
+};
+
+/**
+ * Get product recommendations by product name and brand (for photo identification)
+ * Uses all OCR-extracted data for rich semantic matching
+ */
+export const getProductRecommendations = async (
+  productName: string,
+  brand: string,
+  category?: string,
+  ingredients?: string,
+  marketingClaims?: string,
+  certifications?: string,
+  productType?: string,
+  imageUri?: string
+): Promise<ProductRecommendations | null> => {
+  try {
+    // Create form data to send image along with product info
+    const formData = new FormData();
+    formData.append('product_name', productName);
+    formData.append('brand', brand || '');
+    if (category) {
+      formData.append('category', category);
+    }
+    if (ingredients) {
+      formData.append('ingredients', ingredients);
+    }
+    if (marketingClaims) {
+      formData.append('marketing_claims', marketingClaims);
+    }
+    if (certifications) {
+      formData.append('certifications', certifications);
+    }
+    if (productType) {
+      formData.append('product_type', productType);
+    }
+
+    // If image URI is provided, convert to blob and attach
+    if (imageUri) {
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+      formData.append('image', blob, 'product-photo.jpg');
+    }
+
+    const apiResponse = await fetch(
+      `${AI_SERVICE_URL}/identify/product/recommendations`,
+      {
+        method: 'POST',
+        headers: {
+          'ngrok-skip-browser-warning': 'true',
+        },
+        body: formData,
+      }
+    );
+
+    console.log('Recommendations API response status:', apiResponse.status);
+
+    if (!apiResponse.ok) {
+      const errorText = await apiResponse.text();
+      console.error(
+        'Failed to get product recommendations:',
+        apiResponse.statusText,
+        errorText
+      );
+      return null;
+    }
+
+    const data = await apiResponse.json();
+    console.log('Recommendations API response data:', data);
+
+    if (data.success && data.recommendations) {
+      return data.recommendations;
+    }
+
+    console.warn('API returned success=false or no recommendations:', data);
+    return null;
+  } catch (error) {
+    console.error('Error getting product recommendations:', error);
     return null;
   }
 };

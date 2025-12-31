@@ -19,6 +19,7 @@ import * as z from 'zod';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useUploadThing } from '@/lib/uploadthing';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters long'),
@@ -35,7 +36,25 @@ const EditProfile = () => {
   const [success, setSuccess] = useState('');
   const [profileImage, setProfileImage] = useState<string>('');
   const [imgError, setImgError] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { startUpload } = useUploadThing('profileImage', {
+    onClientUploadComplete: (res) => {
+      console.log('Upload complete:', res);
+      if (res && res[0]) {
+        const uploadedUrl = res[0].url;
+        setProfileImage(uploadedUrl);
+        form.setValue('image', uploadedUrl);
+        setIsUploading(false);
+      }
+    },
+    onUploadError: (error: Error) => {
+      console.error('Upload error:', error);
+      setError(`Upload failed: ${error.message}`);
+      setIsUploading(false);
+    },
+  });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -64,12 +83,14 @@ const EditProfile = () => {
     fileInputRef.current?.click();
   };
 
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Check file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setError('Image size must be less than 5MB');
+      // Check file size (max 4MB for UploadThing)
+      if (file.size > 4 * 1024 * 1024) {
+        setError('Image size must be less than 4MB');
         return;
       }
 
@@ -79,14 +100,27 @@ const EditProfile = () => {
         return;
       }
 
-      // Convert to base64 for preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setProfileImage(base64String);
-        form.setValue('image', base64String);
-      };
-      reader.readAsDataURL(file);
+      try {
+        setError('');
+        setIsUploading(true);
+
+        // Upload to UploadThing
+        const uploadResult = await startUpload([file]);
+
+        if (!uploadResult || uploadResult.length === 0) {
+          throw new Error('Upload failed');
+        }
+
+        // URL is set in onClientUploadComplete callback
+      } catch (err) {
+        console.error('Image upload error:', err);
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Failed to upload image. Please try again.'
+        );
+        setIsUploading(false);
+      }
     }
   };
 
@@ -285,9 +319,9 @@ const EditProfile = () => {
           className="w-full text-[#FFF] mt-11 disabled:opacity-50 disabled:cursor-not-allowed"
           form="edit-form"
           type="submit"
-          disabled={isLoading}
+          disabled={isLoading || isUploading}
         >
-          {isLoading ? (
+          {isLoading || isUploading ? (
             <span className="flex items-center justify-center gap-2">
               <svg
                 className="animate-spin h-5 w-5 text-white"
@@ -309,7 +343,7 @@ const EditProfile = () => {
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 ></path>
               </svg>
-              Saving...
+              {isUploading ? 'Uploading...' : 'Saving...'}
             </span>
           ) : (
             'Save'

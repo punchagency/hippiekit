@@ -10,23 +10,26 @@ const Onboarding = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [serverStatus, setServerStatus] = useState<string>('');
   const [testing, setTesting] = useState(false);
+  const [direction, setDirection] = useState<'left' | 'right'>('right');
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const navigate = useNavigate();
   const totalSteps = onboardingIconsMap.length;
   const isLastStep = currentStep === totalSteps - 1;
+
+  // Minimum swipe distance (in px)
+  const minSwipeDistance = 50;
 
   const testServer = async () => {
     setTesting(true);
     setServerStatus('Testing...');
     try {
-      const apiUrl =
-        import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       console.log('Testing server at:', apiUrl);
 
       const response = await fetch(`${apiUrl}/`, {
         method: 'GET',
-        headers: {
-
-        },
+        headers: {},
       });
 
       console.log('Response status:', response.status);
@@ -63,13 +66,39 @@ const Onboarding = () => {
     if (isLastStep) {
       navigate('/signup');
     } else {
+      setDirection('left');
       setCurrentStep((prev) => prev + 1);
     }
   };
 
   const handleBack = () => {
     if (currentStep > 0) {
+      setDirection('right');
       setCurrentStep((prev) => prev - 1);
+    }
+  };
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe && !isLastStep) {
+      handleNext();
+    }
+    if (isRightSwipe && currentStep > 0) {
+      handleBack();
     }
   };
 
@@ -116,8 +145,15 @@ const Onboarding = () => {
       )}
 
       {/* Onboarding Card - Fills remaining space */}
-      <div className="flex-1 overflow-hidden">
+      <div
+        className="flex-1 overflow-hidden"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
         <OnboardingCard
+          key={currentStep}
+          direction={direction}
           OnboardingIcon={currentData.icon}
           OnboardingIconBg={currentData.iconBg}
           OnboardingIconLogo={currentData.iconLogo}

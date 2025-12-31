@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { verifyEmail } from '../lib/auth';
 import { AlertCircle, CheckCircle2, Loader2, Smartphone } from 'lucide-react';
@@ -13,20 +13,40 @@ export default function VerifyEmail() {
   );
   const [message, setMessage] = useState('Verifying your email...');
   const [showAppPrompt, setShowAppPrompt] = useState(false);
+  const hasVerifiedRef = useRef(false);
 
-  // Check if we're on mobile web (not the native app)
+  // Check if we're on mobile web (not the native app) or desktop web
   const isMobileWeb =
     /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) &&
     !Capacitor.isNativePlatform();
+  
+  const isNativeApp = Capacitor.isNativePlatform();
 
   useEffect(() => {
     const verify = async () => {
+      // Prevent multiple verification attempts using ref (persists across renders)
+      if (hasVerifiedRef.current) {
+        console.log('⚠️ Already verified, skipping duplicate attempt');
+        return;
+      }
+
       try {
         const token = searchParams.get('token');
 
         if (!token) {
           setStatus('error');
           setMessage('No verification token provided');
+          return;
+        }
+
+        // Set ref immediately to prevent any duplicate attempts (even in Strict Mode)
+        hasVerifiedRef.current = true;
+        console.log('🔒 Verification locked, proceeding...');
+
+        // If on native Android app, verify directly and redirect to app login
+        if (isNativeApp) {
+          console.log('📱 Native app detected, verifying directly...');
+          await performVerification(token, 'native');
           return;
         }
 
@@ -43,15 +63,15 @@ export default function VerifyEmail() {
           setTimeout(async () => {
             console.log('⏱️ Timeout reached, proceeding with web verification');
             setShowAppPrompt(true);
-            await performVerification(token);
+            await performVerification(token, 'web');
           }, 2000);
 
           return;
         }
 
-        // On desktop web or already in native app, verify directly
-        console.log('🌐 Web verification starting...');
-        await performVerification(token);
+        // On desktop web, verify directly
+        console.log('🌐 Desktop web verification starting...');
+        await performVerification(token, 'web');
       } catch (error) {
         setStatus('error');
         setMessage(
@@ -60,19 +80,25 @@ export default function VerifyEmail() {
       }
     };
 
-    const performVerification = async (token: string) => {
+    const performVerification = async (token: string, platform: 'web' | 'native') => {
       try {
         setMessage('Verifying your email...');
         const result = await verifyEmail(token);
 
         if (result.success) {
           setStatus('success');
-          setMessage('Email verified successfully! You can now sign in.');
-
-          // Redirect to login after 3 seconds with verified parameter
-          setTimeout(() => {
-            navigate('/signin?verified=true', { replace: true });
-          }, 3000);
+          
+          // Different messaging for web vs native
+          if (platform === 'native') {
+            setMessage('Email verified successfully! You are now logged in.');
+            // Redirect to home after 2 seconds (user is already logged in on native)
+            setTimeout(() => {
+              navigate('/', { replace: true });
+            }, 2000);
+          } else {
+            setMessage('Verification successful! You can now proceed to the login page to sign in.');
+            // No automatic redirect on web - user must click button
+          }
         } else {
           setStatus('error');
           setMessage(result.message || 'Email verification failed');
@@ -86,7 +112,8 @@ export default function VerifyEmail() {
     };
 
     verify();
-  }, [searchParams, navigate, isMobileWeb]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount
 
   const handleOpenApp = () => {
     const token = searchParams.get('token');
@@ -136,20 +163,23 @@ export default function VerifyEmail() {
               <p className="text-gray-600 mb-4">{message}</p>
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
                 <p className="text-sm text-green-700">
-                  Your account has been successfully verified. You can now
-                  access all features of Hippiekit.
+                  {isNativeApp
+                    ? 'Your account has been successfully verified. You are now logged in and can access all features of Hippiekit.'
+                    : 'Your account has been successfully verified. Please go back to the login page and sign in with your credentials to access all features.'}
                 </p>
               </div>
               <p className="text-sm text-gray-500">
-                Redirecting to sign in page in 3 seconds...
+                {isNativeApp
+                  ? 'Redirecting to app in 2 seconds...'
+                  : 'Click the button below to proceed to the login page.'}
               </p>
               <button
                 onClick={() =>
-                  navigate('/signin?verified=true', { replace: true })
+                  navigate(isNativeApp ? '/' : '/signin?verified=true', { replace: true })
                 }
                 className="w-full mt-4 bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition font-medium"
               >
-                Sign In Now
+                {isNativeApp ? 'Continue to App' : 'Sign In Now'}
               </button>
             </>
           )}

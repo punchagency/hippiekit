@@ -8,6 +8,7 @@ import {
   listFavorites,
 } from '@/services/favoriteService';
 import { getValidToken } from '@/lib/auth';
+import { toast } from '@/lib/toast.tsx';
 
 type Props = {
   data: {
@@ -49,7 +50,7 @@ export const Products = ({
   const handleToggle = async (productId: number) => {
     const token = await getValidToken();
     if (!token) {
-      alert('Please sign in to manage favorites');
+      toast.warning('Please sign in to manage favorites');
       return;
     }
     if (loadingIds.has(productId)) return;
@@ -90,7 +91,7 @@ export const Products = ({
           : 'grid grid-cols-2 gap-3 sm:gap-4'
       }
     >
-      {data.map((product) => {
+      {data.map((product, index) => {
         const { id, image, productName, description, rating } = product;
 
         return (
@@ -98,7 +99,8 @@ export const Products = ({
             key={id}
             className={`bg-white rounded-[13px] shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2 sm:p-2.5 flex flex-col gap-2 sm:gap-2.5 cursor-pointer transition-transform hover:scale-105 ${
               horizontal ? 'shrink-0 w-40 sm:w-[180px]' : ''
-            }`}
+            } fade-in-up`}
+            style={{ animationDelay: `${index * 70}ms` }}
             onClick={() => onProductClick?.(id)}
           >
             {/* Product Image */}

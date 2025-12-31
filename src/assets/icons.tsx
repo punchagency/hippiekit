@@ -104,6 +104,53 @@ export const EyeIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+export const EyeOffIcon = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    className={className}
+  >
+    <path
+      d="M3 3L21 21"
+      stroke="#8521A4"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M10.73 10.73C10.3944 11.0656 10.2043 11.528 10.2 12C10.2 12.4243 10.347 12.8344 10.6123 13.1628C10.8777 13.4913 11.2459 13.7207 11.6543 13.8121C12.0626 13.9035 12.4892 13.8514 12.8661 13.6632C13.2431 13.475 13.5485 13.1619 13.735 12.79"
+      stroke="#8521A4"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M6.07 6.08C4.22155 7.376 2.70835 9.12689 1.66797 11.17C1.57472 11.3552 1.52539 11.5588 1.52539 11.765C1.52539 11.9712 1.57472 12.1748 1.66797 12.36C2.99197 15.01 5.90197 18.5 11.9999 18.5C13.9599 18.5322 15.8971 18.0361 17.61 17.06L6.07 6.08Z"
+      stroke="#8521A4"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M9.53 4.53C10.3376 4.34694 11.1684 4.25258 12 4.25C18.098 4.25 21.008 7.74 22.332 10.39C22.4252 10.5752 22.4746 10.7788 22.4746 10.985C22.4746 11.1912 22.4252 11.3948 22.332 11.58C21.8212 12.619 21.1312 13.561 20.29 14.37"
+      stroke="#8521A4"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M14.12 14.12C13.7399 14.5012 13.2665 14.7841 12.7467 14.9445C12.227 15.105 11.6778 15.1376 11.1404 15.0397C10.603 14.9418 10.095 14.7166 9.659 14.3845C9.223 14.0523 8.87167 13.6228 8.63565 13.1312C8.39964 12.6396 8.28597 12.1008 8.30449 11.5599C8.32301 11.019 8.47311 10.4916 8.74143 10.0227C9.00975 9.55374 9.38725 9.15676 9.84164 8.86568C10.296 8.57459 10.8141 8.398 11.35 8.35"
+      stroke="#8521A4"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 export const GoogleIcon = ({ className }: { className?: string }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"

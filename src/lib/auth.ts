@@ -86,7 +86,15 @@ export const verifyEmail = async (token: string) => {
     throw new Error(error.message || 'Email verification failed');
   }
 
-  return await response.json();
+  const data = await response.json();
+  
+  // If verification was successful and we have a token, store it
+  if (data.success && data.data.token) {
+    await tokenStore.setToken(data.data.token);
+    await tokenStore.setUser(data.data);
+  }
+  
+  return data;
 };
 
 export const logout = async () => {

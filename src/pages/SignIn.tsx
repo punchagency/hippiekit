@@ -20,6 +20,7 @@ import {
   GoogleIcon,
   FacebookIcon,
   EyeIcon,
+  EyeOffIcon,
 } from '@/assets/icons';
 // Placeholder for future social sign-in (Better Auth removed)
 // Remove any stale imports from deprecated auth client
@@ -252,7 +253,7 @@ function SignIn() {
                           className="cursor-pointer"
                           onClick={() => setShowPassword(!showPassword)}
                         >
-                          <EyeIcon />
+                          {showPassword ? <EyeIcon /> : <EyeOffIcon />}
                         </InputGroupText>
                       </InputGroupAddon>
                     </InputGroup>

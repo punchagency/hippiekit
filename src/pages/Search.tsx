@@ -1,9 +1,7 @@
 import { FilterIcon, SearchIcon } from '@/assets/homeIcons';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import clock from '@/assets/Clock.svg';
-import { NotificationIcon, SearchDisplayIcon } from '@/assets/icons';
-import backButton from '@/assets/backButton.svg';
-import { Button } from '@/components/ui/button';
+import { SearchDisplayIcon } from '@/assets/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   useCategories,
@@ -15,6 +13,10 @@ import {
   removeFavorite,
   listFavorites,
 } from '@/services/favoriteService';
+import {
+  getSearchHistory as fetchSearchHistory,
+  addSearchHistory as saveSearchHistory,
+} from '@/services/searchHistoryService';
 import { getValidToken } from '@/lib/auth';
 import {
   Sheet,
@@ -23,6 +25,9 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import profileSampleImage from '@/assets/profileImgSample.jpg';
+import { toast } from '@/lib/toast.tsx';
+import { stripHtml, decodeHtmlEntities } from '@/utils/textHelpers';
+import { PageHeader } from '@/components/PageHeader';
 
 export const Search = () => {
   const navigate = useNavigate();
@@ -85,20 +90,28 @@ export const Search = () => {
     return () => observer.unobserve(element);
   }, [handleObserver]);
 
-  // Initialize from URL params
+  // Initialize from URL params and hydrate debounced query so cached results persist on back navigation
   useEffect(() => {
     const searchParam = searchParams.get('search') || '';
     const categoryParam = searchParams.get('category') || '';
     setSearchQuery(searchParam);
+    setDebouncedQuery(searchParam.trim());
     setSelectedCategory(categoryParam);
   }, [searchParams]);
 
-  // Load search history from localStorage
+  // Load search history from backend
   useEffect(() => {
-    const history = localStorage.getItem('searchHistory');
-    if (history) {
-      setSearchHistory(JSON.parse(history));
-    }
+    (async () => {
+      const token = await getValidToken();
+      if (!token) return;
+
+      try {
+        const history = await fetchSearchHistory();
+        setSearchHistory(history);
+      } catch (e) {
+        console.warn('Failed to load search history', e);
+      }
+    })();
   }, []);
 
   // Load user's favorites
@@ -116,33 +129,34 @@ export const Search = () => {
     })();
   }, []);
 
-  // Debounce search query
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedQuery(searchQuery);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
+  // Handle search submission (triggered on Enter key)
+  const handleSearch = async () => {
+    setDebouncedQuery(searchQuery.trim());
+    // Update URL params
+    const newParams: Record<string, string> = {};
+    if (searchQuery.trim()) newParams.search = searchQuery.trim();
+    if (selectedCategory) newParams.category = selectedCategory;
+    setSearchParams(newParams);
 
-  // Save to search history when search is performed
-  useEffect(() => {
-    if (debouncedQuery.trim() && searchData) {
-      setSearchHistory((prevHistory) => {
-        const newHistory = [
-          debouncedQuery,
-          ...prevHistory.filter((h) => h !== debouncedQuery),
-        ].slice(0, 10);
-        localStorage.setItem('searchHistory', JSON.stringify(newHistory));
-        return newHistory;
-      });
+    // Save to backend search history
+    if (searchQuery.trim()) {
+      try {
+        const updatedHistory = await saveSearchHistory(searchQuery.trim());
+        setSearchHistory(updatedHistory);
+      } catch (e) {
+        console.warn('Failed to save search history', e);
+      }
     }
-  }, [debouncedQuery, searchData]);
+  };
+
+  // Save to search history when search is performed (removed localStorage logic)
+  // This effect is now handled in handleSearch function
 
   // Handle favorite toggle
   const handleToggleFavorite = async (productId: number) => {
     const token = await getValidToken();
     if (!token) {
-      alert('Please sign in to manage favorites');
+      toast.warning('Please sign in to manage favorites');
       return;
     }
     if (loadingFavoriteIds.has(productId)) return;
@@ -209,13 +223,6 @@ export const Search = () => {
     setSearchParams(newParams);
   };
 
-  // Helper function to strip HTML tags
-  const stripHtml = (html: string) => {
-    const tmp = document.createElement('div');
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || '';
-  };
-
   // Transform products for display
   const productsGridData = products.map((product: (typeof products)[0]) => ({
     id: product.id,
@@ -223,33 +230,19 @@ export const Search = () => {
       product._embedded?.['wp:featuredmedia']?.[0]?.source_url ||
       profileSampleImage,
     price: product.meta.cta_button_text || 'View Product',
-    productName: product.title.rendered,
+    productName: decodeHtmlEntities(product.title.rendered),
     description: stripHtml(product.content.rendered).substring(0, 100),
     rating: 4.5,
   }));
 
   return (
     <section className="relative pt-6 mx-7 pb-4">
-      <div className="flex items-center justify-between mb-4">
-        <Button
-          onClick={() => navigate('/')}
-          className="rounded-[7px] p-2.5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]"
-        >
-          <img src={backButton} alt="" />
-        </Button>
-
-        <div className="mt-10 flex p-2.5 items-center gap-[7px] ">
-          <span className="font-family-segoe text-primary text-[18px] font-bold">
-            Search Here
-          </span>
-        </div>
-        <button
-          onClick={() => navigate('/notifications')}
-          className="rounded-[7px] p-2 sm:p-2.5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]"
-        >
-          <NotificationIcon />
-        </button>
-      </div>
+      <PageHeader
+        title="Search"
+        onBack={() => navigate('/')}
+        showNotification
+        className="mb-4"
+      />
 
       {/* Search Bar */}
       <div className="relative mt-9 mb-4">
@@ -259,17 +252,17 @@ export const Search = () => {
               type="text"
               placeholder="Search Here For Specific Item"
               value={searchQuery}
-              onChange={(e) => {
-                const value = e.target.value;
-                setSearchQuery(value);
-                // Update URL params
-                const newParams: Record<string, string> = {};
-                if (value.trim()) newParams.search = value.trim();
-                if (selectedCategory) newParams.category = selectedCategory;
-                setSearchParams(newParams);
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSearch();
+                }
               }}
               className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:border-primary p-2.5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]"
             />
+            <div className="absolute left-3 top-1/2 -translate-y-1/2">
+              <SearchIcon />
+            </div>
             <div className="absolute left-3 top-1/2 -translate-y-1/2">
               <SearchIcon />
             </div>

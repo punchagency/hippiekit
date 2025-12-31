@@ -13,6 +13,8 @@ import {
   type FavoriteItem,
 } from '@/services/favoriteService';
 import ProductInfo from '@/components/ProductInfo';
+import { PageHeader } from '@/components/PageHeader';
+import { decodeHtmlEntities } from '@/utils/textHelpers';
 const Favorites = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
@@ -61,7 +63,7 @@ const Favorites = () => {
       }
     };
     loadCategories();
-  }, [favorites]); // Reload categories when favorites change
+  }, []); // Load categories once on mount
 
   // Load favorites function
   const loadFavorites = useCallback(
@@ -111,8 +113,12 @@ const Favorites = () => {
     loadFavorites(1, true);
   }, [categoryParam, searchQuery, loadFavorites]);
 
-  const handleCategoryClick = (categoryName: string) => {
-    const newParams: Record<string, string> = { category: categoryName };
+  const handleCategoryClick = (
+    _categoryId: number,
+    categorySlug: string,
+    _hasSubcategories?: boolean
+  ) => {
+    const newParams: Record<string, string> = { category: categorySlug };
     if (searchQuery.trim()) newParams.search = searchQuery.trim();
     setSearchParams(newParams);
   };
@@ -157,11 +163,12 @@ const Favorites = () => {
   // Transform categories for the Categories component
   const categoryProducts = categories.map((cat) => ({
     id: cat.id,
-    name: cat.name,
+    name: decodeHtmlEntities(cat.name),
     slug: cat.slug,
     price: '', // Not applicable for categories
     image: cat.image || productGridImage, // Use category image or fallback
     items: cat.count.toString(),
+    parent: 0, // Favorite categories don't have parent info
   }));
 
   // Reorder categories to show selected category first
@@ -192,21 +199,18 @@ const Favorites = () => {
     id: favorite.productId,
     image: favorite.product.image || profileSampleImage,
     price: favorite.product.priceText || 'View Product',
-    productName: favorite.product.title,
-    description: favorite.product.title, // Use title as description since we don't have full content
+    productName: decodeHtmlEntities(favorite.product.title),
+    description: decodeHtmlEntities(favorite.product.title), // Use title as description since we don't have full content
     rating: 4.5,
   }));
 
   return (
     <header className="px-5 pt-6 pb-4">
-      <div className="flex items-center justify-center mb-4">
-        <div className="mt-10 flex p-2.5 items-center gap-[7px] ">
-          <img src={favoritesIcon} alt="Logo" className="" />
-          <span className="font-family-segoe text-primary text-[18px] font-bold">
-            Favorites
-          </span>
-        </div>
-      </div>
+      <PageHeader
+        title="Favorites"
+        titleIconSrc={favoritesIcon}
+        showNotification
+      />
 
       {/* Search Bar */}
       <div className="relative mb-4">
@@ -234,7 +238,6 @@ const Favorites = () => {
         </div>
       </div>
 
-      {/* Scan Button */}
       <section className=" rounded-[7px] px-4 py-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex flex-col gap-7.5 ">
         <div className="flex justify-between">
           <h2 className="text-primary font-family-segoe text-[18px] font-bold capitalize">
@@ -256,9 +259,9 @@ const Favorites = () => {
                 key={index}
                 className="flex flex-col items-center gap-1.5 sm:gap-2 w-[55px] sm:w-[60px]"
               >
-                <div className="w-[55px] h-[55px] sm:w-[60px] sm:h-[60px] rounded-[10px] bg-[#650084]/10 animate-pulse" />
-                <div className="h-4 w-full bg-[#650084]/10 rounded animate-pulse" />
-                <div className="h-3 w-3/4 bg-[#650084]/10 rounded animate-pulse" />
+                <div className="w-[55px] h-[55px] sm:w-[60px] sm:h-[60px] rounded-[10px] bg-primary/10 animate-pulse" />
+                <div className="h-4 w-full bg-primary/10 rounded animate-pulse" />
+                <div className="h-3 w-3/4 bg-primary/10 rounded animate-pulse" />
               </div>
             ))}
           </div>
@@ -287,17 +290,17 @@ const Favorites = () => {
                 className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex gap-3"
               >
                 {/* Image skeleton */}
-                <div className="w-[60px] h-[60px] rounded-lg bg-[#650084]/10 animate-pulse" />
+                <div className="w-[60px] h-[60px] rounded-lg bg-primary/10 animate-pulse" />
 
                 {/* Content skeleton */}
                 <div className="flex flex-col flex-1 gap-2">
-                  <div className="h-4 w-3/4 bg-[#650084]/10 rounded animate-pulse" />
-                  <div className="h-3 w-full bg-[#650084]/10 rounded animate-pulse" />
-                  <div className="h-3 w-5/6 bg-[#650084]/10 rounded animate-pulse" />
+                  <div className="h-4 w-3/4 bg-primary/10 rounded animate-pulse" />
+                  <div className="h-3 w-full bg-primary/10 rounded animate-pulse" />
+                  <div className="h-3 w-5/6 bg-primary/10 rounded animate-pulse" />
                 </div>
 
                 {/* Heart icon skeleton */}
-                <div className="w-[22px] h-[22px] bg-[#650084]/10 rounded-sm animate-pulse" />
+                <div className="w-[22px] h-[22px] bg-primary/10 rounded-sm animate-pulse" />
               </div>
             ))}
           </>
@@ -322,12 +325,12 @@ const Favorites = () => {
             >
               {isLoadingMore && (
                 <div className="w-full bg-white rounded-[13px] shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex gap-3">
-                  <div className="w-[60px] h-[60px] rounded-lg bg-[#650084]/10 animate-pulse" />
+                  <div className="w-[60px] h-[60px] rounded-lg bg-primary/10 animate-pulse" />
                   <div className="flex flex-col flex-1 gap-2">
-                    <div className="h-4 w-3/4 bg-[#650084]/10 rounded animate-pulse" />
-                    <div className="h-3 w-full bg-[#650084]/10 rounded animate-pulse" />
+                    <div className="h-4 w-3/4 bg-primary/10 rounded animate-pulse" />
+                    <div className="h-3 w-full bg-primary/10 rounded animate-pulse" />
                   </div>
-                  <div className="w-[22px] h-[22px] bg-[#650084]/10 rounded-sm animate-pulse" />
+                  <div className="w-[22px] h-[22px] bg-primary/10 rounded-sm animate-pulse" />
                 </div>
               )}
             </div>

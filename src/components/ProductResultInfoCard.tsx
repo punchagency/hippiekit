@@ -1,5 +1,3 @@
-import { Button } from './ui/button';
-
 type Props = {
   icon: string;
   title: string;
@@ -34,39 +32,45 @@ export const ProductResultInfoCard = ({
   };
 
   return (
-    <section className="flex flex-col gap-2.5">
-      <div className="flex gap-2.5">
-        <img src={icon} alt="" />
+    <section className="flex flex-col gap-2.5 w-full px-3 sm:px-0">
+      <div className="flex gap-2 sm:gap-2.5 items-start">
+        <img
+          src={icon}
+          alt=""
+          className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0"
+        />
         <span
-          className={`capitalize ${
+          className={`capitalize text-sm sm:text-base ${
             titleType === 'positive'
               ? 'text-[#4E6C34]'
               : titleType === 'negative'
               ? 'text-[#F35959]'
               : 'text-primary'
-          } font-family-segoe font-bold`}
+          } font-family-segoe font-bold break-words`}
         >
           {title}
         </span>
       </div>
 
-      <div className="flex flex-wrap gap-2.5">
+      <div className="flex flex-wrap gap-2">
         {tags.map((tag) => (
-          <Button
+          <button
             key={tag}
-            className={`bg-transparency border font-family-roboto hover:bg-gray-100 transition-colors ${getTagColorClasses()}`}
+            className={`bg-transparent border font-family-roboto hover:bg-gray-100 transition-colors px-2 sm:px-3 py-1 text-xs sm:text-sm rounded ${getTagColorClasses()}`}
             onClick={() =>
               onTagClick && onTagClick(tag, tagDescriptions[tag] || '')
             }
-            title={tag.length > 30 ? tag : undefined}
+            title={tag}
           >
-            {tag.length > 30 ? tag.substring(0, 30) + '...' : tag}
-          </Button>
+            {tag.length > 25 ? tag.substring(0, 25) + '...' : tag}
+          </button>
         ))}
       </div>
-      <div className="rounded-[10px] p-4 bg-[#FFEEEE]">
-        <p className="font-family-segoe font-bold capitalize">{descTitle}</p>
-        <p className="mt-5 font-family-roboto text-[14px] whitespace-pre-line">
+      <div className="rounded-[10px] p-3 sm:p-4 bg-[#FFEEEE]">
+        <p className="font-family-segoe font-bold capitalize text-sm sm:text-base">
+          {descTitle}
+        </p>
+        <p className="mt-2 sm:mt-5 font-family-roboto text-xs sm:text-[14px] whitespace-pre-line break-words">
           {typeof description === 'string'
             ? description
             : JSON.stringify(description)}
