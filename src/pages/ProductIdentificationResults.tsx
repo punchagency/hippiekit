@@ -776,7 +776,95 @@ const ProductIdentificationResults = () => {
             className="bg-white rounded-[15px] max-w-md w-full max-h-[90vh] overflow-y-auto shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] animate-fade-in-up"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal content will go here - copying from original file */}
+            {/* Header with close button */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between rounded-t-[15px]">
+              <h2 className="font-roboto font-bold text-lg text-black">
+                Product Details
+              </h2>
+              <button
+                onClick={() => setSelectedAIAlternative(null)}
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-5 flex flex-col gap-4">
+              {/* Logo/Image */}
+              <div className="w-full flex justify-center">
+                <div className="w-32 h-32 bg-gradient-to-br from-[#00A23E] to-[#20799F] rounded-2xl flex items-center justify-center overflow-hidden shadow-lg">
+                  {selectedAIAlternative.logo_url ? (
+                    <img
+                      src={selectedAIAlternative.logo_url}
+                      alt={`${selectedAIAlternative.brand} logo`}
+                      className="w-full h-full object-contain p-3"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent) {
+                          parent.innerHTML =
+                            '<span class="text-white font-bold text-5xl">🌱</span>';
+                        }
+                      }}
+                    />
+                  ) : (
+                    <span className="text-white font-bold text-5xl">🌱</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Product Name */}
+              <div className="text-center">
+                <h3 className="font-roboto font-bold text-xl text-black mb-2">
+                  {selectedAIAlternative.name}
+                </h3>
+                <p className="font-roboto text-base font-semibold text-[#00A23E]">
+                  {selectedAIAlternative.brand}
+                </p>
+              </div>
+
+              {/* Divider */}
+              <div className="border-t border-gray-200"></div>
+
+              {/* Full Description */}
+              <div>
+                <h4 className="font-roboto font-semibold text-sm text-gray-700 mb-2">
+                  Why This Product?
+                </h4>
+                <p className="font-roboto text-sm text-[#4e4e4e] leading-relaxed">
+                  {selectedAIAlternative.description}
+                </p>
+              </div>
+
+              {/* AI Note */}
+              <div className="bg-[#20799F]/10 border border-[#20799F]/20 rounded-lg p-3">
+                <div className="flex gap-2 items-start">
+                  <img
+                    src={aiIcon}
+                    alt="AI"
+                    className="w-5 h-5 flex-shrink-0 mt-0.5"
+                  />
+                  <p className="font-roboto text-xs text-[#20799F] leading-relaxed">
+                    This recommendation was AI-generated based on the product
+                    you scanned and focuses on healthier, cleaner alternatives.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -17,7 +17,7 @@ import { useAuth } from '@/context/AuthContext';
 import { ProductResultInfoCard } from '@/components/ProductResultInfoCard';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/PageHeader';
-import { takePicture } from '@/lib/cameraService';
+import { pickFromGallery, takePicture } from '@/lib/cameraService';
 
 // Format tag names: replace underscores with spaces and capitalize each word
 const formatTagName = (tag: string): string => {
@@ -528,7 +528,7 @@ const BarcodeProductResults = () => {
     return (
       <section className="relative px-5 pt-6 pb-4 md:mx-7">
         <PageHeader title="Product Analysis" />
-        <div className="flex flex-col items-center justify-center min-h-[400px] p-4">
+        <div className="flex flex-col gap-5 p-2 items-center justify-center min-h-[400px] p-4">
           <p className="text-gray-600 mb-4 text-center">
             Product not found via barcode lookup. Try Scanning the Image.
           </p>
@@ -548,9 +548,29 @@ const BarcodeProductResults = () => {
                 console.error('Product identification error:', e);
               }
             }}
-            className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+            className="px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
           >
-            Scan Image
+            Take Picture
+          </button>
+          <button
+            onClick={async () => {
+              try {
+                const photo = await pickFromGallery();
+                if (!photo?.webPath) return;
+
+                // Navigate immediately to results page - data will load there
+                navigate('/product-identification-results', {
+                  state: {
+                    scannedImage: photo.webPath,
+                  },
+                });
+              } catch (e) {
+                console.error('Product identification error:', e);
+              }
+            }}
+            className="px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+          >
+            Browse Photo
           </button>
         </div>
       </section>
