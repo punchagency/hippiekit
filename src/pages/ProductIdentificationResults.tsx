@@ -6,9 +6,7 @@ import chemicalsIcon from '@/assets/chemicalsIcon.svg';
 import cleanIngredientsIcon from '@/assets/cleanIngredientsIcon.svg';
 import productContainerIngIcon from '@/assets/productContainerIngIcon.svg';
 import aiIcon from '@/assets/aiIcon.svg';
-import type {
-  ProductRecommendations,
-} from '@/services/scanService';
+import type { ProductRecommendations } from '@/services/scanService';
 import {
   getProductRecommendations,
   identifyProductBasic,
@@ -40,12 +38,13 @@ const ProductIdentificationResults = () => {
   const [product, setProduct] = useState<any>(null); // Basic product info
   const [loadingBasicData, setLoadingBasicData] = useState(true);
   const [processingError, setProcessingError] = useState<string | null>(null);
-  
+
   // Progressive loading states
   const [loadingIngredients, setLoadingIngredients] = useState(true);
   const [loadingDescriptions, setLoadingDescriptions] = useState(false);
   const [loadingPackaging, setLoadingPackaging] = useState(true);
-  const [loadingPackagingDescriptions, setLoadingPackagingDescriptions] = useState(false);
+  const [loadingPackagingDescriptions, setLoadingPackagingDescriptions] =
+    useState(false);
 
   // State for selected items
   const [selectedHarmful, setSelectedHarmful] = useState<string | null>(null);
@@ -130,7 +129,10 @@ const ProductIdentificationResults = () => {
               setLoadingDescriptions(true);
               describePhotoIngredients(harmful, safe)
                 .then((descriptionsResult) => {
-                  console.log('📝 Ingredient descriptions received:', descriptionsResult);
+                  console.log(
+                    '📝 Ingredient descriptions received:',
+                    descriptionsResult
+                  );
                   setProduct((prev: any) => {
                     if (!prev) return prev;
                     return {
@@ -191,7 +193,10 @@ const ProductIdentificationResults = () => {
           .then((separationResult) => {
             console.log('📦 Packaging separation received:', separationResult);
 
-            if (!separationResult.materials || separationResult.materials.length === 0) {
+            if (
+              !separationResult.materials ||
+              separationResult.materials.length === 0
+            ) {
               console.log('No packaging materials found');
               setLoadingPackaging(false);
               return;
@@ -207,7 +212,10 @@ const ProductIdentificationResults = () => {
               basicInfo.category
             )
               .then((descriptionsResult) => {
-                console.log('📝 Packaging descriptions received:', descriptionsResult);
+                console.log(
+                  '📝 Packaging descriptions received:',
+                  descriptionsResult
+                );
                 setProduct((prev: any) => {
                   if (!prev) return prev;
                   return {
@@ -242,7 +250,6 @@ const ProductIdentificationResults = () => {
             setLoadingPackaging(false);
             setLoadingPackagingDescriptions(false);
           });
-
       } catch (error) {
         console.error('❌ Error loading product:', error);
         setProcessingError(
@@ -418,7 +425,7 @@ const ProductIdentificationResults = () => {
         <div className="mt-2.5 py-4 sm:py-5 px-3 sm:px-3.5 bg-white rounded-[13px] shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] flex flex-col gap-4 sm:gap-6 overflow-hidden">
           {/* Image Skeleton */}
           <div className="bg-gray-200 rounded-[13px] w-full h-64 animate-pulse"></div>
-          
+
           {/* Product Info Skeleton */}
           <div className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex gap-2 sm:gap-3 items-start">
             <div className="flex flex-col flex-1 gap-2 min-w-0">
@@ -607,7 +614,8 @@ const ProductIdentificationResults = () => {
             description={
               loadingPackagingDescriptions
                 ? 'Analyzing packaging materials with AI...'
-                : selectedPackaging && packagingTagDescriptions[selectedPackaging]
+                : selectedPackaging &&
+                  packagingTagDescriptions[selectedPackaging]
                 ? String(packagingTagDescriptions[selectedPackaging])
                 : packagingAnalysis?.summary
                 ? String(packagingAnalysis.summary)

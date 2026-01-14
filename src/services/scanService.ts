@@ -724,4 +724,3 @@ export const describePhotoPackaging = async (
     throw error;
   }
 };
-

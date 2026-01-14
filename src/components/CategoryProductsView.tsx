@@ -13,9 +13,11 @@ interface CategoryProductsViewProps {
   categorySlug: string;
 }
 
-export function CategoryProductsView({ categorySlug }: CategoryProductsViewProps) {
+export function CategoryProductsView({
+  categorySlug,
+}: CategoryProductsViewProps) {
   console.log('🎯 CategoryProductsView render:', { categorySlug });
-  
+
   const navigate = useNavigate();
 
   // Use infinite scroll query
@@ -37,7 +39,9 @@ export function CategoryProductsView({ categorySlug }: CategoryProductsViewProps
   const products = useMemo(() => {
     if (!data) return [];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const flatProducts = (data as any).pages.flatMap((page: any) => page.products);
+    const flatProducts = (data as any).pages.flatMap(
+      (page: any) => page.products
+    );
     console.log('📦 Products flattened:', { count: flatProducts.length });
     return flatProducts;
   }, [data]);
@@ -77,7 +81,9 @@ export function CategoryProductsView({ categorySlug }: CategoryProductsViewProps
       const shuffled = [...products].sort(() => Math.random() - 0.5);
       setFeaturedProducts(shuffled.slice(0, Math.min(3, products.length)));
       setCurrentProductIndex(0);
-      console.log('⭐ Featured products set:', { count: Math.min(3, products.length) });
+      console.log('⭐ Featured products set:', {
+        count: Math.min(3, products.length),
+      });
     }
   }, [products]);
 
@@ -218,7 +224,10 @@ export function CategoryProductsView({ categorySlug }: CategoryProductsViewProps
                 <div className="flex justify-center items-center">
                   <div
                     className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"
-                    style={{ borderColor: '#650084', borderTopColor: 'transparent' }}
+                    style={{
+                      borderColor: '#650084',
+                      borderTopColor: 'transparent',
+                    }}
                   ></div>
                 </div>
               )}

@@ -43,20 +43,16 @@ const AllCategories = () => {
   const [showProducts, setShowProducts] = useState(false);
 
   // Use cached query for regular categories (top-level only)
-  const {
-    data: wpCategories = [],
-    isLoading: isLoadingWPCategories,
-  } = useCategories();
+  const { data: wpCategories = [], isLoading: isLoadingWPCategories } =
+    useCategories();
 
   // Get current parent ID from category path
   const currentParentId =
     categoryPath.length > 0 ? categoryPath[categoryPath.length - 1].id : 0;
 
   // Use cached query for subcategories
-  const {
-    data: subcategories = [],
-    isLoading: isLoadingSubcategories,
-  } = useSubCategories(currentParentId);
+  const { data: subcategories = [], isLoading: isLoadingSubcategories } =
+    useSubCategories(currentParentId);
 
   // Check if products are loading (for loading state management)
   const { isLoading: isLoadingProducts } = useInfiniteProductsByCategory(
