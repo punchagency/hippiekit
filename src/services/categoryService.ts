@@ -64,9 +64,7 @@ const httpGetJson = async <T>(url: string): Promise<T> => {
 
 export const fetchCategories = async (): Promise<Category[]> => {
   try {
-    const data = await httpGetJson<Category[]>(
-      `${WP_API_URL}/categories?per_page=100`
-    );
+    const data = await httpGetJson<Category[]>(`${WP_API_URL}/categories`);
 
     // Filter only top-level categories (parent === 0)
     const topLevelCategories = data.filter((cat) => cat.parent === 0);
@@ -106,7 +104,7 @@ export const fetchSubCategories = async (
 ): Promise<Category[]> => {
   try {
     const data = await httpGetJson<Category[]>(
-      `${WP_API_URL}/categories?parent=${parentId}&per_page=100`
+      `${WP_API_URL}/categories?parent=${parentId}`
     );
 
     const categoriesWithImages = await Promise.all(
@@ -295,11 +293,18 @@ export const searchCategoriesAndProducts = async (
 
 /**
  * Hook to fetch all categories with caching
+ * Categories are cached for 7 days since they rarely change
  */
 export const useCategories = (): UseQueryResult<Category[], Error> => {
   return useQuery({
     queryKey: ['categories'],
     queryFn: fetchCategories,
+    staleTime: Infinity, // Categories never go stale - they're static content
+    gcTime: Infinity, // Keep in cache forever
+    refetchOnMount: false, // Don't refetch on component mount
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    refetchOnReconnect: false, // Don't refetch on reconnect
+    networkMode: 'offlineFirst', // Use cache first, even if online
   });
 };
 
@@ -314,6 +319,11 @@ export const useSubCategories = (
     queryKey: ['categories', 'subcategories', parentId],
     queryFn: () => fetchSubCategories(parentId),
     enabled: !!parentId,
+    staleTime: Infinity, // Subcategories never go stale - they're static content
+    gcTime: 1000 * 60 * 60 * 24 * 30, // 30 days cache retention
+    refetchOnMount: false, // Don't refetch on component mount
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    refetchOnReconnect: false, // Don't refetch on reconnect
   });
 };
 
@@ -327,6 +337,8 @@ export const useProducts = (
   return useQuery({
     queryKey: ['products', perPage],
     queryFn: () => fetchProducts(perPage),
+    staleTime: 1000 * 60 * 5, // 5 minutes - fresh enough to show new products
+    gcTime: 1000 * 60 * 30, // 30 minutes cache retention
   });
 };
 
@@ -386,7 +398,8 @@ export const useSearchCategoriesAndProducts = (
  */
 export const useInfiniteProductsByCategory = (
   categorySlug: string,
-  perPage: number = 15
+  perPage: number = 15,
+  enabled: boolean = true
 ): UseInfiniteQueryResult<
   {
     products: Product[];
@@ -409,7 +422,7 @@ export const useInfiniteProductsByCategory = (
     },
     getNextPageParam: (lastPage) => lastPage.nextPage,
     initialPageParam: 1,
-    enabled: !!categorySlug,
+    enabled: !!categorySlug && enabled,
   });
 };
 

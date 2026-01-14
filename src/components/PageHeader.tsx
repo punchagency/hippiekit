@@ -9,15 +9,10 @@ import { NotificationIcon } from '@/assets/icons';
 
 interface PageHeaderProps {
   title: string;
-  /** Show a back button; defaults to true */
   showBack?: boolean;
-  /** Custom back handler; defaults to navigate(-1) */
   onBack?: () => void;
-  /** Show notifications button on the right */
   showNotification?: boolean;
-  /** Optional custom right-side content (overrides notification button) */
   rightSlot?: ReactNode;
-  /** Optional leading icon beside the title (e.g., favorites heart) */
   titleIconSrc?: string;
   className?: string;
 }
@@ -40,31 +35,52 @@ export const PageHeader = ({
 
   const handleNotifications = () => navigate('/notifications');
 
-  const renderSpacer = () => <div className="w-10" aria-hidden />;
+  const isLongTitle = title.length > 20;
 
   return (
-    <div
-      className={cn('flex items-center justify-between gap-3 mb-4', className)}
-    >
+    <div className={cn('flex items-center gap-3 mb-4', className)}>
       {showBack ? (
         <button
           onClick={handleBack}
-          className="rounded-[7px] p-2.5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]"
+          className="flex-shrink-0 rounded-[7px] p-2.5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]"
           aria-label="Go back"
         >
           <img src={backButton} alt="Back" />
         </button>
       ) : (
-        renderSpacer()
+        <div className="flex-shrink-0 w-10" aria-hidden />
       )}
 
-      <div className="flex items-center gap-2 mx-auto">
+      {/* TITLE */}
+      <div
+        className={cn(
+          'flex items-center gap-2 flex-1 min-w-0 overflow-hidden',
+          !isLongTitle && 'justify-center'
+        )}
+      >
         {titleIconSrc ? (
-          <img src={titleIconSrc} alt="" className="w-5 h-5" />
+          <img src={titleIconSrc} alt="" className="flex-shrink-0 w-5 h-5" />
         ) : null}
-        <span className="font-family-segoe text-primary text-[18px] font-bold text-center">
-          {title}
-        </span>
+
+        {isLongTitle ? (
+          <div className="overflow-hidden whitespace-nowrap flex-1 min-w-0">
+            <div className="flex w-max animate-marquee">
+              <span className="font-family-segoe text-primary text-[18px] font-bold mr-8">
+                {title}
+              </span>
+              <span
+                aria-hidden
+                className="font-family-segoe text-primary text-[18px] font-bold mr-8"
+              >
+                {title}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <span className="font-family-segoe text-primary text-[18px] font-bold text-center">
+            {title}
+          </span>
+        )}
       </div>
 
       {rightSlot ? (
@@ -72,13 +88,13 @@ export const PageHeader = ({
       ) : showNotification ? (
         <button
           onClick={handleNotifications}
-          className="rounded-[7px] p-2.5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]"
+          className="flex-shrink-0 rounded-[7px] p-2.5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]"
           aria-label="Notifications"
         >
           <NotificationIcon />
         </button>
       ) : (
-        renderSpacer()
+        <div className="flex-shrink-0 w-10" aria-hidden />
       )}
     </div>
   );

@@ -19,7 +19,7 @@ export const ScanningLoader = ({ isVisible }: ScanningLoaderProps) => {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-linear-to-br from-purple-900 via-indigo-900 to-blue-900 animate-gradient pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-linear-to-br from-purple-900 via-indigo-900 to-blue-900 animate-gradient">
       {/* Animated background */}
       <div className="absolute inset-0 overflow-hidden opacity-30">
         <div className="absolute top-0 left-0 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob" />

@@ -1,6 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import backButton from '@/assets/backButton.svg';
 import productResultsIcon from '@/assets/productResultsIcon.svg';
 import heartIcon from '@/assets/heartIcon.svg';
 import chemicalsIcon from '@/assets/chemicalsIcon.svg';
@@ -9,6 +8,7 @@ import productContainerIngIcon from '@/assets/productContainerIngIcon.svg';
 import aiIcon from '@/assets/aiIcon.svg';
 import type { VisionAnalysis } from '@/services/scanService';
 import { ProductResultInfoCard } from '@/components/ProductResultInfoCard';
+import { PageHeader } from '@/components/PageHeader';
 
 export default function VisionProductResults() {
   const location = useLocation();
@@ -81,24 +81,9 @@ export default function VisionProductResults() {
   }
 
   return (
-    <section className="relative pt-6 px-3 sm:px-5 md:mx-7 pb-20">
+    <section className="relative px-5 pt-6 pb-4 md:mx-7">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4 gap-2">
-        <button
-          onClick={() => navigate('/scan')}
-          className="rounded-[7px] p-2.5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex-shrink-0"
-        >
-          <img src={backButton} alt="Back" className="w-5 h-5" />
-        </button>
-
-        <div className="mt-10 flex p-2.5 items-center gap-[7px]">
-          <span className="font-family-segoe text-primary text-sm sm:text-[18px] font-bold whitespace-nowrap">
-            AI OCR Results
-          </span>
-        </div>
-
-        <div className="flex-shrink-0 w-9"></div>
-      </div>
+      <PageHeader title="AI OCR Results" />
 
       {/* Product Results Section Header */}
       <section className="rounded-[7px] px-3 sm:px-4 py-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex gap-2 items-center justify-center flex-wrap">

@@ -13,7 +13,7 @@ import { openExternalLink } from '@/utils/browserHelper';
 import { getValidToken } from '@/lib/auth';
 import { fetchProductById } from '@/services/productService';
 import { toast } from '@/lib/toast.tsx';
-import { stripHtml, decodeHtmlEntities } from '@/utils/textHelpers';
+import { decodeHtmlEntities } from '@/utils/textHelpers';
 import { PageHeader } from '@/components/PageHeader';
 
 // WPProduct type imported from categoryService for consistency
@@ -118,10 +118,8 @@ const ProductPage = () => {
   }
 
   const productTitle = decodeHtmlEntities(product.title?.rendered ?? 'Product');
-  const productDescription = stripHtml(
-    product.excerpt?.rendered ?? product.content?.rendered ?? ''
-  );
-  const buttonText = product.meta?.cta_button_text || 'Buy Now on Amazon';
+  const productDescriptionHtml =
+    product.excerpt?.rendered ?? product.content?.rendered ?? '';
   const buttonUrl = product.meta?.cta_button_url;
 
   return (
@@ -164,20 +162,24 @@ const ProductPage = () => {
 
         {/* Description */}
         <div className="bg-white rounded-[14px] p-4 mb-4">
-          <p className="font-roboto text-[14px] text-gray-700 leading-relaxed">
-            {productDescription}
-          </p>
+          <div
+            className="font-roboto text-[14px] text-gray-700 leading-relaxed [&_p]:space-y-3 [&_br]:block [&_br]:my-3"
+            dangerouslySetInnerHTML={{ __html: productDescriptionHtml }}
+            style={{
+              lineHeight: '1.8',
+            }}
+          />
         </div>
 
         {/* Product Link (WordPress) */}
-        <div className="bg-white rounded-[14px] p-4 mb-6">
+        {/* <div className="bg-white rounded-[14px] p-4 mb-6">
           <Button
             onClick={() => product.link && openExternalLink(product.link)}
             className="w-full bg-primary text-white font-semibold"
           >
             View Full Product
           </Button>
-        </div>
+        </div> */}
 
         {/* Buy/CTA Button */}
         {buttonUrl && (
@@ -185,7 +187,7 @@ const ProductPage = () => {
             onClick={() => openExternalLink(buttonUrl)}
             className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold"
           >
-            {buttonText}
+            Buy Now
           </Button>
         )}
       </div>

@@ -3,11 +3,10 @@ import {
   // takePicture,
   pickFromGallery,
 } from './lib/cameraService';
-import {
-  // scanImage,
-  identifyProduct,
-  lookupBarcode,
-} from './services/scanService';
+// import {
+//   // scanImage,
+//   identifyProduct,
+// } from './services/scanService';
 import { barcodeService } from './services/barcodeService';
 import logo from '@/assets/profileImgSample.jpg';
 import logoactual from '@/assets/logoUpdate.svg';
@@ -22,7 +21,6 @@ import {
 import { NotificationIcon } from './assets/icons';
 import { Categories } from './components/Categories';
 import { Products } from './components/Products';
-import { ScanningLoader } from './components/ScanningLoader';
 import HomeSidebar from './pages/HomeSidebar';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCategories, useProducts } from '@/services/categoryService';
@@ -35,18 +33,16 @@ import { useQueryClient } from '@tanstack/react-query';
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
-  const [isScanning, setIsScanning] = useState(false);
-  const [lastScannedBarcode, setLastScannedBarcode] = useState<string | null>(
-    null
-  );
   const queryClient = useQueryClient();
   const handleRefresh = useCallback(async () => {
+    // Only invalidate products on refresh, not categories
+    // Categories are long-lived and don't need frequent updates
     await queryClient.invalidateQueries({
       predicate: (query) => {
         const key = Array.isArray(query.queryKey)
           ? query.queryKey[0]
           : undefined;
-        return key === 'categories' || key === 'products';
+        return key === 'products';
       },
     });
   }, [queryClient]);
@@ -59,7 +55,6 @@ function App() {
   const { data: products = [], isLoading: isLoadingProducts } = useProducts(6); // Fetch 6 products
 
   console.log('Captured Photo URI:', capturedPhoto);
-  console.log('Is Scanning:', isScanning);
 
   // Transform categories for the Categories component
   const categoryProducts = categories.map((cat) => ({
@@ -85,45 +80,27 @@ function App() {
   // Handle barcode scanning
   const handleBarcodeScan = async () => {
     try {
-      setIsScanning(true);
-
       // Scan barcode using ML Kit
       const scanResult = await barcodeService.scanBarcode();
 
       if (!scanResult.success || !scanResult.barcode) {
         toast.error(scanResult.error || 'Failed to scan barcode');
-        setIsScanning(false);
         return;
       }
 
       console.log('Barcode scanned:', scanResult.barcode);
 
-      // Save the barcode for debugging
-      setLastScannedBarcode(scanResult.barcode);
-
-      // Look up product by barcode
-      const lookupResult = await lookupBarcode(scanResult.barcode);
-
-      if (lookupResult.success && lookupResult.found && lookupResult.product) {
-        // Navigate to barcode product results
-        navigate('/barcode-product-results', {
-          state: {
-            product: lookupResult.product,
-            barcode: scanResult.barcode,
-          },
-        });
-      } else {
-        // Product not found in barcode databases
-        toast.warning(
-          lookupResult.message ||
-            'Product not found in our database. Try scanning the product image instead.'
-        );
-      }
+      // Navigate immediately to results page - data will load there
+      navigate('/barcode-product-results', {
+        state: {
+          product: null, // Will be loaded on results page
+          barcode: scanResult.barcode,
+          isBasicData: true,
+        },
+      });
     } catch (error) {
       console.error('Error scanning barcode:', error);
       toast.error('Failed to scan barcode. Please try again.');
-    } finally {
-      setIsScanning(false);
     }
   };
 
@@ -141,36 +118,50 @@ function App() {
     const photo = await pickFromGallery();
     if (photo) {
       setCapturedPhoto(photo.webPath);
-      await handleIdentifyProduct(photo.webPath);
-    }
-  };
 
-  // Handle product identification with AI + Web search
-  const handleIdentifyProduct = async (imageUri: string) => {
-    try {
-      setIsScanning(true);
-      const result = await identifyProduct(imageUri);
-
-      console.log('Product identification result:', result);
-
-      // Navigate to product identification results
+      // Navigate immediately to results page - data will load there
       navigate('/product-identification-results', {
         state: {
-          result: result,
-          scannedImage: imageUri,
+          scannedImage: photo.webPath,
         },
       });
-    } catch (error) {
-      console.error('Error identifying product:', error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : 'Failed to identify product. Please try again.'
-      );
-    } finally {
-      setIsScanning(false);
     }
   };
+
+  // // Handle product identification with AI + Web search
+  // const handleIdentifyProduct = async (imageUri: string) => {
+  //   try {
+  //     const result = await identifyProduct(imageUri);
+
+  //     console.log('Product identification result:', result);
+
+  //     // Update the already-navigated page with results (or navigate if not already there)
+  //     // The results page will handle this via location state
+  //     navigate('/product-identification-results', {
+  //       state: {
+  //         result: result,
+  //         scannedImage: imageUri,
+  //         isLoading: false,
+  //       },
+  //       replace: true, // Replace current history entry
+  //     });
+  //   } catch (error) {
+  //     console.error('Error identifying product:', error);
+  //     // Navigate with error state
+  //     navigate('/product-identification-results', {
+  //       state: {
+  //         result: null,
+  //         scannedImage: imageUri,
+  //         isLoading: false,
+  //         error:
+  //           error instanceof Error
+  //             ? error.message
+  //             : 'Failed to identify product. Please try again.',
+  //       },
+  //       replace: true,
+  //     });
+  //   }
+  // };
 
   // // Handle scanning the image
   // const handleScanImage = async (imageUri: string) => {
@@ -208,7 +199,6 @@ function App() {
     <PullToRefresh onRefresh={handleRefresh}>
       <>
         <Toaster position="top-center" />
-        <ScanningLoader isVisible={isScanning} />
         <div className="relative min-h-full overflow-hidden">
           <HomeSidebar open={isSidebarOpen} onOpenChange={setIsSidebarOpen} />
 
@@ -269,119 +259,102 @@ function App() {
             </div>
 
             {/* Scan Button */}
-            <div className="rounded-[7px] px-3 sm:px-4 py-4 sm:py-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex flex-col gap-4 sm:gap-7.5 items-center justify-center">
-              <div className="flex flex-col gap-3 sm:gap-5 items-center justify-center">
-                <div className="bg-[#F5F5F5] rounded-[10px] flex w-[54px] h-[50px] sm:w-[64.198px] sm:h-[60px] p-2.5 flex-col justify-center items-center gap-2.5">
+            <div className="rounded-[7px] px-3 sm:px-4 py-4 sm:py-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex flex-col gap-3 sm:gap-7.5 items-center justify-center">
+              <div className="flex flex-col gap-2 sm:gap-5 items-center justify-center">
+                <div className="bg-[#F5F5F5] rounded-[10px] flex w-[48px] h-[48px] sm:w-[64.198px] sm:h-[60px] p-2 sm:p-2.5 flex-col justify-center items-center gap-2.5">
                   <ScanIcon />
                 </div>
-                <span className="font-family-segoe text-primary text-[16px] sm:text-[20px] font-bold capitalize text-center">
+                <span className="font-family-segoe text-primary text-[16px] sm:text-[20px] font-bold capitalize text-center px-2">
                   Scan Code or upload photo
                 </span>
               </div>
-              <div className="flex sm:flex-row gap-2 sm:gap-2.5 w-full font-family-poppins font-semibold text-sm sm:text-base">
+              <div className="flex flex-row gap-1.5 sm:gap-2.5 w-full font-family-poppins font-semibold text-xs sm:text-base">
                 <button
                   onClick={handleBarcodeScan}
-                  className="flex flex-1 p-2 justify-center items-center gap-2 sm:gap-4 rounded-md bg-primary"
+                  className="flex flex-1 px-1.5 py-2 sm:p-2 justify-center items-center gap-1 sm:gap-4 rounded-md bg-primary min-w-0"
                 >
-                  <QRIcon />
-                  <span className="text-white">Scan Barcode</span>
+                  <QRIcon className="shrink-0" />
+                  <span className="text-white truncate">Scan Barcode</span>
                 </button>
                 <button
                   onClick={handleBrowsePhoto}
-                  className="flex flex-1 p-2 justify-center items-center gap-2 sm:gap-4 border border-primary rounded-md bg-transparency"
+                  className="flex flex-1 px-1.5 py-2 sm:p-2 justify-center items-center gap-1 sm:gap-4 border border-primary rounded-md bg-transparency min-w-0"
                 >
-                  <CameraIcon />
-                  <span className="text-primary font-medium">Browse Photo</span>
+                  <CameraIcon className="shrink-0" />
+                  <span className="text-primary font-medium truncate">
+                    Browse Photo
+                  </span>
                 </button>
               </div>
             </div>
-
-            {/* Debug Card - Last Scanned Barcode */}
-            {lastScannedBarcode && (
-              <div className="mt-4 rounded-[7px] px-4 py-3 bg-yellow-50 border-2 border-yellow-300 shadow-md">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-xs font-semibold text-yellow-800 mb-1">
-                      Last Scanned Barcode:
-                    </p>
-                    <p className="text-lg font-bold text-yellow-900 font-mono">
-                      {lastScannedBarcode}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setLastScannedBarcode(null)}
-                    className="ml-2 p-2 text-yellow-700 hover:text-yellow-900"
-                    aria-label="Clear"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
-            )}
           </header>
 
           {/* Scrollable Content - Add padding-top to account for fixed header */}
-          <div className="pt-[calc(320px+env(safe-area-inset-top))] sm:pt-[calc(340px+env(safe-area-inset-top))]">
+          <div className="pt-[calc(300px+env(safe-area-inset-top))] sm:pt-[calc(340px+env(safe-area-inset-top))]">
             {/* Top Categories */}
-            <section className="mx-3 sm:mx-3.5 rounded-[7px] px-3 sm:px-4 py-4 sm:py-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex flex-col gap-4 sm:gap-7.5">
-              <div className="flex justify-between items-center">
-                <h2 className="text-primary font-family-segoe text-[16px] sm:text-[18px] font-bold capitalize">
+            <section className="mx-2 sm:mx-3.5 rounded-[7px] px-2 sm:px-4 py-3 sm:py-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex flex-col gap-3 sm:gap-7.5">
+              <div className="flex justify-between items-center gap-2">
+                <h2 className="text-primary font-family-segoe text-[14px] sm:text-[18px] font-bold capitalize">
                   Top Categories
                 </h2>
 
                 <button
-                  className="text-[#848484] underline text-sm sm:text-base"
-                  onClick={() => navigate('/all-categories')}
+                  className="text-[#848484] underline text-xs sm:text-base shrink-0"
+                  onClick={() => navigate('/categories')}
                 >
-                  <Link to="/all-categories">See all</Link>
+                  <Link to="/categories">See all</Link>
                 </button>
               </div>
               {isLoadingCategories ? (
-                <div className="grid grid-cols-4 gap-4 sm:gap-7.5 justify-items-center">
+                <div className="flex gap-5 sm:gap-4 overflow-x-auto scrollbar-hide pb-2 -mx-1 px-1">
                   {[...Array(4)].map((_, index) => (
                     <div
                       key={index}
-                      className="flex flex-col items-center gap-1.5 sm:gap-2 w-[55px] sm:w-[60px]"
+                      className="flex flex-col items-center gap-1 sm:gap-1.5 md:gap-2 shrink-0 w-20 sm:w-24"
                     >
-                      <div className="w-[55px] h-[55px] sm:w-[60px] sm:h-[60px] rounded-[10px] bg-primary/10 animate-pulse" />
-                      <div className="h-4 w-full bg-primary/10 rounded animate-pulse" />
-                      <div className="h-3 w-3/4 bg-primary/10 rounded animate-pulse" />
+                      <div className="w-full aspect-square rounded-[10px] bg-primary/10 animate-pulse" />
+                      <div className="h-3 sm:h-4 w-full bg-primary/10 rounded animate-pulse" />
+                      <div className="h-2 sm:h-3 w-3/4 bg-primary/10 rounded animate-pulse" />
                     </div>
                   ))}
                 </div>
               ) : categoryProducts.length > 0 ? (
-                <Categories
-                  topCat
-                  products={categoryProducts}
-                  selection="link"
-                />
+                <div className="flex gap-2 sm:gap-4 overflow-x-auto scrollbar-hide pb-2 -mx-1 px-1">
+                  <Categories
+                    topCat
+                    products={categoryProducts}
+                    selection="link"
+                  />
+                </div>
               ) : (
                 <div className="flex justify-center items-center py-8">
-                  <p className="text-gray-500">No categories available</p>
+                  <p className="text-gray-500 text-sm">
+                    No categories available
+                  </p>
                 </div>
               )}
             </section>
 
             {/* Products Grid */}
-            <section className="mx-3 sm:mx-3.5 mt-3 mb-20 rounded-[7px] px-3 sm:px-4 py-4 sm:py-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex flex-col gap-4 sm:gap-7.5">
-              <h2 className="text-primary font-family-segoe text-[16px] sm:text-[18px] font-bold capitalize">
+            <section className="mx-2 sm:mx-3.5 mt-3 mb-20 rounded-[7px] px-2 sm:px-4 py-3 sm:py-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex flex-col gap-3 sm:gap-7.5">
+              <h2 className="text-primary font-family-segoe text-[14px] sm:text-[18px] font-bold capitalize">
                 New Product Corner
               </h2>
 
               {isLoadingProducts ? (
-                <div className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide pb-2 -mx-1 px-1">
+                <div className="flex gap-2 sm:gap-4 overflow-x-auto scrollbar-hide pb-2 -mx-1 px-1">
                   {[...Array(3)].map((_, index) => (
                     <div
                       key={index}
-                      className="bg-white rounded-[13px] shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2 sm:p-2.5 flex flex-col gap-2 sm:gap-2.5 shrink-0 w-40 sm:w-[180px]"
+                      className="bg-white rounded-[13px] shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2 sm:p-2.5 flex flex-col gap-2 sm:gap-2.5 shrink-0 w-36 sm:w-[180px]"
                     >
-                      <div className="w-full h-[110px] sm:h-[127px] rounded-lg bg-primary/10 animate-pulse" />
+                      <div className="w-full h-[100px] sm:h-[127px] rounded-lg bg-primary/10 animate-pulse" />
                       <div className="flex flex-col gap-2 sm:gap-3.5">
-                        <div className="flex flex-col gap-1.5 sm:gap-2.5">
-                          <div className="h-4 w-3/4 bg-primary/10 rounded animate-pulse" />
-                          <div className="h-3 w-full bg-primary/10 rounded animate-pulse" />
+                        <div className="flex flex-col gap-1 sm:gap-2.5">
+                          <div className="h-3 sm:h-4 w-3/4 bg-primary/10 rounded animate-pulse" />
+                          <div className="h-2 sm:h-3 w-full bg-primary/10 rounded animate-pulse" />
                         </div>
-                        <div className="h-6 w-12 bg-primary/10 rounded-[5px] animate-pulse" />
+                        <div className="h-5 sm:h-6 w-10 sm:w-12 bg-primary/10 rounded-[5px] animate-pulse" />
                       </div>
                     </div>
                   ))}

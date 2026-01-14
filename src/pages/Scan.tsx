@@ -5,8 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { takePicture } from '@/lib/cameraService';
-import { lookupBarcode, identifyProduct } from '@/services/scanService';
-import { ScanningLoader } from '@/components/ScanningLoader';
+// Removed unused identifyProduct import
 import { barcodeService } from '@/services/barcodeService';
 import { Barcode, Sparkles } from 'lucide-react';
 import { toast } from '@/lib/toast.tsx';
@@ -14,8 +13,7 @@ import { PageHeader } from '@/components/PageHeader';
 
 export const Scan = () => {
   const navigate = useNavigate();
-  const [isScanning, setIsScanning] = useState(false);
-  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  // Removed unused capturedPhoto state
   const [manualBarcode, setManualBarcode] = useState('');
 
   // Handle manual barcode entry (for testing)
@@ -26,73 +24,46 @@ export const Scan = () => {
     }
 
     try {
-      setIsScanning(true);
       console.log('Manual barcode entered:', manualBarcode);
 
-      // Look up product by barcode
-      const lookupResult = await lookupBarcode(manualBarcode.trim());
-
-      if (lookupResult.success && lookupResult.found && lookupResult.product) {
-        // Navigate to barcode product results
-        navigate('/barcode-product-results', {
-          state: {
-            product: lookupResult.product,
-            barcode: manualBarcode.trim(),
-          },
-        });
-      } else {
-        toast.warning(
-          lookupResult.message ||
-            'Product not found in our database. Try a different barcode.'
-        );
-      }
+      // Navigate immediately to results page with loading state
+      navigate('/barcode-product-results', {
+        state: {
+          product: null, // Will be loaded on results page
+          barcode: manualBarcode.trim(),
+          isBasicData: true,
+        },
+      });
     } catch (error) {
-      console.error('Error looking up barcode:', error);
-      toast.error('Failed to lookup barcode. Please try again.');
-    } finally {
-      setIsScanning(false);
+      console.error('Error with manual barcode:', error);
+      toast.error('Failed to process barcode. Please try again.');
     }
   };
 
   // Handle barcode scanning
   const handleBarcodeScan = async () => {
     try {
-      setIsScanning(true);
-
       // Scan barcode using ML Kit
       const scanResult = await barcodeService.scanBarcode();
 
       if (!scanResult.success || !scanResult.barcode) {
         toast.error(scanResult.error || 'Failed to scan barcode');
-        setIsScanning(false);
         return;
       }
 
       console.log('Barcode scanned:', scanResult.barcode);
 
-      // Look up product by barcode
-      const lookupResult = await lookupBarcode(scanResult.barcode);
-
-      if (lookupResult.success && lookupResult.found && lookupResult.product) {
-        // Navigate to barcode product results
-        navigate('/barcode-product-results', {
-          state: {
-            product: lookupResult.product,
-            barcode: scanResult.barcode,
-          },
-        });
-      } else {
-        // Product not found in barcode databases
-        toast.warning(
-          lookupResult.message ||
-            'Product not found in our database. Try scanning the product image instead.'
-        );
-      }
+      // Navigate immediately to results page - data will load there
+      navigate('/barcode-product-results', {
+        state: {
+          product: null, // Will be loaded on results page
+          barcode: scanResult.barcode,
+          isBasicData: true,
+        },
+      });
     } catch (error) {
       console.error('Error scanning barcode:', error);
       toast.error('Failed to scan barcode. Please try again.');
-    } finally {
-      setIsScanning(false);
     }
   };
 
@@ -100,31 +71,30 @@ export const Scan = () => {
   const handleProductIdentification = async () => {
     try {
       const photo = await takePicture();
-      if (!photo?.webPath) return;
-      setCapturedPhoto(photo.webPath);
-      setIsScanning(true);
 
-      const result = await identifyProduct(photo.webPath);
+      if (!photo?.webPath) {
+        console.log('No photo captured');
+        return;
+      }
+
+      console.log('Photo captured, navigating with:', photo.webPath);
+
+      // Navigate immediately to results page - data will load there
       navigate('/product-identification-results', {
-        state: { result, scannedImage: photo.webPath },
+        state: {
+          scannedImage: photo.webPath,
+        },
       });
     } catch (e) {
       console.error('Product identification error:', e);
       if (e instanceof Error) {
         toast.error(e.message);
       } else {
-        toast.error('Failed to identify product. Please try again.');
+        toast.error('Failed to take photo. Please try again.');
       }
-    } finally {
-      setIsScanning(false);
-      setCapturedPhoto(null);
     }
   };
 
-  // Show scanning loader while processing
-  if (isScanning) {
-    return <ScanningLoader isVisible={isScanning} />;
-  }
   return (
     <header className="px-5 pt-6 pb-4">
       <PageHeader
@@ -140,7 +110,7 @@ export const Scan = () => {
       />
 
       <div className="h-[641px] flex flex-col gap-5 mt-4">
-        <img src={capturedPhoto || scanPhoto} alt="" />
+        <img src={scanPhoto} alt="" />
 
         <Button
           onClick={handleProductIdentification}

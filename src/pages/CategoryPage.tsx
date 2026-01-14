@@ -9,12 +9,13 @@ import OptionIcon from '@/assets/optionsIcon.svg';
 import { openExternalLink } from '@/utils/browserHelper';
 import { stripHtml, decodeHtmlEntities } from '@/utils/textHelpers';
 import { PageHeader } from '@/components/PageHeader';
-import { useCategory } from '@/context/CategoryContext';
+import { PullToRefresh } from '@/components/PullToRefresh';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function CategoryPage() {
   const { categoryName } = useParams();
   const navigate = useNavigate();
-  const { selectedCategory } = useCategory();
+  const queryClient = useQueryClient();
 
   // Use infinite scroll query
   const {
@@ -35,10 +36,8 @@ export default function CategoryPage() {
   // Intersection observer ref for infinite scroll
   const observerTarget = useRef<HTMLDivElement>(null);
 
-  // Use category name from context if available, otherwise parse slug
-  const displayCategoryName = selectedCategory
-    ? decodeHtmlEntities(selectedCategory.name)
-    : categoryName
+  // Parse slug to create display name
+  const displayCategoryName = categoryName
     ? categoryName
         .split('-')
         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
@@ -48,6 +47,13 @@ export default function CategoryPage() {
   const [currentProductIndex, setCurrentProductIndex] = useState(0);
   const [isImageFading, setIsImageFading] = useState(false);
   const [featuredProducts, setFeaturedProducts] = useState<typeof products>([]);
+
+  // Refresh handler
+  const handleRefresh = useCallback(async () => {
+    await queryClient.invalidateQueries({
+      queryKey: ['products-by-category', categoryName],
+    });
+  }, [queryClient, categoryName]);
 
   // Setup intersection observer for infinite scroll
   const handleObserver = useCallback(
@@ -117,152 +123,157 @@ export default function CategoryPage() {
   //   }
   // }, [currentProductIndex, featuredProducts]);
   return (
-    <div className="px-4">
-      <PageHeader title={displayCategoryName || 'Category'} />
-      {isLoadingProducts ? (
-        // Featured Products Loading Skeleton
-        <div className="w-full h-[408px] rounded-[14px] bg-white p-3.5 gap-4 flex flex-col">
-          <div className="rounded-[14px] p-3.5 flex flex-col gap-4 shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]">
-            <div className="relative h-[202px] w-full overflow-hidden rounded-[10px] bg-primary/10 animate-pulse" />
-
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="h-6 w-3/4 bg-primary/10 rounded animate-pulse mb-2" />
-                <div className="h-4 w-full bg-primary/10 rounded animate-pulse mb-1" />
-                <div className="h-4 w-5/6 bg-primary/10 rounded animate-pulse mb-1" />
-                <div className="h-4 w-4/6 bg-primary/10 rounded animate-pulse" />
-              </div>
-
-              <div className="w-6 h-6 bg-primary/10 rounded animate-pulse ml-2" />
-            </div>
-
-            <div className="h-12 w-full bg-primary/10 rounded-lg animate-pulse" />
-          </div>
-        </div>
-      ) : (
-        featuredProducts.length > 0 && (
+    <PullToRefresh onRefresh={handleRefresh}>
+      <div className=" px-5 pt-6 pb-4">
+        <PageHeader title={displayCategoryName || 'Category'} />
+        {isLoadingProducts ? (
+          // Featured Products Loading Skeleton
           <div className="w-full h-[408px] rounded-[14px] bg-white p-3.5 gap-4 flex flex-col">
             <div className="rounded-[14px] p-3.5 flex flex-col gap-4 shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]">
-              <div className="relative h-[202px] w-full overflow-hidden rounded-[10px]">
-                {/* Featured Product Image with Fade Effect */}
-                <div
-                  className={`w-full h-full transition-opacity duration-300 ${
-                    isImageFading ? 'opacity-0' : 'opacity-100'
-                  }`}
-                >
-                  <img
-                    src={
-                      featuredProducts[currentProductIndex]._embedded?.[
-                        'wp:featuredmedia'
-                      ]?.[0]?.source_url || profileSampleImage
-                    }
-                    alt={featuredProducts[currentProductIndex].title.rendered}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-
-                {/* Heart Icon */}
-                <button className="absolute top-2.5 right-3 bg-[rgba(255,255,255,0.3)] p-[5px] rounded-sm shadow-[0px_2px_16px_0px_rgba(6,51,54,0.1)] z-10">
-                  <img src={heartIconReg} alt="" />
-                </button>
-
-                {/* Progress Indicator */}
-                <div className="absolute bottom-2.5 left-1/2 transform -translate-x-1/2 flex gap-1 z-10">
-                  {featuredProducts.map((_: unknown, index: number) => (
-                    <div
-                      key={index}
-                      className={`h-1 rounded-full transition-all duration-300 ${
-                        index === currentProductIndex
-                          ? 'w-6 bg-secondary'
-                          : 'w-1 bg-gray-300'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
+              <div className="relative h-[202px] w-full overflow-hidden rounded-[10px] bg-primary/10 animate-pulse" />
 
               <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="text-primary text-[18px] font-family-segoe font-bold capitalize line-clamp-1">
-                    {featuredProducts[currentProductIndex].title.rendered}
-                  </h3>
-                  <p className="text-[14px] font-family-roboto line-clamp-3 mt-1">
-                    {stripHtml(
-                      featuredProducts[currentProductIndex].content.rendered
-                    )}
-                  </p>
+                <div className="flex-1">
+                  <div className="h-6 w-3/4 bg-primary/10 rounded animate-pulse mb-2" />
+                  <div className="h-4 w-full bg-primary/10 rounded animate-pulse mb-1" />
+                  <div className="h-4 w-5/6 bg-primary/10 rounded animate-pulse mb-1" />
+                  <div className="h-4 w-4/6 bg-primary/10 rounded animate-pulse" />
                 </div>
 
-                <button>
-                  <img src={OptionIcon} alt="" />
-                </button>
+                <div className="w-6 h-6 bg-primary/10 rounded animate-pulse ml-2" />
               </div>
 
-              <Button
-                onClick={() => {
-                  const link =
-                    featuredProducts[currentProductIndex]?.meta?.cta_button_url;
-                  if (link) {
-                    openExternalLink(link);
-                  } else {
-                    console.warn('No Amazon link available for this product');
-                  }
-                }}
-                className="font-semibold text-[16px] text-white"
-              >
-                Buy Now
-              </Button>
+              <div className="h-12 w-full bg-primary/10 rounded-lg animate-pulse" />
             </div>
           </div>
-        )
-      )}
-
-      <section className="mx-4.5 mt-4">
-        {isLoadingProducts ? (
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
-            {[...Array(4)].map((_, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-[13px] shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2 sm:p-2.5 flex flex-col gap-2 sm:gap-2.5 shrink-0 w-40 sm:w-[180px]"
-              >
-                <div className="w-full h-[110px] sm:h-[127px] rounded-lg bg-primary/10 animate-pulse" />
-                <div className="flex flex-col gap-2 sm:gap-3.5">
-                  <div className="flex flex-col gap-1.5 sm:gap-2.5">
-                    <div className="h-4 w-3/4 bg-primary/10 rounded animate-pulse" />
-                    <div className="h-3 w-full bg-primary/10 rounded animate-pulse" />
-                  </div>
-                  <div className="h-6 w-12 bg-primary/10 rounded-[5px] animate-pulse" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : productsGridData.length > 0 ? (
-          <>
-            <Products
-              data={productsGridData}
-              onProductClick={(productId) => navigate(`/products/${productId}`)}
-            />
-
-            {/* Infinite scroll trigger */}
-            <div ref={observerTarget} className="w-full py-4">
-              {isFetchingNextPage && (
-                <div className="flex justify-center items-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-                </div>
-              )}
-              {!hasNextPage && products.length > 0 && (
-                <div className="flex justify-center items-center">
-                  <p className="text-gray-500 text-sm">No more products</p>
-                </div>
-              )}
-            </div>
-          </>
         ) : (
-          <div className="flex justify-center items-center py-8">
-            <p className="text-gray-500">No products available</p>
-          </div>
+          featuredProducts.length > 0 && (
+            <div className="w-full h-[408px] rounded-[14px] bg-white p-3.5 gap-4 flex flex-col">
+              <div className="rounded-[14px] p-3.5 flex flex-col gap-4 shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]">
+                <div className="relative h-[202px] w-full overflow-hidden rounded-[10px]">
+                  {/* Featured Product Image with Fade Effect */}
+                  <div
+                    className={`w-full h-full transition-opacity duration-300 ${
+                      isImageFading ? 'opacity-0' : 'opacity-100'
+                    }`}
+                  >
+                    <img
+                      src={
+                        featuredProducts[currentProductIndex]._embedded?.[
+                          'wp:featuredmedia'
+                        ]?.[0]?.source_url || profileSampleImage
+                      }
+                      alt={featuredProducts[currentProductIndex].title.rendered}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+
+                  {/* Heart Icon */}
+                  <button className="absolute top-2.5 right-3 bg-[rgba(255,255,255,0.3)] p-[5px] rounded-sm shadow-[0px_2px_16px_0px_rgba(6,51,54,0.1)] z-10">
+                    <img src={heartIconReg} alt="" />
+                  </button>
+
+                  {/* Progress Indicator */}
+                  <div className="absolute bottom-2.5 left-1/2 transform -translate-x-1/2 flex gap-1 z-10">
+                    {featuredProducts.map((_: unknown, index: number) => (
+                      <div
+                        key={index}
+                        className={`h-1 rounded-full transition-all duration-300 ${
+                          index === currentProductIndex
+                            ? 'w-6 bg-secondary'
+                            : 'w-1 bg-gray-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="text-primary text-[18px] font-family-segoe font-bold capitalize line-clamp-1">
+                      {featuredProducts[currentProductIndex].title.rendered}
+                    </h3>
+                    <p className="text-[14px] font-family-roboto line-clamp-3 mt-1">
+                      {stripHtml(
+                        featuredProducts[currentProductIndex].content.rendered
+                      )}
+                    </p>
+                  </div>
+
+                  <button>
+                    <img src={OptionIcon} alt="" />
+                  </button>
+                </div>
+
+                <Button
+                  onClick={() => {
+                    const link =
+                      featuredProducts[currentProductIndex]?.meta
+                        ?.cta_button_url;
+                    if (link) {
+                      openExternalLink(link);
+                    } else {
+                      console.warn('No Amazon link available for this product');
+                    }
+                  }}
+                  className="font-semibold text-[16px] text-white"
+                >
+                  Buy Now
+                </Button>
+              </div>
+            </div>
+          )
         )}
-      </section>
-    </div>
+
+        <section className="mx-4.5 mt-4">
+          {isLoadingProducts ? (
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              {[...Array(4)].map((_, index) => (
+                <div
+                  key={index}
+                  className="bg-white rounded-[13px] shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2 sm:p-2.5 flex flex-col gap-2 sm:gap-2.5 shrink-0 w-40 sm:w-[180px]"
+                >
+                  <div className="w-full h-[110px] sm:h-[127px] rounded-lg bg-primary/10 animate-pulse" />
+                  <div className="flex flex-col gap-2 sm:gap-3.5">
+                    <div className="flex flex-col gap-1.5 sm:gap-2.5">
+                      <div className="h-4 w-3/4 bg-primary/10 rounded animate-pulse" />
+                      <div className="h-3 w-full bg-primary/10 rounded animate-pulse" />
+                    </div>
+                    <div className="h-6 w-12 bg-primary/10 rounded-[5px] animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : productsGridData.length > 0 ? (
+            <>
+              <Products
+                data={productsGridData}
+                onProductClick={(productId) =>
+                  navigate(`/products/${productId}`)
+                }
+              />
+
+              {/* Infinite scroll trigger */}
+              <div ref={observerTarget} className="w-full py-4">
+                {isFetchingNextPage && (
+                  <div className="flex justify-center items-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+                  </div>
+                )}
+                {!hasNextPage && products.length > 0 && (
+                  <div className="flex justify-center items-center">
+                    <p className="text-gray-500 text-sm">No more products</p>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="flex justify-center items-center py-8">
+              <p className="text-gray-500">No products available</p>
+            </div>
+          )}
+        </section>
+      </div>
+    </PullToRefresh>
   );
 }

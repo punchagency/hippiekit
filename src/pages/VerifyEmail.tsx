@@ -93,10 +93,10 @@ export default function VerifyEmail() {
 
           // Different messaging for web vs native
           if (platform === 'native') {
-            setMessage('Email verified successfully! You are now logged in.');
-            // Redirect to home after 2 seconds (user is already logged in on native)
+            setMessage('Email verified successfully! Taking you to login...');
+            // Redirect to login page after 2 seconds on native
             setTimeout(() => {
-              navigate('/', { replace: true });
+              navigate('/signin', { replace: true });
             }, 2000);
           } else {
             setMessage(

@@ -16,6 +16,7 @@ export interface AIGeneratedProduct {
   brand: string;
   description: string;
   type: 'ai_generated';
+  logo_url?: string;
 }
 
 export interface ProductRecommendations {
@@ -80,8 +81,12 @@ export interface BarcodeProduct {
       severity: 'critical' | 'high' | 'moderate' | 'low';
       why_flagged: string;
     }>;
+    safe_chemicals?: Array<{
+      name: string;
+      category: string;
+    }>;
     safety_score: number;
-    recommendations: {
+    recommendations?: {
       avoid: string[];
       look_for: string[];
       certifications: string[];
@@ -320,20 +325,24 @@ export const scanImageVision = async (
 };
 
 /**
- * Look up a product by barcode
+ * Look up a product by barcode (BASIC - fast initial load)
+ * Returns essential data only: name, brand, image, safety score
+ * Use this for initial page navigation, then call separate ingredient/packaging analysis
  */
-export const lookupBarcode = async (
+export const lookupBarcodeBasic = async (
   barcode: string
 ): Promise<BarcodeLookupResponse> => {
   try {
-    const response = await fetch(`${AI_SERVICE_URL}/lookup-barcode`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'ngrok-skip-browser-warning': 'true',
-      },
-      body: JSON.stringify({ barcode }),
-    });
+    const response = await fetch(
+      `${AI_SERVICE_URL}/barcode/lookup?barcode=${encodeURIComponent(barcode)}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+      }
+    );
 
     if (!response.ok) {
       const error = await response.json();
@@ -343,7 +352,7 @@ export const lookupBarcode = async (
     const result: BarcodeLookupResponse = await response.json();
     return result;
   } catch (error) {
-    console.error('Error looking up barcode:', error);
+    console.error('Error looking up barcode (basic):', error);
     throw error;
   }
 };
@@ -351,9 +360,13 @@ export const lookupBarcode = async (
 /**
  * Get product recommendations for a barcode-scanned product
  * This is called separately after the main barcode lookup to avoid slowing down initial results
+ *
+ * @param barcode - The product barcode
+ * @param productData - Optional pre-fetched product data to avoid redundant API calls
  */
 export const getBarcodeRecommendations = async (
-  barcode: string
+  barcode: string,
+  productData?: any
 ): Promise<ProductRecommendations | null> => {
   try {
     const response = await fetch(`${AI_SERVICE_URL}/barcode/recommendations`, {
@@ -362,7 +375,10 @@ export const getBarcodeRecommendations = async (
         'Content-Type': 'application/json',
         'ngrok-skip-browser-warning': 'true',
       },
-      body: JSON.stringify({ barcode }),
+      body: JSON.stringify({
+        barcode,
+        product_data: productData, // Pass product data to avoid redundant API call
+      }),
     });
 
     if (!response.ok) {
@@ -537,3 +553,175 @@ export const identifyProduct = async (
     throw error;
   }
 };
+
+// ===== MODULAR PHOTO IDENTIFICATION API (Progressive Loading) =====
+
+/**
+ * Step 1: Get basic product info from image (FAST - 1-2s)
+ */
+export const identifyProductBasic = async (imageUri: string) => {
+  try {
+    const response = await fetch(imageUri);
+    const blob = await response.blob();
+
+    const formData = new FormData();
+    formData.append('image', blob, 'product-photo.jpg');
+
+    const res = await fetch(`${AI_SERVICE_URL}/identify/product/basic`, {
+      method: 'POST',
+      headers: {
+        'ngrok-skip-browser-warning': 'true',
+      },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.detail || 'Failed to identify product');
+    }
+
+    return await res.json();
+  } catch (error) {
+    console.error('Error identifying product (basic):', error);
+    throw error;
+  }
+};
+
+/**
+ * Step 2: Separate ingredients into harmful/safe (FAST - 2-3s)
+ */
+export const separatePhotoIngredients = async (
+  productName: string,
+  brand: string,
+  category?: string
+) => {
+  try {
+    const formData = new FormData();
+    formData.append('product_name', productName);
+    formData.append('brand', brand);
+    if (category) formData.append('category', category);
+
+    const res = await fetch(`${AI_SERVICE_URL}/identify/ingredients/separate`, {
+      method: 'POST',
+      headers: {
+        'ngrok-skip-browser-warning': 'true',
+      },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.detail || 'Failed to separate ingredients');
+    }
+
+    return await res.json();
+  } catch (error) {
+    console.error('Error separating ingredients:', error);
+    throw error;
+  }
+};
+
+/**
+ * Step 3: Get AI descriptions for ingredients (SLOWER - 3-5s)
+ */
+export const describePhotoIngredients = async (
+  harmfulIngredients: string[],
+  safeIngredients: string[]
+) => {
+  try {
+    const formData = new FormData();
+    formData.append('harmful_ingredients', harmfulIngredients.join(','));
+    formData.append('safe_ingredients', safeIngredients.join(','));
+
+    const res = await fetch(`${AI_SERVICE_URL}/identify/ingredients/describe`, {
+      method: 'POST',
+      headers: {
+        'ngrok-skip-browser-warning': 'true',
+      },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.detail || 'Failed to describe ingredients');
+    }
+
+    return await res.json();
+  } catch (error) {
+    console.error('Error describing ingredients:', error);
+    throw error;
+  }
+};
+
+/**
+ * Step 4: Get packaging material names (FAST - 1-2s)
+ */
+export const separatePhotoPackaging = async (
+  productName: string,
+  brand: string,
+  category?: string
+) => {
+  try {
+    const formData = new FormData();
+    formData.append('product_name', productName);
+    formData.append('brand', brand);
+    if (category) formData.append('category', category);
+
+    const res = await fetch(`${AI_SERVICE_URL}/identify/packaging/separate`, {
+      method: 'POST',
+      headers: {
+        'ngrok-skip-browser-warning': 'true',
+      },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.detail || 'Failed to find packaging');
+    }
+
+    return await res.json();
+  } catch (error) {
+    console.error('Error finding packaging:', error);
+    throw error;
+  }
+};
+
+/**
+ * Step 5: Get detailed packaging analysis (SLOWER - 2-4s)
+ */
+export const describePhotoPackaging = async (
+  packagingText: string,
+  materials: string[],
+  brandName?: string,
+  productName?: string,
+  category?: string
+) => {
+  try {
+    const formData = new FormData();
+    formData.append('packaging_text', packagingText);
+    formData.append('materials', materials.join(','));
+    if (brandName) formData.append('brand_name', brandName);
+    if (productName) formData.append('product_name', productName);
+    if (category) formData.append('category', category);
+
+    const res = await fetch(`${AI_SERVICE_URL}/identify/packaging/describe`, {
+      method: 'POST',
+      headers: {
+        'ngrok-skip-browser-warning': 'true',
+      },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.detail || 'Failed to analyze packaging');
+    }
+
+    return await res.json();
+  } catch (error) {
+    console.error('Error analyzing packaging:', error);
+    throw error;
+  }
+};
+

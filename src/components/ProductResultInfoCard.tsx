@@ -8,6 +8,7 @@ type Props = {
   onTagClick?: (tag: string, description: string) => void;
   tagDescriptions?: Record<string, string>;
   tagColor?: 'red' | 'green';
+  isLoadingDescription?: boolean;
 };
 
 export const ProductResultInfoCard = ({
@@ -20,6 +21,7 @@ export const ProductResultInfoCard = ({
   onTagClick,
   tagDescriptions = {},
   tagColor,
+  isLoadingDescription = false,
 }: Props) => {
   const getTagColorClasses = () => {
     if (tagColor === 'red') {
@@ -29,6 +31,16 @@ export const ProductResultInfoCard = ({
       return 'text-[#4E6C34] border-[#4E6C34]';
     }
     return 'text-black border-[#DADADA]';
+  };
+
+  const getSpinnerColor = () => {
+    if (tagColor === 'red') {
+      return 'border-[#F35959]';
+    }
+    if (tagColor === 'green') {
+      return 'border-[#4E6C34]';
+    }
+    return 'border-primary';
   };
 
   return (
@@ -70,11 +82,20 @@ export const ProductResultInfoCard = ({
         <p className="font-family-segoe font-bold capitalize text-sm sm:text-base">
           {descTitle}
         </p>
-        <p className="mt-2 sm:mt-5 font-family-roboto text-xs sm:text-[14px] whitespace-pre-line break-words">
-          {typeof description === 'string'
-            ? description
-            : JSON.stringify(description)}
-        </p>
+        {isLoadingDescription ? (
+          <div className="mt-2 sm:mt-5 flex items-center justify-center gap-2 py-3">
+            <div
+              className={`w-4 h-4 border-2 ${getSpinnerColor()} border-t-transparent rounded-full animate-spin`}
+            ></div>
+            <span className="font-family-roboto text-xs sm:text-[14px]">
+              {description}
+            </span>
+          </div>
+        ) : (
+          <p className="mt-2 sm:mt-5 font-family-roboto text-xs sm:text-[14px] whitespace-pre-line break-words">
+            {description}
+          </p>
+        )}
       </div>
     </section>
   );

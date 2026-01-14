@@ -17,6 +17,7 @@ type Props = {
     categorySlug: string,
     hasSubcategories?: boolean
   ) => void;
+  onHoverCategory?: (categoryId: number) => void;
   onDeselectCategory?: () => void;
   categoryParam?: string;
   selection?: 'link' | 'filter' | 'hierarchical';
@@ -26,6 +27,7 @@ export const Categories = ({
   products,
   topCat,
   onCategoryClick,
+  onHoverCategory,
   onDeselectCategory,
   categoryParam,
   selection,
@@ -55,13 +57,26 @@ export const Categories = ({
     }
   };
 
+  const handleCategoryHover = (categoryId: number) => {
+    onHoverCategory?.(categoryId);
+  };
+
   return (
-    <div className="grid grid-cols-4 gap-4 sm:gap-7.5 justify-items-center">
+    <div
+      className={cn(
+        topCat
+          ? 'flex gap-5 sm:gap-4'
+          : 'grid grid-cols-2 min-[430px]:grid-cols-4 gap-3 sm:gap-4 md:gap-7.5 justify-items-center'
+      )}
+    >
       {displayProducts.map((category, index) => (
         <div
           key={index}
           className={cn(
-            'flex flex-col items-center opacity-100 gap-1.5 sm:gap-2 w-[55px] sm:w-[60px] font-family-Inter fade-in-up',
+            'flex flex-col items-center opacity-100 gap-1 sm:gap-1.5 md:gap-2 font-family-Inter fade-in-up cursor-pointer',
+            topCat
+              ? 'shrink-0 w-20 sm:w-24'
+              : 'w-full max-w-[80px] min-[430px]:max-w-[60px]',
             {
               'opacity-50':
                 topCat &&
@@ -74,8 +89,14 @@ export const Categories = ({
           )}
           style={{ animationDelay: `${index * 60}ms` }}
           onClick={() => handleCategoryClickInternal(category)}
+          onMouseEnter={() => handleCategoryHover(category.id)}
         >
-          <div className="w-[55px] h-[55px] sm:w-[60px] sm:h-[60px] rounded-[10px] overflow-hidden relative">
+          <div
+            className={cn(
+              'w-full aspect-square rounded-[10px] overflow-hidden relative',
+              !topCat && 'max-w-[80px] sm:max-w-[60px]'
+            )}
+          >
             {category.image ? (
               <img
                 src={category.image}
@@ -119,10 +140,10 @@ export const Categories = ({
               </button>
             )}
           </div>
-          <span className="text-[14px] sm:text-[16px] font-semibold line-clamp-2 text-center leading-tight sm:leading-4">
+          <span className="text-[11px] sm:text-[14px] md:text-[16px] font-semibold line-clamp-2 text-center leading-tight w-full">
             {category.name}
           </span>
-          <span className="text-[11px] sm:text-[13px] font-normal text-[#1D1D21]">
+          <span className="text-[9px] sm:text-[11px] md:text-[13px] font-normal text-[#1D1D21]">
             {category.items} Items
           </span>
         </div>

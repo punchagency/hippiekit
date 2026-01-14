@@ -15,6 +15,8 @@ import {
 import ProductInfo from '@/components/ProductInfo';
 import { PageHeader } from '@/components/PageHeader';
 import { decodeHtmlEntities } from '@/utils/textHelpers';
+import { PullToRefresh } from '@/components/PullToRefresh';
+
 const Favorites = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
@@ -38,32 +40,6 @@ const Favorites = () => {
 
   const categoryParam: string = searchParams.get('category') || '';
   const searchParam: string = searchParams.get('search') || '';
-
-  // Initialize search query from URL on mount
-  useEffect(() => {
-    setSearchQuery(searchParam);
-  }, [searchParam]);
-
-  // Load favorite categories
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        setIsLoadingCategories(true);
-        const response = await listFavoriteCategories();
-        if (response.success) {
-          setCategories(response.data);
-        } else {
-          setCategories([]);
-        }
-      } catch (error) {
-        console.error('Failed to load favorite categories:', error);
-        setCategories([]);
-      } finally {
-        setIsLoadingCategories(false);
-      }
-    };
-    loadCategories();
-  }, []); // Load categories once on mount
 
   // Load favorites function
   const loadFavorites = useCallback(
@@ -104,6 +80,39 @@ const Favorites = () => {
     },
     [categoryParam, searchQuery]
   );
+
+  // Refresh handler
+  const handleRefresh = useCallback(async () => {
+    setPage(1);
+    setHasMore(true);
+    await loadFavorites(1, true);
+  }, [loadFavorites]);
+
+  // Initialize search query from URL on mount
+  useEffect(() => {
+    setSearchQuery(searchParam);
+  }, [searchParam]);
+
+  // Load favorite categories
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        setIsLoadingCategories(true);
+        const response = await listFavoriteCategories();
+        if (response.success) {
+          setCategories(response.data);
+        } else {
+          setCategories([]);
+        }
+      } catch (error) {
+        console.error('Failed to load favorite categories:', error);
+        setCategories([]);
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+    loadCategories();
+  }, []); // Load categories once on mount
 
   // Load initial favorites when category or search changes
   useEffect(() => {
@@ -205,147 +214,151 @@ const Favorites = () => {
   }));
 
   return (
-    <header className="px-5 pt-6 pb-4">
-      <PageHeader
-        title="Favorites"
-        titleIconSrc={favoritesIcon}
-        showNotification
-      />
+    <PullToRefresh onRefresh={handleRefresh}>
+      <header className="px-5 pt-6 pb-4">
+        <PageHeader
+          title="Favorites"
+          titleIconSrc={favoritesIcon}
+          showNotification
+        />
 
-      {/* Search Bar */}
-      <div className="relative mb-4">
-        <div className="flex items-center gap-2">
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              placeholder="Search Here For Specific Item"
-              value={searchQuery}
-              onChange={(e) => {
-                const value = e.target.value;
-                setSearchQuery(value);
-                // Update URL params
-                const newParams: Record<string, string> = {};
-                if (categoryParam) newParams.category = categoryParam;
-                if (value.trim()) newParams.search = value.trim();
-                setSearchParams(newParams);
-              }}
-              className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:border-primary p-2.5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]"
-            />
-            <div className="absolute left-3 top-1/2 -translate-y-1/2">
-              <SearchIcon />
+        {/* Search Bar */}
+        <div className="relative mb-4">
+          <div className="flex items-center gap-2">
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                placeholder="Search Here For Specific Item"
+                value={searchQuery}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSearchQuery(value);
+                  // Update URL params
+                  const newParams: Record<string, string> = {};
+                  if (categoryParam) newParams.category = categoryParam;
+                  if (value.trim()) newParams.search = value.trim();
+                  setSearchParams(newParams);
+                }}
+                className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:border-primary p-2.5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]"
+              />
+              <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                <SearchIcon />
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <section className=" rounded-[7px] px-4 py-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex flex-col gap-7.5 ">
-        <div className="flex justify-between">
-          <h2 className="text-primary font-family-segoe text-[18px] font-bold capitalize">
-            Top Categories
-          </h2>
+        <section className=" rounded-[7px] px-4 py-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex flex-col gap-7.5 ">
+          <div className="flex justify-between">
+            <h2 className="text-primary font-family-segoe text-[18px] font-bold capitalize">
+              Top Categories
+            </h2>
 
-          <button
-            className="text-[#848484] underline text-sm sm:text-base"
-            onClick={() => navigate('/all-categories?from=favorites')}
-          >
-            See all
-          </button>
-        </div>
-
-        {isLoadingCategories ? (
-          <div className="grid grid-cols-4 gap-4 sm:gap-7.5 justify-items-center">
-            {[...Array(4)].map((_, index) => (
-              <div
-                key={index}
-                className="flex flex-col items-center gap-1.5 sm:gap-2 w-[55px] sm:w-[60px]"
-              >
-                <div className="w-[55px] h-[55px] sm:w-[60px] sm:h-[60px] rounded-[10px] bg-primary/10 animate-pulse" />
-                <div className="h-4 w-full bg-primary/10 rounded animate-pulse" />
-                <div className="h-3 w-3/4 bg-primary/10 rounded animate-pulse" />
-              </div>
-            ))}
-          </div>
-        ) : categoryProducts.length > 0 ? (
-          <Categories
-            topCat
-            categoryParam={categoryParam}
-            onCategoryClick={handleCategoryClick}
-            onDeselectCategory={handleDeselectCategory}
-            products={reorderedCategories}
-            selection="filter"
-          />
-        ) : (
-          <div className="flex justify-center items-center py-8">
-            <p className="text-gray-500">No categories available</p>
-          </div>
-        )}
-      </section>
-
-      <div className="mt-3.5 flex flex-col gap-2.5">
-        {isLoadingProducts ? (
-          <>
-            {[...Array(5)].map((_, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex gap-3"
-              >
-                {/* Image skeleton */}
-                <div className="w-[60px] h-[60px] rounded-lg bg-primary/10 animate-pulse" />
-
-                {/* Content skeleton */}
-                <div className="flex flex-col flex-1 gap-2">
-                  <div className="h-4 w-3/4 bg-primary/10 rounded animate-pulse" />
-                  <div className="h-3 w-full bg-primary/10 rounded animate-pulse" />
-                  <div className="h-3 w-5/6 bg-primary/10 rounded animate-pulse" />
-                </div>
-
-                {/* Heart icon skeleton */}
-                <div className="w-[22px] h-[22px] bg-primary/10 rounded-sm animate-pulse" />
-              </div>
-            ))}
-          </>
-        ) : productsGridData.length > 0 ? (
-          <>
-            {productsGridData.map((product, index) => (
-              <ProductInfo
-                key={`${product.id}-${index}`}
-                name={product.productName}
-                description={product.description}
-                img={product.image}
-                isFavorite={true}
-                onClick={() => navigate(`/products/${product.id}`)}
-                onToggleFavorite={() => handleToggleFavorite(product.id)}
-              />
-            ))}
-
-            {/* Infinite scroll trigger */}
-            <div
-              ref={observerTarget}
-              className="h-10 flex items-center justify-center"
+            <button
+              className="text-[#848484] underline text-sm sm:text-base"
+              onClick={() => navigate('/categories?from=favorites')}
             >
-              {isLoadingMore && (
-                <div className="w-full bg-white rounded-[13px] shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex gap-3">
+              See all
+            </button>
+          </div>
+
+          {isLoadingCategories ? (
+            <div className="flex gap-2 sm:gap-4 overflow-x-auto scrollbar-hide pb-2 -mx-1 px-1">
+              {[...Array(4)].map((_, index) => (
+                <div
+                  key={index}
+                  className="flex flex-col items-center gap-1 sm:gap-1.5 md:gap-2 shrink-0 w-20 sm:w-24"
+                >
+                  <div className="w-full aspect-square rounded-[10px] bg-primary/10 animate-pulse" />
+                  <div className="h-3 sm:h-4 w-full bg-primary/10 rounded animate-pulse" />
+                  <div className="h-2 sm:h-3 w-3/4 bg-primary/10 rounded animate-pulse" />
+                </div>
+              ))}
+            </div>
+          ) : categoryProducts.length > 0 ? (
+            <div className="flex gap-2 sm:gap-4 overflow-x-auto scrollbar-hide pb-2 -mx-1 px-1">
+              <Categories
+                topCat
+                categoryParam={categoryParam}
+                onCategoryClick={handleCategoryClick}
+                onDeselectCategory={handleDeselectCategory}
+                products={reorderedCategories}
+                selection="filter"
+              />
+            </div>
+          ) : (
+            <div className="flex justify-center items-center py-8">
+              <p className="text-gray-500">No categories available</p>
+            </div>
+          )}
+        </section>
+
+        <div className="mt-3.5 flex flex-col gap-2.5">
+          {isLoadingProducts ? (
+            <>
+              {[...Array(5)].map((_, index) => (
+                <div
+                  key={index}
+                  className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex gap-3"
+                >
+                  {/* Image skeleton */}
                   <div className="w-[60px] h-[60px] rounded-lg bg-primary/10 animate-pulse" />
+
+                  {/* Content skeleton */}
                   <div className="flex flex-col flex-1 gap-2">
                     <div className="h-4 w-3/4 bg-primary/10 rounded animate-pulse" />
                     <div className="h-3 w-full bg-primary/10 rounded animate-pulse" />
+                    <div className="h-3 w-5/6 bg-primary/10 rounded animate-pulse" />
                   </div>
+
+                  {/* Heart icon skeleton */}
                   <div className="w-[22px] h-[22px] bg-primary/10 rounded-sm animate-pulse" />
                 </div>
-              )}
+              ))}
+            </>
+          ) : productsGridData.length > 0 ? (
+            <>
+              {productsGridData.map((product, index) => (
+                <ProductInfo
+                  key={`${product.id}-${index}`}
+                  name={product.productName}
+                  description={product.description}
+                  img={product.image}
+                  isFavorite={true}
+                  onClick={() => navigate(`/products/${product.id}`)}
+                  onToggleFavorite={() => handleToggleFavorite(product.id)}
+                />
+              ))}
+
+              {/* Infinite scroll trigger */}
+              <div
+                ref={observerTarget}
+                className="h-10 flex items-center justify-center"
+              >
+                {isLoadingMore && (
+                  <div className="w-full bg-white rounded-[13px] shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex gap-3">
+                    <div className="w-[60px] h-[60px] rounded-lg bg-primary/10 animate-pulse" />
+                    <div className="flex flex-col flex-1 gap-2">
+                      <div className="h-4 w-3/4 bg-primary/10 rounded animate-pulse" />
+                      <div className="h-3 w-full bg-primary/10 rounded animate-pulse" />
+                    </div>
+                    <div className="w-[22px] h-[22px] bg-primary/10 rounded-sm animate-pulse" />
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="flex justify-center items-center py-8">
+              <p className="text-gray-500">
+                {searchQuery.trim()
+                  ? 'No products found'
+                  : 'No products available'}
+              </p>
             </div>
-          </>
-        ) : (
-          <div className="flex justify-center items-center py-8">
-            <p className="text-gray-500">
-              {searchQuery.trim()
-                ? 'No products found'
-                : 'No products available'}
-            </p>
-          </div>
-        )}
-      </div>
-    </header>
+          )}
+        </div>
+      </header>
+    </PullToRefresh>
   );
 };
 
