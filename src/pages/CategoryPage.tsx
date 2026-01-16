@@ -49,9 +49,9 @@ export default function CategoryPage() {
   // Parse slug to create display name
   const displayCategoryName = categoryName
     ? categoryName
-        .split('-')
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ')
+      .split('-')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
     : '';
 
   const [currentProductIndex, setCurrentProductIndex] = useState(0);
@@ -186,7 +186,7 @@ export default function CategoryPage() {
           <div className="px-5 mt-4">
             {/* Featured Skeleton */}
             <div className="relative rounded-3xl overflow-hidden bg-white shadow-lg">
-              <div className="h-[280px] bg-gradient-to-br from-primary/10 to-primary/5 animate-pulse" />
+              <div className="h-[280px] bg-linear-to-br from-primary/10 to-primary/5 animate-pulse" />
               <div className="p-5">
                 <div className="h-6 w-3/4 bg-primary/10 rounded-lg animate-pulse mb-3" />
                 <div className="h-4 w-full bg-primary/10 rounded animate-pulse mb-2" />
@@ -221,9 +221,8 @@ export default function CategoryPage() {
                   {/* Image Container */}
                   <div className="relative h-[280px] w-full overflow-hidden">
                     <div
-                      className={`w-full h-full transition-opacity duration-300 ${
-                        isImageFading ? 'opacity-0' : 'opacity-100'
-                      }`}
+                      className={`w-full h-full transition-opacity duration-300 ${isImageFading ? 'opacity-0' : 'opacity-100'
+                        }`}
                     >
                       <img
                         src={
@@ -237,7 +236,7 @@ export default function CategoryPage() {
                     </div>
 
                     {/* Gradient Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                    <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
 
                     {/* Favorite Button */}
                     <button
@@ -278,11 +277,10 @@ export default function CategoryPage() {
                               setIsImageFading(false);
                             }, 150);
                           }}
-                          className={`h-2 rounded-full transition-all duration-300 ${
-                            index === currentProductIndex
+                          className={`h-2 rounded-full transition-all duration-300 ${index === currentProductIndex
                               ? 'w-8 bg-white'
                               : 'w-2 bg-white/50 hover:bg-white/70'
-                          }`}
+                            }`}
                         />
                       ))}
                     </div>

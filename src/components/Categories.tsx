@@ -97,7 +97,7 @@ export const Categories = ({
                     }}
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
+                  <div className="w-full h-full bg-linear-to-br from-primary/20 to-primary/40 flex items-center justify-center">
                     <span className="text-primary font-bold text-lg">
                       {category.name.substring(0, 2).toUpperCase()}
                     </span>
@@ -105,7 +105,7 @@ export const Categories = ({
                 )}
 
                 {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/50 via-transparent to-transparent" />
 
                 {/* Deselect Button */}
                 {selection === 'filter' && isSelected && (
@@ -175,7 +175,7 @@ export const Categories = ({
                   }}
                 />
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-primary/10 via-primary/20 to-secondary/20 flex items-center justify-center">
+                <div className="w-full h-full bg-linear-to-br from-primary/10 via-primary/20 to-secondary/20 flex items-center justify-center">
                   <span className="text-primary/60 font-bold text-2xl">
                     {category.name.substring(0, 2).toUpperCase()}
                   </span>
@@ -183,7 +183,7 @@ export const Categories = ({
               )}
 
               {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+              <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/20 to-transparent" />
 
               {/* Category Name on Image */}
               <div className="absolute bottom-0 left-0 right-0 p-3">

@@ -129,7 +129,7 @@ export default function VerifyEmail() {
 
   return (
     <SafeAreaLayout>
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-purple-50 to-blue-50 px-4">
         <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
           {status === 'loading' && (
             <>

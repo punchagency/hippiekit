@@ -70,8 +70,8 @@ export default function VisionProductResults() {
   const packagingTags = packagingMaterial
     ? [packagingMaterial]
     : packagingType
-    ? [packagingType]
-    : [];
+      ? [packagingType]
+      : [];
 
   const packagingTagDescriptions: Record<string, string> = {};
   if (packagingMaterial) {
@@ -86,22 +86,24 @@ export default function VisionProductResults() {
       <PageHeader title="AI OCR Results" />
 
       {/* Product Results Section Header */}
-      <section className="rounded-[7px] px-3 sm:px-4 py-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex gap-2 items-center justify-center flex-wrap">
-        <img
-          src={productResultsIcon}
-          alt=""
-          className="w-5 h-5 flex-shrink-0"
-        />
-        <span className="font-family-segoe text-primary text-base sm:text-[18px] font-bold">
+      <section className="rounded-2xl px-4 py-4 bg-white shadow-sm flex gap-2.5 items-center justify-center">
+        <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+          <img
+            src={productResultsIcon}
+            alt=""
+            className="w-4 h-4"
+          />
+        </div>
+        <span className="font-family-segoe text-primary text-base sm:text-[17px] font-bold">
           Product Results
         </span>
       </section>
 
       {/* Main Product Card */}
-      <div className="mt-2.5 py-4 sm:py-5 px-3 sm:px-3.5 bg-white rounded-[13px] shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] flex flex-col gap-4 sm:gap-6 overflow-hidden">
+      <div className="mt-3 py-5 px-4 bg-white rounded-2xl shadow-sm flex flex-col gap-5 overflow-hidden">
         {/* Scanned Image */}
         {scannedImage && (
-          <div className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] overflow-hidden">
+          <div className="bg-white rounded-2xl w-full shadow-sm overflow-hidden border border-gray-100">
             <img
               src={scannedImage}
               alt="Scanned Product"
@@ -110,45 +112,44 @@ export default function VisionProductResults() {
           </div>
         )}
 
-        <div className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex gap-2 sm:gap-3 items-start">
+        <div className="bg-white rounded-2xl w-full shadow-sm border border-gray-100 p-3.5 flex gap-3 items-start">
           {/* Product Info */}
-          <div className="flex flex-col flex-1 gap-1 sm:gap-2 min-w-0">
+          <div className="flex flex-col flex-1 gap-1.5 min-w-0 py-0.5">
             {/* Product Name */}
-            <h3 className="font-roboto font-semibold text-sm sm:text-[16px] text-black capitalize leading-snug break-words">
+            <h3 className="font-family-segoe font-bold text-[15px] sm:text-base text-gray-900 capitalize leading-snug break-words">
               {analysis.product_info?.name || 'Unknown Product'}
             </h3>
             {/* Brand */}
             {analysis.product_info?.brand && (
-              <p className="font-roboto font-normal text-xs sm:text-[14px] text-[#4e4e4e] leading-normal truncate">
+              <p className="font-roboto font-normal text-xs sm:text-[13px] text-gray-500 leading-normal truncate">
                 {analysis.product_info.brand}
               </p>
             )}
             {/* Category */}
             {analysis.product_info?.category && (
-              <p className="font-roboto font-normal text-xs sm:text-[13px] text-[#888] leading-normal">
+              <p className="font-roboto font-normal text-[11px] sm:text-xs text-gray-400 leading-normal">
                 {analysis.product_info.category}
               </p>
             )}
           </div>
 
           {/* Favorite Button */}
-          <button className="w-5 h-5 sm:w-[22px] sm:h-[22px] bg-[rgba(255,255,255,0.3)] p-1 sm:p-[5px] rounded-sm shadow-[0px_2px_16px_0px_rgba(6,51,54,0.1)] flex-shrink-0">
-            <img src={heartIcon} alt="Favorite" className="w-full h-full" />
+          <button className="w-8 h-8 sm:w-9 sm:h-9 bg-primary/8 rounded-xl flex items-center justify-center hover:bg-primary/15 active:scale-95 transition-all flex-shrink-0">
+            <img src={heartIcon} alt="Favorite" className="w-4 h-4" />
           </button>
         </div>
 
         {/* Safety Score Badge */}
         {analysis.chemical_analysis?.safety_score !== null &&
           analysis.chemical_analysis?.safety_score !== undefined && (
-            <div className="flex items-center justify-center gap-3">
+            <div className="flex items-center justify-center">
               <div
-                className={`px-4 py-2 rounded-lg font-bold text-base sm:text-lg ${
-                  analysis.chemical_analysis.safety_score >= 70
-                    ? 'bg-green-100 text-green-800'
-                    : analysis.chemical_analysis.safety_score >= 40
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : 'bg-red-100 text-red-800'
-                }`}
+                className={`px-5 py-2.5 rounded-xl font-bold text-sm sm:text-base shadow-sm ${analysis.chemical_analysis.safety_score >= 70
+                  ? 'bg-[#F0F7EC] text-[#4E6C34] border border-[#4E6C34]/20'
+                  : analysis.chemical_analysis.safety_score >= 40
+                    ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                    : 'bg-[#FFF0F0] text-[#F35959] border border-[#F35959]/20'
+                  }`}
               >
                 Safety Score: {analysis.chemical_analysis.safety_score}/100
               </div>
@@ -165,11 +166,12 @@ export default function VisionProductResults() {
             tagColor="red"
             tagDescriptions={harmfulTagDescriptions}
             onTagClick={(tag) => setSelectedHarmful(tag)}
+            selectedTag={selectedHarmful}
             descTitle={selectedHarmful || 'Harmful Chemicals'}
             description={
               selectedHarmful && harmfulTagDescriptions[selectedHarmful]
                 ? String(harmfulTagDescriptions[selectedHarmful])
-                : 'Click on a chemical above to see why it may be harmful'
+                : 'Tap on a chemical above to see why it may be harmful'
             }
           />
         )}
@@ -177,7 +179,7 @@ export default function VisionProductResults() {
 
       {/* Clean Ingredients Section */}
       {safeTags.length > 0 && (
-        <section className="rounded-[7px] px-3 sm:px-4 py-4 sm:py-5 mt-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex gap-2 items-center justify-center overflow-hidden">
+        <section className="rounded-2xl px-4 py-5 mt-5 bg-white shadow-sm overflow-hidden">
           <ProductResultInfoCard
             icon={cleanIngredientsIcon}
             title="The clean, safe ingredients"
@@ -186,11 +188,12 @@ export default function VisionProductResults() {
             tagColor="green"
             tagDescriptions={safeTagDescriptions}
             onTagClick={(tag) => setSelectedSafe(tag)}
+            selectedTag={selectedSafe}
             descTitle={selectedSafe || 'Safe Ingredients'}
             description={
               selectedSafe && safeTagDescriptions[selectedSafe]
                 ? String(safeTagDescriptions[selectedSafe])
-                : 'Click on an ingredient above to learn more about it'
+                : 'Tap on an ingredient above to learn more about it'
             }
           />
         </section>
@@ -198,7 +201,7 @@ export default function VisionProductResults() {
 
       {/* Packaging Material Section */}
       {packagingTags.length > 0 && (
-        <section className="rounded-[7px] px-3 sm:px-4 py-4 sm:py-5 mt-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex gap-2 items-center justify-center overflow-hidden">
+        <section className="rounded-2xl px-4 py-5 mt-5 bg-white shadow-sm overflow-hidden">
           <ProductResultInfoCard
             icon={productContainerIngIcon}
             title="product container & packaging"
@@ -206,28 +209,31 @@ export default function VisionProductResults() {
             tags={packagingTags}
             tagDescriptions={packagingTagDescriptions}
             onTagClick={(tag) => setSelectedPackaging(tag)}
+            selectedTag={selectedPackaging}
             descTitle={selectedPackaging || 'Packaging Overview'}
             description={
               selectedPackaging && packagingTagDescriptions[selectedPackaging]
                 ? String(packagingTagDescriptions[selectedPackaging])
-                : 'Click on a material above to see details'
+                : 'Tap on a material above to see details'
             }
           />
         </section>
       )}
 
       {/* AI Note */}
-      <section className="mt-6 sm:mt-8 mb-20 p-3 sm:p-4 text-white font-family-roboto leading-6 rounded-[10px] bg-[#20799F]">
-        <header className="flex gap-2.5 font-medium text-base sm:text-[18px] items-center">
-          <img
-            src={aiIcon}
-            alt=""
-            className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0"
-          />
+      <section className="mt-8 mb-24 p-4 sm:p-5 text-white font-family-roboto leading-relaxed rounded-2xl bg-linear-to-br from-[#20799F] to-[#1a6585] shadow-lg">
+        <header className="flex gap-2.5 font-semibold text-[15px] sm:text-base items-center">
+          <div className="w-8 h-8 bg-white/15 rounded-xl flex items-center justify-center">
+            <img
+              src={aiIcon}
+              alt=""
+              className="w-4 h-4"
+            />
+          </div>
           <span>AI Note</span>
         </header>
 
-        <p className="mt-3.5 text-sm sm:text-base">
+        <p className="mt-3.5 text-[13px] sm:text-sm text-white/90">
           This analysis is based on AI vision OCR and may not be 100% accurate.
           Please verify ingredient information before making purchasing
           decisions.

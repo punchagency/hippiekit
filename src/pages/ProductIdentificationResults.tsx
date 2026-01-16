@@ -408,43 +408,45 @@ const ProductIdentificationResults = () => {
       <PageHeader title="Product Analysis" />
 
       {/* Product Results Section Header */}
-      <section className="rounded-[7px] px-3 sm:px-4 py-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex gap-2 items-center justify-center flex-wrap">
-        <img
-          src={productResultsIcon}
-          alt=""
-          className="w-5 h-5 flex-shrink-0"
-        />
-        <span className="font-family-segoe text-primary text-base sm:text-[18px] font-bold">
+      <section className="rounded-2xl px-4 py-4 bg-white shadow-sm flex gap-2.5 items-center justify-center">
+        <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+          <img
+            src={productResultsIcon}
+            alt=""
+            className="w-4 h-4"
+          />
+        </div>
+        <span className="font-family-segoe text-primary text-base sm:text-[17px] font-bold">
           Product Results
         </span>
       </section>
 
       {/* Main Product Card */}
       {loadingBasicData ? (
-        <div className="mt-2.5 py-4 sm:py-5 px-3 sm:px-3.5 bg-white rounded-[13px] shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] flex flex-col gap-4 sm:gap-6 overflow-hidden">
+        <div className="mt-3 py-5 px-4 bg-white rounded-2xl shadow-sm flex flex-col gap-5 overflow-hidden">
           {/* Image Skeleton */}
-          <div className="bg-gray-200 rounded-[13px] w-full h-64 animate-pulse"></div>
+          <div className="bg-primary/10 rounded-2xl w-full h-64 animate-pulse"></div>
 
           {/* Product Info Skeleton */}
-          <div className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex gap-2 sm:gap-3 items-start">
-            <div className="flex flex-col flex-1 gap-2 min-w-0">
-              <div className="h-5 bg-gray-200 rounded w-3/4 animate-pulse"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+          <div className="bg-white rounded-2xl w-full shadow-sm border border-gray-100 p-3.5 flex gap-3 items-start">
+            <div className="flex flex-col flex-1 gap-2 min-w-0 py-1">
+              <div className="h-5 bg-primary/10 rounded-lg w-3/4 animate-pulse"></div>
+              <div className="h-4 bg-primary/10 rounded-lg w-1/2 animate-pulse"></div>
             </div>
-            <div className="w-5 h-5 bg-gray-200 rounded animate-pulse"></div>
+            <div className="w-8 h-8 bg-primary/10 rounded-xl animate-pulse"></div>
           </div>
 
           {/* Loading Message */}
-          <div className="flex items-center justify-center gap-2 py-3">
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
-            <p className="text-sm text-gray-600">Analyzing product...</p>
+          <div className="flex items-center justify-center gap-2.5 py-3 bg-primary/5 rounded-xl">
+            <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"></div>
+            <p className="text-sm font-medium text-primary">Analyzing product...</p>
           </div>
         </div>
       ) : product ? (
-        <div className="mt-2.5 py-4 sm:py-5 px-3 sm:px-3.5 bg-white rounded-[13px] shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] flex flex-col gap-4 sm:gap-6 overflow-hidden">
+        <div className="mt-3 py-5 px-4 bg-white rounded-2xl shadow-sm flex flex-col gap-5 overflow-hidden">
           {/* Product Image */}
           {scannedImage && (
-            <div className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] overflow-hidden">
+            <div className="bg-white rounded-2xl w-full shadow-sm border border-gray-100 overflow-hidden">
               <img
                 src={scannedImage}
                 alt={product.product_name}
@@ -453,44 +455,44 @@ const ProductIdentificationResults = () => {
             </div>
           )}
 
-          <div className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex gap-2 sm:gap-3 items-start">
+          <div className="bg-white rounded-2xl w-full shadow-sm border border-gray-100 p-3.5 flex gap-3 items-start">
             {/* Product Info */}
-            <div className="flex flex-col flex-1 gap-1 sm:gap-2 min-w-0">
+            <div className="flex flex-col flex-1 gap-1.5 min-w-0 py-0.5">
               {/* Product Name */}
-              <h3 className="font-roboto font-semibold text-sm sm:text-[16px] text-black capitalize leading-snug break-words">
+              <h3 className="font-family-segoe font-bold text-[15px] sm:text-base text-gray-900 capitalize leading-snug break-words">
                 {product.product_name}
               </h3>
               {/* Brand */}
               {product.brand && (
-                <p className="font-roboto font-normal text-xs sm:text-[14px] text-[#4e4e4e] leading-normal truncate">
+                <p className="font-roboto font-normal text-xs sm:text-[13px] text-gray-500 leading-normal truncate">
                   {product.brand}
                 </p>
               )}
             </div>
 
             {/* Favorite Button */}
-            <button className="w-5 h-5 sm:w-[22px] sm:h-[22px] bg-[rgba(255,255,255,0.3)] p-1 sm:p-[5px] rounded-sm shadow-[0px_2px_16px_0px_rgba(6,51,54,0.1)] flex-shrink-0">
-              <img src={heartIcon} alt="Favorite" className="w-full h-full" />
+            <button className="w-8 h-8 sm:w-9 sm:h-9 bg-primary/8 rounded-xl flex items-center justify-center hover:bg-primary/15 active:scale-95 transition-all flex-shrink-0">
+              <img src={heartIcon} alt="Favorite" className="w-4 h-4" />
             </button>
           </div>
 
           {/* Harmful Chemicals Section */}
           {loadingIngredients ? (
             <div className="animate-fade-in-up mt-5">
-              <div className="rounded-[7px] px-3 sm:px-4 py-4 sm:py-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-5 h-5 bg-gray-200 rounded animate-pulse"></div>
-                  <div className="h-4 bg-gray-200 rounded w-48 animate-pulse"></div>
+              <div className="rounded-2xl px-4 py-5 bg-[#FFF] shadow-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-9 h-9 bg-[#F35959]/10 rounded-xl animate-pulse"></div>
+                  <div className="h-4 bg-primary/10 rounded-lg w-48 animate-pulse"></div>
                 </div>
-                <div className="flex flex-wrap gap-2 mb-3">
-                  <div className="h-6 bg-gray-200 rounded-full w-20 animate-pulse"></div>
-                  <div className="h-6 bg-gray-200 rounded-full w-24 animate-pulse"></div>
-                  <div className="h-6 bg-gray-200 rounded-full w-16 animate-pulse"></div>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <div className="h-8 bg-[#F35959]/10 rounded-lg w-20 animate-pulse"></div>
+                  <div className="h-8 bg-[#F35959]/10 rounded-lg w-24 animate-pulse"></div>
+                  <div className="h-8 bg-[#F35959]/10 rounded-lg w-16 animate-pulse"></div>
                 </div>
-                <div className="text-center py-3">
-                  <div className="inline-flex items-center gap-2 text-primary">
-                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                    <span className="text-sm font-medium">
+                <div className="rounded-xl bg-[#FFF0F0] p-4">
+                  <div className="flex items-center gap-2 py-2">
+                    <div className="w-4 h-4 border-2 border-[#F35959] border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-sm font-medium text-[#F35959]">
                       Analyzing ingredients with AI...
                     </span>
                   </div>
@@ -507,13 +509,14 @@ const ProductIdentificationResults = () => {
                 tagColor="red"
                 tagDescriptions={harmfulTagDescriptions}
                 onTagClick={(tag) => setSelectedHarmful(tag)}
+                selectedTag={selectedHarmful}
                 descTitle={selectedHarmful || 'Harmful Chemicals'}
                 description={
                   loadingDescriptions
                     ? 'Analyzing ingredients with AI...'
                     : selectedHarmful && harmfulTagDescriptions[selectedHarmful]
                       ? String(harmfulTagDescriptions[selectedHarmful])
-                      : 'Click on a chemical above to see why it may be harmful'
+                      : 'Tap on a chemical above to see why it may be harmful'
                 }
                 isLoadingDescription={loadingDescriptions}
               />
@@ -524,28 +527,28 @@ const ProductIdentificationResults = () => {
 
       {/* Clean Ingredients Section */}
       {loadingIngredients ? (
-        <section className="rounded-[7px] px-3 sm:px-4 py-4 sm:py-5 mt-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] animate-fade-in-up overflow-hidden">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-5 h-5 bg-gray-200 rounded animate-pulse"></div>
-            <div className="h-4 bg-gray-200 rounded w-56 animate-pulse"></div>
+        <section className="rounded-2xl px-4 py-5 mt-5 bg-[#FFF] shadow-sm animate-fade-in-up overflow-hidden">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-9 h-9 bg-[#4E6C34]/10 rounded-xl animate-pulse"></div>
+            <div className="h-4 bg-primary/10 rounded-lg w-56 animate-pulse"></div>
           </div>
-          <div className="flex flex-wrap gap-2 mb-3">
-            <div className="h-6 bg-gray-200 rounded-full w-24 animate-pulse"></div>
-            <div className="h-6 bg-gray-200 rounded-full w-20 animate-pulse"></div>
-            <div className="h-6 bg-gray-200 rounded-full w-28 animate-pulse"></div>
-            <div className="h-6 bg-gray-200 rounded-full w-16 animate-pulse"></div>
+          <div className="flex flex-wrap gap-2 mb-4">
+            <div className="h-8 bg-[#4E6C34]/10 rounded-lg w-24 animate-pulse"></div>
+            <div className="h-8 bg-[#4E6C34]/10 rounded-lg w-20 animate-pulse"></div>
+            <div className="h-8 bg-[#4E6C34]/10 rounded-lg w-28 animate-pulse"></div>
+            <div className="h-8 bg-[#4E6C34]/10 rounded-lg w-16 animate-pulse"></div>
           </div>
-          <div className="text-center py-3">
-            <div className="inline-flex items-center gap-2 text-green-600">
-              <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-sm font-medium">
+          <div className="rounded-xl bg-[#F0F7EC] p-4">
+            <div className="flex items-center gap-2 py-2">
+              <div className="w-4 h-4 border-2 border-[#4E6C34] border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-sm font-medium text-[#4E6C34]">
                 Identifying safe ingredients...
               </span>
             </div>
           </div>
         </section>
       ) : safeTags.length > 0 ? (
-        <section className="rounded-[7px] px-3 sm:px-4 py-4 sm:py-5 mt-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex gap-2 items-center justify-center overflow-hidden animate-fade-in-up">
+        <section className="rounded-2xl px-4 py-5 mt-5 bg-[#FFF] shadow-sm overflow-hidden animate-fade-in-up">
           <ProductResultInfoCard
             icon={cleanIngredientsIcon}
             title="The clean, safe ingredients"
@@ -554,13 +557,14 @@ const ProductIdentificationResults = () => {
             tagColor="green"
             tagDescriptions={safeTagDescriptions}
             onTagClick={(tag) => setSelectedSafe(tag)}
+            selectedTag={selectedSafe}
             descTitle={selectedSafe || 'Safe Ingredients'}
             description={
               loadingDescriptions
                 ? 'Analyzing ingredients with AI...'
                 : selectedSafe && safeTagDescriptions[selectedSafe]
                   ? String(safeTagDescriptions[selectedSafe])
-                  : 'Click on an ingredient above to learn more about it'
+                  : 'Tap on an ingredient above to learn more about it'
             }
             isLoadingDescription={loadingDescriptions}
           />
@@ -569,26 +573,26 @@ const ProductIdentificationResults = () => {
 
       {/* Packaging Material Section */}
       {loadingPackaging ? (
-        <section className="rounded-[7px] px-3 sm:px-4 py-4 sm:py-5 mt-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] animate-fade-in-up overflow-hidden">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-5 h-5 bg-gray-200 rounded animate-pulse"></div>
-            <div className="h-4 bg-gray-200 rounded w-60 animate-pulse"></div>
+        <section className="rounded-2xl px-4 py-5 mt-5 bg-[#FFF] shadow-sm animate-fade-in-up overflow-hidden">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-9 h-9 bg-primary/10 rounded-xl animate-pulse"></div>
+            <div className="h-4 bg-primary/10 rounded-lg w-60 animate-pulse"></div>
           </div>
-          <div className="flex flex-wrap gap-2 mb-3">
-            <div className="h-6 bg-gray-200 rounded-full w-20 animate-pulse"></div>
-            <div className="h-6 bg-gray-200 rounded-full w-24 animate-pulse"></div>
+          <div className="flex flex-wrap gap-2 mb-4">
+            <div className="h-8 bg-primary/10 rounded-lg w-20 animate-pulse"></div>
+            <div className="h-8 bg-primary/10 rounded-lg w-24 animate-pulse"></div>
           </div>
-          <div className="text-center py-3">
-            <div className="inline-flex items-center gap-2 text-blue-600">
-              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-sm font-medium">
+          <div className="rounded-xl bg-[#F5F0F7] p-4">
+            <div className="flex items-center gap-2 py-2">
+              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-sm font-medium text-primary">
                 Analyzing packaging materials...
               </span>
             </div>
           </div>
         </section>
       ) : packagingTags.length > 0 ? (
-        <section className="rounded-[7px] px-3 sm:px-4 py-4 sm:py-5 mt-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex gap-2 items-center justify-center overflow-hidden animate-fade-in-up">
+        <section className="rounded-2xl px-4 py-5 mt-5 bg-[#FFF] shadow-sm overflow-hidden animate-fade-in-up">
           <ProductResultInfoCard
             icon={productContainerIngIcon}
             title="product container & packaging"
@@ -609,6 +613,7 @@ const ProductIdentificationResults = () => {
             }
             tagDescriptions={packagingTagDescriptions}
             onTagClick={(tag) => setSelectedPackaging(tag)}
+            selectedTag={selectedPackaging}
             descTitle={selectedPackaging || 'Packaging Overview'}
             description={
               loadingPackagingDescriptions
@@ -618,7 +623,7 @@ const ProductIdentificationResults = () => {
                   ? String(packagingTagDescriptions[selectedPackaging])
                   : packagingAnalysis?.summary
                     ? String(packagingAnalysis.summary)
-                    : 'Click on a material above to see details'
+                    : 'Tap on a material above to see details'
             }
             isLoadingDescription={loadingPackagingDescriptions}
           />
@@ -626,30 +631,28 @@ const ProductIdentificationResults = () => {
       ) : null}
 
       {/* Hippiekit Product Recommendations */}
-      <section className="mt-5">
+      <section className="mt-6">
         {loadingRecommendations ? (
-          // Loading skeleton matching BarcodeProductResults
+          // Loading skeleton
           <div className="animate-pulse">
-            <div className="text-center py-4 mb-3.5">
-              <div className="inline-flex items-center gap-2 text-primary">
-                <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                <span className="font-family-roboto text-base sm:text-[18px] font-medium">
-                  Providing Similar Alternatives
-                </span>
-              </div>
+            <div className="flex items-center justify-center gap-2.5 py-4 mb-4 bg-white rounded-2xl">
+              <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <span className="font-family-roboto text-[15px] sm:text-base font-medium text-primary">
+                Finding Similar Alternatives
+              </span>
             </div>
-            <div className="flex flex-col gap-2.5">
+            <div className="flex flex-col gap-3">
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="bg-white rounded-[13px] p-2.5 flex gap-3"
+                  className="bg-white rounded-2xl p-3.5 flex gap-3 shadow-sm"
                 >
-                  <div className="w-[60px] h-[60px] bg-gray-200 rounded"></div>
-                  <div className="flex-1 flex flex-col gap-2">
-                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                    <div className="h-3 bg-gray-200 rounded w-full"></div>
+                  <div className="w-16 h-16 bg-primary/10 rounded-xl"></div>
+                  <div className="flex-1 flex flex-col gap-2 py-1">
+                    <div className="h-4 bg-primary/10 rounded-lg w-3/4"></div>
+                    <div className="h-3 bg-primary/10 rounded w-full"></div>
                   </div>
-                  <div className="w-20 h-9 bg-gray-200 rounded"></div>
+                  <div className="w-20 h-9 bg-[#00A23E]/10 rounded-xl"></div>
                 </div>
               ))}
             </div>
@@ -660,31 +663,32 @@ const ProductIdentificationResults = () => {
           <div>
             {/* WordPress Products */}
             {recommendations.products.length > 0 && (
-              <div className="mb-5">
-                <header className="font-family-roboto text-base sm:text-[18px] font-medium mb-3.5">
+              <div className="mb-6">
+                <header className="font-family-segoe text-[15px] sm:text-base font-bold text-gray-800 mb-3.5 flex items-center gap-2">
+                  <div className="w-1.5 h-5 bg-[#00A23E] rounded-full"></div>
                   Hippiekit Vetted Swaps
                 </header>
-                <div className="flex flex-col gap-2.5">
+                <div className="flex flex-col gap-3">
                   {recommendations.products.map((product) => (
                     <div
                       key={product.id}
-                      className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex flex-col sm:flex-row gap-2 sm:gap-3 items-start sm:items-center overflow-hidden"
+                      className="bg-white rounded-2xl w-full shadow-sm p-3.5 flex flex-col sm:flex-row gap-3 items-start sm:items-center overflow-hidden hover:shadow-md active:scale-[0.99] transition-all"
                     >
                       <img
                         src={product.image_url}
                         alt={product.name}
-                        className="w-14 h-14 sm:w-[60px] sm:h-[60px] object-cover rounded-lg flex-shrink-0"
+                        className="w-16 h-16 sm:w-[68px] sm:h-[68px] object-cover rounded-xl flex-shrink-0"
                       />
 
-                      <div className="flex flex-col flex-1 gap-1 min-w-0">
-                        <h3 className="font-roboto font-semibold text-sm sm:text-[16px] text-black capitalize leading-snug break-words">
+                      <div className="flex flex-col flex-1 gap-1.5 min-w-0">
+                        <h3 className="font-family-segoe font-bold text-[14px] sm:text-[15px] text-gray-900 capitalize leading-snug break-words">
                           {product.name}
                         </h3>
-                        <p className="font-roboto font-normal text-xs sm:text-[14px] text-[#4e4e4e] leading-normal line-clamp-2">
+                        <p className="font-roboto font-normal text-xs sm:text-[13px] text-gray-500 leading-relaxed line-clamp-2">
                           {product.description}
                         </p>
                         {product.price && (
-                          <span className="font-roboto text-xs sm:text-[14px] font-semibold text-[#00A23E]">
+                          <span className="font-roboto text-xs sm:text-[13px] font-bold text-[#00A23E]">
                             {product.price}
                           </span>
                         )}
@@ -692,7 +696,7 @@ const ProductIdentificationResults = () => {
 
                       <Button
                         onClick={() => window.open(product.permalink, '_blank')}
-                        className="bg-[#00A23E] text-white px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm hover:bg-[#008f35] transition-colors flex-shrink-0 whitespace-nowrap"
+                        className="bg-[#00A23E] text-white px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-xl hover:bg-[#008f35] active:scale-95 transition-all flex-shrink-0 whitespace-nowrap shadow-sm"
                       >
                         Buy now
                       </Button>
@@ -705,28 +709,29 @@ const ProductIdentificationResults = () => {
             {/* AI-Generated Alternatives */}
             {recommendations.ai_alternatives.length > 0 && (
               <div>
-                <header className="font-family-roboto text-base sm:text-[18px] font-medium mb-3.5 flex items-center gap-2">
-                  Healthier Eco-Friendly Recommendation
-                  <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-purple-100 to-blue-100 rounded-full">
-                    <img src={aiIcon} alt="AI" className="w-4 h-4" />
-                    <span className="text-xs font-semibold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <header className="font-family-segoe text-[15px] sm:text-base font-bold text-gray-800 mb-3.5 flex items-center gap-2">
+                  <div className="w-1.5 h-5 bg-[#20799F] rounded-full"></div>
+                  Healthier Eco-Friendly Alternatives
+                  <div className="flex items-center gap-1 px-2 py-1 bg-linear-to-r from-primary/10 to-[#20799F]/10 rounded-full">
+                    <img src={aiIcon} alt="AI" className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-bold bg-linear-to-r from-primary to-[#20799F] bg-clip-text text-transparent">
                       AI
                     </span>
                   </div>
                 </header>
-                <div className="flex flex-col gap-2.5">
+                <div className="flex flex-col gap-3">
                   {recommendations.ai_alternatives.map((alt, index) => (
                     <div
                       key={index}
                       onClick={() => setSelectedAIAlternative(alt)}
-                      className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex flex-col sm:flex-row gap-2 sm:gap-3 items-start sm:items-center overflow-hidden cursor-pointer hover:shadow-[0px_2px_15px_0px_rgba(0,0,0,0.22)] transition-shadow"
+                      className="bg-white rounded-2xl w-full shadow-sm p-3.5 flex flex-col sm:flex-row gap-3 items-start sm:items-center overflow-hidden cursor-pointer hover:shadow-md active:scale-[0.99] transition-all border border-transparent hover:border-[#20799F]/20"
                     >
-                      <div className="w-14 h-14 sm:w-[60px] sm:h-[60px] bg-gradient-to-br from-[#00A23E] to-[#20799F] rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      <div className="w-16 h-16 sm:w-[68px] sm:h-[68px] bg-linear-to-br from-[#00A23E] to-[#20799F] rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden shadow-sm">
                         {alt.logo_url ? (
                           <img
                             src={alt.logo_url}
                             alt={`${alt.brand} logo`}
-                            className="w-full h-full object-contain p-1"
+                            className="w-full h-full object-contain p-1.5"
                             onError={(e) => {
                               // Fallback to emoji if image fails to load
                               const target = e.target as HTMLImageElement;
@@ -734,27 +739,34 @@ const ProductIdentificationResults = () => {
                               const parent = target.parentElement;
                               if (parent) {
                                 parent.innerHTML =
-                                  '<span class="text-white font-bold text-lg sm:text-xl">🌱</span>';
+                                  '<span class="text-white font-bold text-2xl">🌱</span>';
                               }
                             }}
                           />
                         ) : (
-                          <span className="text-white font-bold text-lg sm:text-xl">
+                          <span className="text-white font-bold text-2xl">
                             🌱
                           </span>
                         )}
                       </div>
 
                       <div className="flex flex-col flex-1 gap-1 min-w-0">
-                        <h3 className="font-roboto font-semibold text-sm sm:text-[16px] text-black leading-snug break-words">
+                        <h3 className="font-family-segoe font-bold text-[14px] sm:text-[15px] text-gray-900 leading-snug break-words">
                           {alt.name}
                         </h3>
-                        <p className="font-roboto text-xs sm:text-[12px] font-medium text-[#00A23E]">
+                        <p className="font-roboto text-xs font-semibold text-[#00A23E]">
                           {alt.brand}
                         </p>
-                        <p className="font-roboto font-normal text-xs sm:text-[13px] text-[#4e4e4e] leading-normal line-clamp-2">
+                        <p className="font-roboto font-normal text-xs sm:text-[12px] text-gray-500 leading-relaxed line-clamp-2">
                           {alt.description}
                         </p>
+                      </div>
+
+                      {/* Tap indicator */}
+                      <div className="hidden sm:flex w-8 h-8 rounded-xl bg-[#20799F]/10 items-center justify-center flex-shrink-0">
+                        <svg className="w-4 h-4 text-[#20799F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
                       </div>
                     </div>
                   ))}
@@ -804,7 +816,7 @@ const ProductIdentificationResults = () => {
             <div className="p-5 flex flex-col gap-4">
               {/* Logo/Image */}
               <div className="w-full flex justify-center">
-                <div className="w-32 h-32 bg-gradient-to-br from-[#00A23E] to-[#20799F] rounded-2xl flex items-center justify-center overflow-hidden shadow-lg">
+                <div className="w-32 h-32 bg-linear-to-br from-[#00A23E] to-[#20799F] rounded-2xl flex items-center justify-center overflow-hidden shadow-lg">
                   {selectedAIAlternative.logo_url ? (
                     <img
                       src={selectedAIAlternative.logo_url}
@@ -870,19 +882,21 @@ const ProductIdentificationResults = () => {
 
       {/* AI Note - Only show if we have AI-generated recommendations */}
       {recommendations && recommendations.ai_alternatives.length > 0 && (
-        <section className="mt-6 sm:mt-8 mb-20 p-3 sm:p-4 text-white font-family-roboto leading-6 rounded-[10px] bg-[#20799F]">
-          <header className="flex gap-2.5 font-medium text-base sm:text-[18px] items-center">
-            <img
-              src={aiIcon}
-              alt=""
-              className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0"
-            />
+        <section className="mt-8 mb-24 p-4 sm:p-5 text-white font-family-roboto leading-relaxed rounded-2xl bg-linear-to-br from-[#20799F] to-[#1a6585] shadow-lg">
+          <header className="flex gap-2.5 font-semibold text-[15px] sm:text-base items-center">
+            <div className="w-8 h-8 bg-white/15 rounded-xl flex items-center justify-center">
+              <img
+                src={aiIcon}
+                alt=""
+                className="w-4 h-4"
+              />
+            </div>
             <span>AI Note</span>
           </header>
 
-          <p className="mt-3.5 text-sm sm:text-base">
-            These products have not been researched by Hippiekit yet, please
-            research before purchasing.
+          <p className="mt-3.5 text-[13px] sm:text-sm text-white/90">
+            These products have not been researched by Hippiekit yet. Please
+            research before purchasing to ensure they meet your standards.
           </p>
         </section>
       )}
