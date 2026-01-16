@@ -14,6 +14,13 @@ const config: CapacitorConfig = {
       style: 'dark',
       resizeOnFullScreen: true,
     },
+    StatusBar: {
+      style: 'DARK',
+      backgroundColor: '#f5f5f5'
+    },
+  },
+  ios: {
+    backgroundColor: '#f5f5f5'
   },
   // Live reload on device: serve from your LAN Vite dev server
   // Comment out for production builds

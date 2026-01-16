@@ -326,7 +326,7 @@ const AllCategories = () => {
       hasSubcategories: subcategories.length > 0,
     });
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen pt-[env(safe-area-inset-top)]">
         <div
           className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"
           style={{ borderColor: '#650084', borderTopColor: 'transparent' }}
@@ -342,7 +342,7 @@ const AllCategories = () => {
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
-      <section className="relative px-5 pt-6 pb-4">
+      <section className="relative px-5 pb-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1.5rem)' }}>
         <PageHeader
           title={pageTitle}
           onBack={

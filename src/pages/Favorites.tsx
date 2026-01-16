@@ -125,7 +125,7 @@ const Favorites = () => {
   const handleCategoryClick = (
     _categoryId: number,
     categorySlug: string,
-    _hasSubcategories?: boolean
+    // _hasSubcategories?: boolean
   ) => {
     const newParams: Record<string, string> = { category: categorySlug };
     if (searchQuery.trim()) newParams.search = searchQuery.trim();
@@ -183,9 +183,9 @@ const Favorites = () => {
   // Reorder categories to show selected category first
   const reorderedCategories = categoryParam
     ? [
-        ...categoryProducts.filter((cat) => cat.slug === categoryParam),
-        ...categoryProducts.filter((cat) => cat.slug !== categoryParam),
-      ]
+      ...categoryProducts.filter((cat) => cat.slug === categoryParam),
+      ...categoryProducts.filter((cat) => cat.slug !== categoryParam),
+    ]
     : categoryProducts;
 
   // Handle removing favorite

@@ -197,7 +197,7 @@ export const Scan = () => {
   };
 
   return (
-    <div className="min-h-screen pb-24">
+    <div className="min-h-screen pt-safe pb-safe-nav">
       {/* Module Install Modal for Android */}
       <ModuleInstallModal
         isOpen={moduleModalOpen}

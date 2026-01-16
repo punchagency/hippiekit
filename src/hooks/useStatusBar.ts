@@ -8,16 +8,13 @@ export const useStatusBar = () => {
       if (!Capacitor.isNativePlatform()) return;
 
       try {
-        // 1️⃣ IMPORTANT: prevent overlap FIRST
-        await StatusBar.setOverlaysWebView({ overlay: false });
+        // Enable edge-to-edge: content goes behind status bar
+        await StatusBar.setOverlaysWebView({ overlay: true });
 
-        // 2️⃣ Set background color
-        await StatusBar.setBackgroundColor({ color: 'purple' });
-
-        // 3️⃣ Set correct icon style for dark background
+        // Dark style = dark icons for light backgrounds
         await StatusBar.setStyle({ style: Style.Dark });
 
-        // 4️⃣ Ensure it's visible
+        // Ensure it's visible
         await StatusBar.show();
       } catch (error) {
         console.error('Error setting up status bar:', error);
