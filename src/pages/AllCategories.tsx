@@ -20,6 +20,7 @@ import {
   buildCategoryPath,
   buildCategoryUrl,
 } from '@/utils/categoryPath';
+import { SearchIcon } from '@/assets/homeIcons';
 
 const AllCategories = () => {
   const navigate = useNavigate();
@@ -32,15 +33,10 @@ const AllCategories = () => {
   const slugs = parseCategoryPath(location.pathname);
   const currentSlug = slugs.length > 0 ? slugs[slugs.length - 1] : null;
 
-  console.log('🔄 AllCategories render:', {
-    pathname: location.pathname,
-    slugs,
-    currentSlug,
-  });
-
   // State for category path (hierarchical navigation)
   const [categoryPath, setCategoryPath] = useState<Category[]>([]);
   const [showProducts, setShowProducts] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Use cached query for regular categories (top-level only)
   const { data: wpCategories = [], isLoading: isLoadingWPCategories } =
@@ -54,35 +50,20 @@ const AllCategories = () => {
   const { data: subcategories = [], isLoading: isLoadingSubcategories } =
     useSubCategories(currentParentId);
 
-  // Check if products are loading (for loading state management)
-  const { isLoading: isLoadingProducts } = useInfiniteProductsByCategory(
+  // Prefetch products query when we're about to show products
+  useInfiniteProductsByCategory(
     currentSlug || '',
     15,
     showProducts
   );
 
-  console.log('📊 Query states:', {
-    isLoadingWPCategories,
-    isLoadingSubcategories,
-    isLoadingProducts,
-    currentParentId,
-    wpCategoriesCount: wpCategories.length,
-    subcategoriesCount: subcategories.length,
-  });
-
-  // Immediate loading state when category is clicked
-  const [isNavigating, setIsNavigating] = useState(false);
-
   // Refresh handler
   const handleRefresh = useCallback(async () => {
     if (showProducts && currentSlug) {
-      // Only refresh products when viewing product list
       await queryClient.invalidateQueries({
         queryKey: ['products-by-category', currentSlug],
       });
     }
-    // Don't invalidate categories or subcategories on refresh
-    // They are long-lived and cached with 7-day staleTime
   }, [queryClient, showProducts, currentSlug]);
 
   // State for favorite categories
@@ -128,19 +109,16 @@ const AllCategories = () => {
 
     const syncUrlToState = async () => {
       if (slugPath === '') {
-        // At top level
         setCategoryPath([]);
         return;
       }
 
       try {
-        // Build category path from URL slugs
         const slugArray = slugPath.split('/').filter(Boolean);
         const resolvedPath = await buildCategoryPath(slugArray, wpCategories);
         setCategoryPath(resolvedPath);
       } catch (error) {
         console.error('Error resolving category path:', error);
-        // Reset to top level on error
         setCategoryPath([]);
       }
     };
@@ -148,43 +126,27 @@ const AllCategories = () => {
     syncUrlToState();
   }, [slugPath, wpCategories, fromFavorites]);
 
-  // Determine current categories based on parent ID (computed, not state)
+  // Determine current categories based on parent ID
   const currentCategories =
     currentParentId === 0 ? wpCategories : subcategories;
 
-  // Determine if we should show products based on whether subcategories exist (memoized)
+  // Determine if we should show products - wait for subcategories check to complete
   const shouldShowProducts = useMemo(() => {
-    console.log('🤔 Determining shouldShowProducts:', {
-      fromFavorites,
-      currentSlug,
-      categoryPathLength: categoryPath.length,
-      isLoadingSubcategories,
-      currentParentId,
-      subcategoriesLength: subcategories.length,
-    });
-
-    // Don't show products if:
-    // - From favorites
-    // - No slug (at top level)
-    // - No category path yet
-    // - Currently loading subcategories
-    if (
-      fromFavorites ||
-      !currentSlug ||
-      categoryPath.length === 0 ||
-      isLoadingSubcategories
-    ) {
-      console.log('❌ Not showing products - conditions not met');
+    // Don't show products if at root or from favorites
+    if (fromFavorites || !currentSlug || categoryPath.length === 0) {
       return false;
     }
 
-    // If we're at a category level with no subcategories, show products
+    // Wait for subcategories to finish loading before deciding
+    if (isLoadingSubcategories) {
+      return false;
+    }
+
+    // Show products only if we have no subcategories
     if (currentParentId > 0 && subcategories.length === 0) {
-      console.log('✅ Showing products - no subcategories found');
       return true;
     }
 
-    console.log('❌ Not showing products - has subcategories or at top level');
     return false;
   }, [
     currentSlug,
@@ -195,9 +157,7 @@ const AllCategories = () => {
     isLoadingSubcategories,
   ]);
 
-  // Update showProducts state when the computed value changes
   useEffect(() => {
-    console.log('🔄 showProducts changed:', shouldShowProducts);
     setShowProducts(shouldShowProducts);
   }, [shouldShowProducts]);
 
@@ -205,31 +165,17 @@ const AllCategories = () => {
     _categoryId: number,
     categorySlug: string
   ) => {
-    console.log('🖱️ Category clicked:', { categorySlug, isNavigating });
-
-    // Prevent multiple clicks
-    if (isNavigating) {
-      console.log('⚠️ Already navigating, ignoring click');
-      return;
-    }
-
-    // Set navigating state immediately to show spinner
-    setIsNavigating(true);
-    console.log('✈️ Navigation started');
-
     if (fromFavorites) {
-      // Navigate back to favorites with the selected category
       navigate(`/favorites?category=${categorySlug}`);
       return;
     }
 
-    // Build the new URL path with the category slug
     const newSlugs = [...slugs, categorySlug];
     const newUrl = buildCategoryUrl(newSlugs);
     navigate(newUrl);
   };
 
-  // Prefetch subcategories on hover for better UX
+  // Prefetch subcategories on hover
   const handleCategoryHover = (categoryId: number) => {
     queryClient.prefetchQuery({
       queryKey: ['categories', 'subcategories', categoryId],
@@ -242,42 +188,12 @@ const AllCategories = () => {
     });
   };
 
-  // Use favorite categories when from favorites, otherwise use current categories
+  // Use favorite categories when from favorites
   const categories = fromFavorites ? favoriteCategories : currentCategories;
-  // Only consider loading if we don't have cached data
   const isLoadingCategories = fromFavorites
     ? isLoadingFavoriteCategories
     : (isLoadingWPCategories && wpCategories.length === 0) ||
-      (isLoadingSubcategories && subcategories.length === 0);
-
-  // Reset navigating state when loading completes
-  useEffect(() => {
-    console.log('⏱️ Loading state check effect running:', {
-      isNavigating,
-      isLoadingCategories,
-      isLoadingProducts,
-      showProducts,
-    });
-
-    // For category view: only wait for categories to load
-    // For product view: wait for both categories and products to load
-    const shouldResetLoading = showProducts
-      ? !isLoadingCategories && !isLoadingProducts
-      : !isLoadingCategories;
-
-    console.log('🔍 Should reset loading?', shouldResetLoading);
-
-    if (shouldResetLoading) {
-      console.log('✅ Loading complete, resetting navigation state');
-      setIsNavigating(false);
-    } else {
-      console.log('⏳ Still loading...', {
-        reason: showProducts
-          ? `Products view: isLoadingCategories=${isLoadingCategories}, isLoadingProducts=${isLoadingProducts}`
-          : `Category view: isLoadingCategories=${isLoadingCategories}`,
-      });
-    }
-  }, [isNavigating, isLoadingCategories, isLoadingProducts, showProducts]);
+    (isLoadingSubcategories && subcategories.length === 0);
 
   // Transform categories for the Categories component
   const categoryProducts = categories.map((cat) => {
@@ -295,7 +211,7 @@ const AllCategories = () => {
       name: decodeHtmlEntities(cat.name),
       slug: cat.slug,
       category: decodeHtmlEntities(cat.name),
-      price: '', // Not applicable for categories
+      price: '',
       image: fromFavorites
         ? favCat.image || logo
         : wpCat.meta?.featured_image || logo,
@@ -304,81 +220,193 @@ const AllCategories = () => {
     };
   });
 
+  // Filter categories by search
+  const filteredCategories = searchQuery.trim()
+    ? categoryProducts.filter((cat) =>
+      cat.name.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    : categoryProducts;
+
   // Determine page title from category path
   const pageTitle =
     categoryPath.length > 0
       ? decodeHtmlEntities(categoryPath[categoryPath.length - 1].name)
       : 'All Categories';
 
-  // Only show full-page loading spinner on true initial load (no cached data)
-  // Don't show spinner when navigating between cached categories
-  const shouldShowFullPageSpinner =
-    (isLoadingWPCategories && wpCategories.length === 0) ||
-    (isLoadingSubcategories &&
-      subcategories.length === 0 &&
-      currentParentId > 0);
+  // Show loading only for initial load when we have no cached data
+  const shouldShowInitialLoader =
+    (isLoadingWPCategories && wpCategories.length === 0 && categoryPath.length === 0);
 
-  if (shouldShowFullPageSpinner) {
-    console.log('🔄 Showing full-page spinner (initial load):', {
-      isLoadingWPCategories,
-      isLoadingSubcategories,
-      hasWPCategories: wpCategories.length > 0,
-      hasSubcategories: subcategories.length > 0,
-    });
+  if (shouldShowInitialLoader) {
     return (
-      <div className="flex items-center justify-center min-h-screen pt-[env(safe-area-inset-top)]">
-        <div
-          className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"
-          style={{ borderColor: '#650084', borderTopColor: 'transparent' }}
-        ></div>
+      <div className="flex flex-col items-center justify-center min-h-screen pt-[env(safe-area-inset-top)]">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-primary/20 rounded-full"></div>
+          <div className="absolute top-0 left-0 w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        </div>
+        <p className="mt-4 text-gray-500 text-sm font-medium">Loading categories...</p>
       </div>
     );
   }
 
-  console.log('🎨 Rendering main content:', {
-    showProducts,
-    categoryProductsCount: categoryProducts.length,
-  });
-
   return (
     <PullToRefresh onRefresh={handleRefresh}>
-      <section className="relative px-5 pb-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1.5rem)' }}>
-        <PageHeader
-          title={pageTitle}
-          onBack={
-            categoryPath.length > 0 && !fromFavorites
-              ? () => navigate(-1)
-              : undefined
-          }
-        />
+      <section
+        className="relative min-h-screen pb-24"
+      >
+        {/* Header Section */}
+        <div className="px-5">
+          <PageHeader
+            title={pageTitle}
+            showBack={categoryPath.length > 0 || fromFavorites}
+          />
 
-        {/* Breadcrumb navigation - only show when not from favorites and has path */}
-        {!fromFavorites && categoryPath.length > 0 && (
-          <Breadcrumb categoryPath={categoryPath} className="mt-4 mb-2" />
-        )}
+          {/* Breadcrumb navigation */}
+          {!fromFavorites && categoryPath.length > 0 && (
+            <Breadcrumb categoryPath={categoryPath} className="mt-3 mb-2" />
+          )}
 
-        {showProducts ? (
+          {/* Search Bar - Only show on main categories page */}
+          {categoryPath.length === 0 && !showProducts && !fromFavorites && (
+            <div className="mt-4 mb-6">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search categories..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-11 pr-4 py-3.5 rounded-2xl border-0 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.08)] focus:outline-none focus:ring-2 focus:ring-primary/30 text-[15px] placeholder:text-gray-400 transition-all"
+                />
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                  <SearchIcon />
+                </div>
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Loading state for subcategories */}
+        {isLoadingSubcategories && currentParentId > 0 && !showProducts ? (
+          <div className="px-5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="h-4 w-24 bg-primary/10 rounded animate-pulse" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {[...Array(4)].map((_, index) => (
+                <div key={index} className="bg-white rounded-2xl shadow-md overflow-hidden">
+                  <div className="h-32 bg-primary/10 animate-pulse" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : showProducts ? (
           // PRODUCT VIEW
-          <CategoryProductsView categorySlug={currentSlug || ''} />
+          <div className="px-5">
+            <CategoryProductsView categorySlug={currentSlug || ''} />
+          </div>
         ) : (
           // CATEGORY VIEW
-          <div className="mt-6">
-            {categoryProducts.length > 0 ? (
+          <div className="px-5">
+            {/* Category Stats Header */}
+            {filteredCategories.length > 0 && (
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-gray-500 text-sm">
+                  {filteredCategories.length} {filteredCategories.length === 1 ? 'category' : 'categories'}
+                  {searchQuery && ' found'}
+                </p>
+                {categoryPath.length === 0 && !fromFavorites && (
+                  <div className="flex items-center gap-1.5 text-primary text-sm font-medium">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                    </svg>
+                    <span>Browse</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {isLoadingCategories ? (
+              <div className="grid grid-cols-2 gap-4">
+                {[...Array(6)].map((_, index) => (
+                  <div key={index} className="bg-white rounded-2xl shadow-md overflow-hidden">
+                    <div className="h-32 bg-primary/10 animate-pulse" />
+                  </div>
+                ))}
+              </div>
+            ) : filteredCategories.length > 0 ? (
               <Categories
-                products={categoryProducts}
+                products={filteredCategories}
                 selection={fromFavorites ? 'filter' : 'hierarchical'}
                 onCategoryClick={handleCategoryClick}
-                onHoverCategory={
-                  fromFavorites ? undefined : handleCategoryHover
-                }
+                onHoverCategory={fromFavorites ? undefined : handleCategoryHover}
               />
             ) : (
-              <div className="flex justify-center items-center py-8">
-                <p className="text-gray-500">
-                  {categoryPath.length > 0
-                    ? 'No subcategories available.'
-                    : 'No categories available'}
+              <div className="flex flex-col items-center justify-center py-16">
+                <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#650084"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.3-4.3" />
+                  </svg>
+                </div>
+                <h3 className="text-gray-800 font-semibold text-lg mb-1">
+                  {searchQuery ? 'No matches found' : 'No categories yet'}
+                </h3>
+                <p className="text-gray-500 text-sm text-center max-w-[250px]">
+                  {searchQuery
+                    ? `We couldn't find any categories matching "${searchQuery}"`
+                    : categoryPath.length > 0
+                      ? 'This category has no subcategories'
+                      : 'Categories will appear here once available'}
                 </p>
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="mt-4 px-5 py-2.5 bg-primary text-white rounded-xl font-medium text-sm hover:bg-primary/90 transition-colors"
+                  >
+                    Clear search
+                  </button>
+                )}
               </div>
             )}
           </div>

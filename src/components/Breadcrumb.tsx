@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Category } from '@/services/categoryService';
 import { decodeHtmlEntities } from '@/utils/textHelpers';
@@ -18,15 +18,16 @@ export const Breadcrumb = ({
 
   return (
     <nav
-      className={`flex items-center gap-2 text-sm overflow-x-auto scrollbar-hide ${className}`}
+      className={`flex items-center gap-1.5 text-sm overflow-x-auto scrollbar-hide py-2 ${className}`}
       aria-label="Breadcrumb"
     >
       {/* Home link */}
       <Link
         to="/categories"
-        className="text-gray-500 hover:text-primary transition-colors whitespace-nowrap"
+        className="flex items-center gap-1 text-gray-500 hover:text-primary transition-colors whitespace-nowrap shrink-0"
       >
-        Home
+        <Home className="h-3.5 w-3.5" />
+        <span className="hidden sm:inline">Categories</span>
       </Link>
 
       {/* Category path */}
@@ -38,16 +39,16 @@ export const Breadcrumb = ({
           .join('/')}`;
 
         return (
-          <div key={category.id} className="flex items-center gap-2">
-            <ChevronRight className="h-4 w-4 text-gray-400" />
+          <div key={category.id} className="flex items-center gap-1.5 shrink-0">
+            <ChevronRight className="h-3.5 w-3.5 text-gray-300" />
             {isLast ? (
-              <span className="text-gray-900 font-medium whitespace-nowrap">
+              <span className="text-primary font-medium whitespace-nowrap bg-primary/10 px-2.5 py-1 rounded-full text-xs">
                 {decodeHtmlEntities(category.name)}
               </span>
             ) : (
               <Link
                 to={path}
-                className="text-gray-500 hover:text-primary transition-colors whitespace-nowrap"
+                className="text-gray-500 hover:text-primary transition-colors whitespace-nowrap text-xs"
               >
                 {decodeHtmlEntities(category.name)}
               </Link>

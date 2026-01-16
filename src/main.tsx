@@ -211,30 +211,6 @@ function Root() {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/categories"
-              element={
-                <ProtectedRoute>
-                  <AllCategories />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/categories/*"
-              element={
-                <ProtectedRoute>
-                  <AllCategories />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/products/:productId"
-              element={
-                <ProtectedRoute>
-                  <ProductPage />
-                </ProtectedRoute>
-              }
-            />
 
             <Route
               path="/favorites/search"
@@ -321,6 +297,9 @@ function Root() {
               <Route path="/profile" element={<Profile />} />
               <Route path="/edit-profile" element={<EditProfile />} />
               <Route path="/favorites" element={<Favorites />} />
+              <Route path="/categories" element={<AllCategories />} />
+              <Route path="/categories/*" element={<AllCategories />} />
+              <Route path="/products/:productId" element={<ProductPage />} />
             </Route>
 
             {/* Catch all - redirect to onboarding */}

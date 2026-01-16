@@ -88,7 +88,7 @@ const ProductPage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#f5f5f5] pb-6 pt-[env(safe-area-inset-top)]">
+      <div className="min-h-screen bg-[#f5f5f5] pb-6 ">
         <div className="px-5 pt-6">
           <PageHeader title="Product" onBack={() => navigate(-1)} />
         </div>
@@ -103,7 +103,7 @@ const ProductPage = () => {
 
   if (error || !product) {
     return (
-      <div className="min-h-screen bg-[#f5f5f5] pb-6 pt-[env(safe-area-inset-top)]">
+      <div className="min-h-screen bg-[#f5f5f5] pb-6 ">
         <div className="px-5 pt-6">
           <PageHeader title="Product" onBack={() => navigate(-1)} />
         </div>
@@ -123,7 +123,7 @@ const ProductPage = () => {
   const buttonUrl = product.meta?.cta_button_url;
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] pb-6 pt-[env(safe-area-inset-top)]">
+    <div className="min-h-screen bg-[#f5f5f5] pb-6 ">
       {/* Header */}
       <div className="sticky top-0 z-10 px-5 pt-6 pb-4 bg-[#f5f5f5]">
         <PageHeader title={productTitle} onBack={() => navigate(-1)} />
