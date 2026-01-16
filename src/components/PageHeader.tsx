@@ -29,8 +29,18 @@ export const PageHeader = ({
   const navigate = useNavigate();
 
   const handleBack = () => {
+    // If a custom onBack is provided, use it
     if (onBack) return onBack();
-    navigate(-1);
+
+    // Override back for specific routes
+    if (
+      location.pathname.includes('product-identification-results') ||
+      location.pathname.includes('barcode-product-results')
+    ) {
+      navigate('/'); // Go to home screen
+    } else {
+      navigate(-1); // Go back in history
+    }
   };
 
   const handleNotifications = () => navigate('/notifications');

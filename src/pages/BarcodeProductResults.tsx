@@ -27,6 +27,32 @@ const formatTagName = (tag: string): string => {
     .join(' ');
 };
 
+// Helper function to detect network errors
+const isNetworkError = (error: any): boolean => {
+  if (!error) return false;
+  
+  const errorMessage = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+  
+  // Check for common network error indicators
+  return (
+    errorMessage.includes('network') ||
+    errorMessage.includes('fetch') ||
+    errorMessage.includes('failed to fetch') ||
+    errorMessage.includes('networkerror') ||
+    errorMessage.includes('network request failed') ||
+    errorMessage.includes('offline') ||
+    errorMessage.includes('no internet') ||
+    errorMessage.includes('connection') ||
+    errorMessage.includes('resolve host') ||
+    errorMessage.includes('hostname') ||
+    errorMessage.includes('dns') ||
+    errorMessage.includes('enotfound') ||
+    errorMessage.includes('getaddrinfo') ||
+    error.name === 'NetworkError' ||
+    error.name === 'TypeError' && errorMessage.includes('fetch')
+  );
+};
+
 const BarcodeProductResults = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -40,6 +66,7 @@ const BarcodeProductResults = () => {
   const [product, setProduct] = useState<BarcodeProduct | null>(initialProduct);
   const [loadingBasicData, setLoadingBasicData] = useState(!initialProduct);
   const [error, setError] = useState<string | null>(null);
+  const [isNetworkIssue, setIsNetworkIssue] = useState(false);
   const [loadingIngredients, setLoadingIngredients] = useState(!initialProduct); // Start as true to show skeleton immediately
   const [loadingDescriptions, setLoadingDescriptions] = useState(false);
   const [loadingPackaging, setLoadingPackaging] = useState(!initialProduct); // Start as true to show skeleton immediately
@@ -356,9 +383,19 @@ const BarcodeProductResults = () => {
           stack: err instanceof Error ? err.stack : undefined,
           type: typeof err,
         });
-        setError(
-          err instanceof Error ? err.message : 'Failed to load product data'
-        );
+        
+        // Check if it's a network error
+        const networkError = isNetworkError(err);
+        setIsNetworkIssue(networkError);
+        
+        if (networkError) {
+          setError('No internet connection detected');
+        } else {
+          setError(
+            err instanceof Error ? err.message : 'Failed to load product data'
+          );
+        }
+        
         setLoadingBasicData(false);
         setLoadingIngredients(false);
         setLoadingPackaging(false);
@@ -529,9 +566,30 @@ const BarcodeProductResults = () => {
       <section className="relative px-5 pt-6 pb-4 md:mx-7">
         <PageHeader title="Product Analysis" />
         <div className="flex flex-col gap-5 p-2 items-center justify-center min-h-[400px] p-4">
-          <p className="text-gray-600 mb-4 text-center">
-            Product not found via barcode lookup. Try Scanning the Image.
-          </p>
+          {isNetworkIssue ? (
+            <>
+              <div className="text-6xl mb-4">📡</div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">No Internet Connection</h2>
+              <p className="text-gray-600 mb-4 text-center max-w-md">
+                Please connect to Wi-Fi or mobile data and try again.
+              </p>
+              <button
+                onClick={() => {
+                  // Reset error state and reload the page to retry with same barcode
+                  setError(null);
+                  setIsNetworkIssue(false);
+                  window.location.reload();
+                }}
+                className="px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+              >
+                Try Again
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-gray-600 mb-4 text-center">
+                Product not found via barcode lookup. Try Scanning the Image.
+              </p>
           <button
             onClick={async () => {
               try {
@@ -572,6 +630,8 @@ const BarcodeProductResults = () => {
           >
             Browse Photo
           </button>
+            </>
+          )}
         </div>
       </section>
     );

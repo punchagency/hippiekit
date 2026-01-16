@@ -23,13 +23,15 @@ export const takePicture = async (): Promise<CapturedPhoto | null> => {
       }
     }
 
-    // Take photo
+    // Take photo with optimized settings for mobile
     const photo = await Camera.getPhoto({
-      quality: 90,
+      quality: 75, // Reduced from 90 to prevent memory issues on mobile
       allowEditing: false,
       resultType: CameraResultType.Uri,
       source: CameraSource.Camera,
       correctOrientation: true,
+      width: 1920, // Max width to prevent huge images
+      height: 1920, // Max height to prevent huge images
     });
 
     return {
@@ -63,12 +65,14 @@ export const pickFromGallery = async (): Promise<CapturedPhoto | null> => {
       }
     }
 
-    // Pick photo from gallery
+    // Pick photo from gallery with optimized settings
     const photo = await Camera.getPhoto({
-      quality: 90,
+      quality: 75, // Reduced from 90 to prevent memory issues on mobile
       allowEditing: false,
       resultType: CameraResultType.Uri,
       source: CameraSource.Photos,
+      width: 1920, // Max width to prevent huge images
+      height: 1920, // Max height to prevent huge images
     });
 
     return {

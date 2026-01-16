@@ -135,8 +135,13 @@ export function CategoryProductsView({
   return (
     <div className="mt-6">
       {featuredProducts.length > 0 && (
-        <div className="w-full h-[408px] rounded-[14px] bg-white p-3.5 gap-4 flex flex-col">
-          <div className="rounded-[14px] p-3.5 flex flex-col gap-4 shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]">
+        <div className="w-full rounded-[14px] bg-white p-3.5 gap-4 flex flex-col">
+          <div
+            onClick={() =>
+              navigate(`/products/${featuredProducts[currentProductIndex].id}`)
+            }
+            className="rounded-[14px] p-3.5 flex flex-col gap-4 shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] cursor-pointer hover:shadow-lg transition-shadow"
+          >
             <div className="relative h-[202px] w-full overflow-hidden rounded-[10px]">
               {/* Featured Product Image with Fade Effect */}
               <div
@@ -156,7 +161,13 @@ export function CategoryProductsView({
               </div>
 
               {/* Heart Icon */}
-              <button className="absolute top-2.5 right-3 bg-[rgba(255,255,255,0.3)] p-[5px] rounded-sm shadow-[0px_2px_16px_0px_rgba(6,51,54,0.1)] z-10">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Add to favorites logic here
+                }}
+                className="absolute top-2.5 right-3 bg-[rgba(255,255,255,0.3)] p-[5px] rounded-sm shadow-[0px_2px_16px_0px_rgba(6,51,54,0.1)] z-10"
+              >
                 <img src={heartIconReg} alt="" />
               </button>
 
@@ -176,24 +187,39 @@ export function CategoryProductsView({
             </div>
 
             <div className="flex items-start justify-between">
-              <div>
+              <div className="flex-1">
                 <h3 className="text-primary text-[18px] font-family-segoe font-bold capitalize line-clamp-1">
-                  {featuredProducts[currentProductIndex].title.rendered}
-                </h3>
-                <p className="text-[14px] font-family-roboto line-clamp-3 mt-1">
-                  {stripHtml(
-                    featuredProducts[currentProductIndex].content.rendered
+                  {decodeHtmlEntities(
+                    featuredProducts[currentProductIndex].title.rendered
                   )}
-                </p>
+                </h3>
+                <div
+                  className="text-[14px] font-family-roboto mt-1 leading-relaxed text-gray-600 line-clamp-3 [&_p]:space-y-2 [&_br]:block [&_br]:my-2 [&_strong]:font-bold [&_em]:italic"
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      featuredProducts[currentProductIndex].excerpt?.rendered ??
+                      featuredProducts[currentProductIndex].content?.rendered ??
+                      '',
+                  }}
+                  style={{
+                    lineHeight: '1.6',
+                  }}
+                />
               </div>
 
-              <button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Options menu logic here
+                }}
+              >
                 <img src={OptionIcon} alt="" />
               </button>
             </div>
 
             <Button
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 const link =
                   featuredProducts[currentProductIndex]?.meta?.cta_button_url;
                 if (link) {
@@ -210,7 +236,7 @@ export function CategoryProductsView({
         </div>
       )}
 
-      <section className="mx-4.5 mt-4">
+      <section className=" mt-4">
         {productsGridData.length > 0 ? (
           <>
             <Products
