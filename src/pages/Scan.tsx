@@ -11,6 +11,7 @@ import { Barcode, Sparkles, Loader2 } from 'lucide-react';
 import { toast } from '@/lib/toast.tsx';
 import { PageHeader } from '@/components/PageHeader';
 import { ModuleInstallModal, type ModuleInstallState } from '@/components/ModuleInstallModal';
+import BottomNav from '@/components/BottomNav';
 
 export const Scan = () => {
   const navigate = useNavigate();
@@ -196,7 +197,7 @@ export const Scan = () => {
   };
 
   return (
-    <div className="min-h-screen pb-safe">
+    <div className="min-h-screen pb-24">
       {/* Module Install Modal for Android */}
       <ModuleInstallModal
         isOpen={moduleModalOpen}
@@ -281,6 +282,9 @@ export const Scan = () => {
         </div>
       </div>
     </header>
+    
+    {/* Bottom Navigation */}
+    <BottomNav />
     </div>
   );
 };
