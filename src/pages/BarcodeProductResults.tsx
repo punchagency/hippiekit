@@ -18,6 +18,7 @@ import { ProductResultInfoCard } from '@/components/ProductResultInfoCard';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/PageHeader';
 import { pickFromGallery, takePicture } from '@/lib/cameraService';
+import { toast } from '@/lib/toast';
 
 // Format tag names: replace underscores with spaces and capitalize each word
 const formatTagName = (tag: string): string => {
@@ -546,6 +547,11 @@ const BarcodeProductResults = () => {
                 });
               } catch (e) {
                 console.error('Product identification error:', e);
+                if (e instanceof Error) {
+                  toast.error(e.message);
+                } else {
+                  toast.error('Failed to take photo. Please try again.');
+                }
               }
             }}
             className="px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
@@ -566,6 +572,11 @@ const BarcodeProductResults = () => {
                 });
               } catch (e) {
                 console.error('Product identification error:', e);
+                if (e instanceof Error) {
+                  toast.error(e.message);
+                } else {
+                  toast.error('Failed to select photo. Please try again.');
+                }
               }
             }}
             className="px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"

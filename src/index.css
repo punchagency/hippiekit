@@ -287,3 +287,23 @@ body.barcode-scanner-active #root {
   opacity: 0;
   animation: fade-in-up 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
+
+/* Safe area bottom padding utility */
+.pb-safe {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 1rem);
+}
+
+/* Keyboard handling - scroll input into view */
+input:focus,
+textarea:focus {
+  scroll-margin-bottom: 200px;
+}
+
+/* iOS keyboard push-up fix */
+@supports (-webkit-touch-callout: none) {
+  /* iOS specific styles */
+  input,
+  textarea {
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+}

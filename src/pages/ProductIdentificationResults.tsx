@@ -364,11 +364,10 @@ const ProductIdentificationResults = () => {
     const formattedName = formatTagName(material);
     const details = packagingDetails[material];
     if (details) {
-      packagingTagDescriptions[formattedName] = `${details.description}\n\n${
-        details.health_concerns !== 'None identified'
+      packagingTagDescriptions[formattedName] = `${details.description}\n\n${details.health_concerns !== 'None identified'
           ? `Health Concerns: ${details.health_concerns}\n`
           : ''
-      }Environmental Impact: ${details.environmental_impact}`;
+        }Environmental Impact: ${details.environmental_impact}`;
     }
   });
 
@@ -513,8 +512,8 @@ const ProductIdentificationResults = () => {
                   loadingDescriptions
                     ? 'Analyzing ingredients with AI...'
                     : selectedHarmful && harmfulTagDescriptions[selectedHarmful]
-                    ? String(harmfulTagDescriptions[selectedHarmful])
-                    : 'Click on a chemical above to see why it may be harmful'
+                      ? String(harmfulTagDescriptions[selectedHarmful])
+                      : 'Click on a chemical above to see why it may be harmful'
                 }
                 isLoadingDescription={loadingDescriptions}
               />
@@ -560,8 +559,8 @@ const ProductIdentificationResults = () => {
               loadingDescriptions
                 ? 'Analyzing ingredients with AI...'
                 : selectedSafe && safeTagDescriptions[selectedSafe]
-                ? String(safeTagDescriptions[selectedSafe])
-                : 'Click on an ingredient above to learn more about it'
+                  ? String(safeTagDescriptions[selectedSafe])
+                  : 'Click on an ingredient above to learn more about it'
             }
             isLoadingDescription={loadingDescriptions}
           />
@@ -597,16 +596,16 @@ const ProductIdentificationResults = () => {
               packagingAnalysis?.overall_safety === 'harmful'
                 ? 'negative'
                 : packagingAnalysis?.overall_safety === 'safe'
-                ? 'positive'
-                : 'normal'
+                  ? 'positive'
+                  : 'normal'
             }
             tags={packagingTags}
             tagColor={
               packagingAnalysis?.overall_safety === 'harmful'
                 ? 'red'
                 : packagingAnalysis?.overall_safety === 'safe'
-                ? 'green'
-                : undefined
+                  ? 'green'
+                  : undefined
             }
             tagDescriptions={packagingTagDescriptions}
             onTagClick={(tag) => setSelectedPackaging(tag)}
@@ -616,10 +615,10 @@ const ProductIdentificationResults = () => {
                 ? 'Analyzing packaging materials with AI...'
                 : selectedPackaging &&
                   packagingTagDescriptions[selectedPackaging]
-                ? String(packagingTagDescriptions[selectedPackaging])
-                : packagingAnalysis?.summary
-                ? String(packagingAnalysis.summary)
-                : 'Click on a material above to see details'
+                  ? String(packagingTagDescriptions[selectedPackaging])
+                  : packagingAnalysis?.summary
+                    ? String(packagingAnalysis.summary)
+                    : 'Click on a material above to see details'
             }
             isLoadingDescription={loadingPackagingDescriptions}
           />

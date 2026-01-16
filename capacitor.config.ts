@@ -10,18 +10,17 @@ const config: CapacitorConfig = {
       enabled: true,
     },
     Keyboard: {
-      resize: 'native',
+      resize: 'body',
       style: 'dark',
       resizeOnFullScreen: true,
     },
   },
   // Live reload on device: serve from your LAN Vite dev server
-  // Uncomment and update IP when using live reload during development
   // Comment out for production builds
-  // server: {
-  //   url: 'http://192.168.1.211:5173',
-  //   cleartext: true,
-  // },
+  server: {
+    url: 'http://172.20.10.6:5173',
+    cleartext: true,
+  },
 };
 
 export default config;

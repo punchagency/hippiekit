@@ -115,16 +115,25 @@ function App() {
 
   // Handle picking from gallery - uses AI product identification
   const handleBrowsePhoto = async () => {
-    const photo = await pickFromGallery();
-    if (photo) {
-      setCapturedPhoto(photo.webPath);
+    try {
+      const photo = await pickFromGallery();
+      if (photo) {
+        setCapturedPhoto(photo.webPath);
 
-      // Navigate immediately to results page - data will load there
-      navigate('/product-identification-results', {
-        state: {
-          scannedImage: photo.webPath,
-        },
-      });
+        // Navigate immediately to results page - data will load there
+        navigate('/product-identification-results', {
+          state: {
+            scannedImage: photo.webPath,
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Error browsing photo:', error);
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to select photo. Please try again.');
+      }
     }
   };
 

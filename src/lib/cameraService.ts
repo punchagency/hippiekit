@@ -1,4 +1,5 @@
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { Capacitor } from '@capacitor/core';
 
 export interface CapturedPhoto {
   webPath: string;
@@ -7,39 +8,75 @@ export interface CapturedPhoto {
 }
 
 /**
+ * Check if we're on a native platform (iOS/Android)
+ */
+const isNative = (): boolean => Capacitor.isNativePlatform();
+
+/**
  * Take a photo using the device camera
  */
 export const takePicture = async (): Promise<CapturedPhoto | null> => {
+  console.log('[takePicture] Starting...');
+  
   try {
-    // Requet camera permissions
-    const permissions = await Camera.checkPermissions();
-
-    if (permissions.camera !== 'granted') {
-      const requestResult = await Camera.requestPermissions({
-        permissions: ['camera'],
-      });
-      if (requestResult.camera !== 'granted') {
-        throw new Error('Camera permission denied');
+    // On iOS, check if permission was explicitly denied
+    if (isNative()) {
+      try {
+        const permissions = await Camera.checkPermissions();
+        console.log('[takePicture] Camera permissions:', JSON.stringify(permissions));
+        
+        // Only block if explicitly denied
+        if (permissions.camera === 'denied') {
+          throw new Error('Camera access was denied. Please enable it in Settings.');
+        }
+      } catch (permError) {
+        console.log('[takePicture] Permission check error (continuing anyway):', permError);
+        // Continue anyway - let getPhoto handle the permission
       }
     }
 
-    // Take photo
+    console.log('[takePicture] Calling Camera.getPhoto...');
+    
+    // Take photo - iOS will automatically prompt for permission if needed
     const photo = await Camera.getPhoto({
       quality: 90,
       allowEditing: false,
       resultType: CameraResultType.Uri,
       source: CameraSource.Camera,
       correctOrientation: true,
+      saveToGallery: false, // Don't save to gallery to avoid needing NSPhotoLibraryAddUsageDescription
     });
 
+    console.log('[takePicture] Photo result:', photo ? 'success' : 'null', photo?.webPath);
+
+    if (!photo.webPath) {
+      throw new Error('No photo was captured');
+    }
+
     return {
-      webPath: photo.webPath!,
+      webPath: photo.webPath,
       format: photo.format,
       base64String: photo.base64String,
     };
-  } catch (error) {
-    console.error('Error taking picture:', error);
-    return null;
+  } catch (error: unknown) {
+    console.error('[takePicture] Error:', error);
+    
+    // Re-throw with user-friendly message
+    if (error instanceof Error) {
+      const msg = error.message.toLowerCase();
+      // User cancelled - check various cancellation messages
+      if (msg.includes('cancel') || msg.includes('user') || msg.includes('dismiss')) {
+        console.log('[takePicture] User cancelled');
+        return null; // Silent return for user cancellation
+      }
+      // Permission denied
+      if (msg.includes('denied') || msg.includes('permission') || msg.includes('access')) {
+        throw new Error('Camera access denied. Please enable camera access in your device Settings.');
+      }
+      // Re-throw original error
+      throw error;
+    }
+    throw new Error('Failed to take photo. Please try again.');
   }
 };
 
@@ -48,22 +85,19 @@ export const takePicture = async (): Promise<CapturedPhoto | null> => {
  */
 export const pickFromGallery = async (): Promise<CapturedPhoto | null> => {
   try {
-    // Request photo permissions
-    const permissions = await Camera.checkPermissions();
-
-    if (permissions.photos !== 'granted' && permissions.photos !== 'limited') {
-      const requestResult = await Camera.requestPermissions({
-        permissions: ['photos'],
-      });
-      if (
-        requestResult.photos !== 'granted' &&
-        requestResult.photos !== 'limited'
-      ) {
-        throw new Error('Photo library permission denied');
+    // On iOS, we should check if permission was explicitly denied
+    // If it's 'prompt', iOS will show the permission dialog when we call getPhoto()
+    if (isNative()) {
+      const permissions = await Camera.checkPermissions();
+      console.log('Photo library permissions:', permissions);
+      
+      // Only block if explicitly denied (not 'prompt', 'granted', or 'limited')
+      if (permissions.photos === 'denied') {
+        throw new Error('Photo library access was denied. Please enable it in Settings.');
       }
     }
 
-    // Pick photo from gallery
+    // Pick photo - iOS will automatically prompt for permission if needed
     const photo = await Camera.getPhoto({
       quality: 90,
       allowEditing: false,
@@ -71,13 +105,30 @@ export const pickFromGallery = async (): Promise<CapturedPhoto | null> => {
       source: CameraSource.Photos,
     });
 
+    if (!photo.webPath) {
+      throw new Error('No photo was selected');
+    }
+
     return {
-      webPath: photo.webPath!,
+      webPath: photo.webPath,
       format: photo.format,
       base64String: photo.base64String,
     };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error picking photo from gallery:', error);
-    return null;
+    
+    // Re-throw with user-friendly message
+    if (error instanceof Error) {
+      // User cancelled
+      if (error.message.includes('cancelled') || error.message.includes('canceled')) {
+        return null; // Silent return for user cancellation
+      }
+      // Permission denied
+      if (error.message.includes('denied') || error.message.includes('permission')) {
+        throw new Error('Photo library access denied. Please enable access in your device Settings.');
+      }
+      throw error;
+    }
+    throw new Error('Failed to select photo. Please try again.');
   }
 };
