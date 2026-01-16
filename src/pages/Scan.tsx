@@ -3,7 +3,7 @@ import scanPhoto from '../assets/scanPhoto.png';
 import { Button } from '@/components/ui/button';
 // import { ScanIcon } from '@/assets/homeIcons';
 import { useNavigate } from 'react-router-dom';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { takePicture } from '@/lib/cameraService';
 // Removed unused identifyProduct import
 import { barcodeService } from '@/services/barcodeService';
@@ -11,13 +11,35 @@ import { Barcode, Sparkles, Loader2 } from 'lucide-react';
 import { toast } from '@/lib/toast.tsx';
 import { PageHeader } from '@/components/PageHeader';
 import { ModuleInstallModal, type ModuleInstallState } from '@/components/ModuleInstallModal';
-import BottomNav from '@/components/BottomNav';
+import { Keyboard } from '@capacitor/keyboard';
 
 export const Scan = () => {
   const navigate = useNavigate();
   // Removed unused capturedPhoto state
   const [manualBarcode, setManualBarcode] = useState('');
-  
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  // Handle keyboard visibility for proper scrolling
+  useEffect(() => {
+    const showListener = Keyboard.addListener('keyboardWillShow', () => {
+      setKeyboardVisible(true);
+      // Scroll input into view after a small delay
+      setTimeout(() => {
+        inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    });
+
+    const hideListener = Keyboard.addListener('keyboardWillHide', () => {
+      setKeyboardVisible(false);
+    });
+
+    return () => {
+      showListener.then(l => l.remove());
+      hideListener.then(l => l.remove());
+    };
+  }, []);
+
   // Module install modal state
   const [moduleModalOpen, setModuleModalOpen] = useState(false);
   const [moduleModalState, setModuleModalState] = useState<ModuleInstallState>('idle');
@@ -151,7 +173,7 @@ export const Scan = () => {
     setModuleModalOpen(false);
     setModuleModalState('idle');
     setModuleInstallProgress(0);
-    
+
     // If success, proceed to scan
     await performBarcodeScan();
   };
@@ -162,10 +184,10 @@ export const Scan = () => {
   // Handle product identification from front photo
   const handleProductIdentification = async () => {
     if (isIdentifying) return; // Prevent double-clicks
-    
+
     console.log('[handleProductIdentification] Button clicked');
     setIsIdentifying(true);
-    
+
     try {
       console.log('[handleProductIdentification] Calling takePicture...');
       const photo = await takePicture();
@@ -197,7 +219,7 @@ export const Scan = () => {
   };
 
   return (
-    <div className="min-h-screen pt-safe pb-safe-nav">
+    <div className="flex flex-col h-full min-h-screen overflow-auto pb-safe">
       {/* Module Install Modal for Android */}
       <ModuleInstallModal
         isOpen={moduleModalOpen}
@@ -209,7 +231,7 @@ export const Scan = () => {
         onClose={handleModuleClose}
       />
 
-      <header className="px-5 pt-6 pb-4">
+      <div className="px-5 pt-6">
         <PageHeader
           title="Scan Product"
           titleIconSrc={undefined}
@@ -221,70 +243,80 @@ export const Scan = () => {
             </button>
           }
         />
+      </div>
 
+      <div className="flex-1 px-5 overflow-auto">
         <div className="flex flex-col gap-5 mt-4">
           <img src={scanPhoto} alt="" className="w-full max-h-[400px] object-contain" />
 
-        <Button
-          onClick={handleProductIdentification}
-          disabled={isIdentifying}
-          className="bg-purple-600 text-white font-semibold font-family-poppins"
-        >
-          <div className="flex items-center gap-2">
-            {isIdentifying ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <Sparkles className="w-5 h-5" />
-            )}
-            {isIdentifying ? 'Opening Camera...' : 'Identify Product (Take Photo)'}
-          </div>
-        </Button>
+          <Button
+            onClick={handleProductIdentification}
+            disabled={isIdentifying}
+            className="bg-purple-600 text-white font-semibold font-family-poppins"
+          >
+            <div className="flex items-center gap-2">
+              {isIdentifying ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Sparkles className="w-5 h-5" />
+              )}
+              {isIdentifying ? 'Opening Camera...' : 'Identify Product (Take Photo)'}
+            </div>
+          </Button>
 
-        <Button
-          onClick={handleBarcodeScan}
-          className="bg-secondary text-white font-semibold font-family-poppins mt-3"
-        >
-          <div className="flex items-center gap-2">
-            <Barcode className="w-5 h-5" />
-            Scan Barcode
-          </div>
-        </Button>
+          <Button
+            onClick={handleBarcodeScan}
+            className="bg-secondary text-white font-semibold font-family-poppins mt-3"
+          >
+            <div className="flex items-center gap-2">
+              <Barcode className="w-5 h-5" />
+              Scan Barcode
+            </div>
+          </Button>
 
-        {/* Manual Barcode Entry for Testing */}
-        <div className="p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-          <p className="text-sm font-semibold text-gray-600 mb-2">
-            Test Mode: Enter Barcode Manually
-          </p>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={manualBarcode}
-              onChange={(e) => setManualBarcode(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  handleManualBarcodeSubmit();
-                }
-              }}
-              placeholder="Enter barcode (e.g., 3017620422003)"
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            <Button
-              onClick={handleManualBarcodeSubmit}
-              className="bg-primary text-white font-semibold px-4 py-2"
-              disabled={!manualBarcode.trim()}
-            >
-              Test
-            </Button>
+          {/* Manual Barcode Entry for Testing */}
+          <div className="p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+            <p className="text-sm font-semibold text-gray-600 mb-2">
+              Test Mode: Enter Barcode Manually
+            </p>
+            <div className="flex gap-2">
+              <input
+                ref={inputRef}
+                type="text"
+                inputMode="numeric"
+                value={manualBarcode}
+                onChange={(e) => setManualBarcode(e.target.value)}
+                onFocus={() => {
+                  // Scroll into view on focus as a fallback
+                  setTimeout(() => {
+                    inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }, 300);
+                }}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleManualBarcodeSubmit();
+                  }
+                }}
+                placeholder="Enter barcode (e.g., 3017620422003)"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <Button
+                onClick={handleManualBarcodeSubmit}
+                className="bg-primary text-white font-semibold px-4 py-2"
+                disabled={!manualBarcode.trim()}
+              >
+                Test
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Examples: 3017620422003 (Nutella), 5449000000996 (Coca-Cola)
+            </p>
           </div>
-          <p className="text-xs text-gray-500 mt-2">
-            Examples: 3017620422003 (Nutella), 5449000000996 (Coca-Cola)
-          </p>
+
+          {/* Spacer for keyboard */}
+          <div className={`transition-all duration-300 ${keyboardVisible ? 'h-[300px]' : 'h-8'}`} />
         </div>
       </div>
-    </header>
-    
-    {/* Bottom Navigation */}
-    <BottomNav />
     </div>
   );
 };

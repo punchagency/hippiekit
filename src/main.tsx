@@ -164,46 +164,6 @@ function Root() {
               }
             />
             <Route
-              path="/scan"
-              element={
-                <ProtectedRoute>
-                  <Scan />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/product-results"
-              element={
-                <ProtectedRoute>
-                  <ProductResults />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/vision-product-results"
-              element={
-                <ProtectedRoute>
-                  <VisionProductResults />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/barcode-product-results"
-              element={
-                <ProtectedRoute>
-                  <BarcodeProductResults />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/product-identification-results"
-              element={
-                <ProtectedRoute>
-                  <ProductIdentificationResults />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/gallery"
               element={
                 <ProtectedRoute>
@@ -300,6 +260,11 @@ function Root() {
               <Route path="/categories" element={<AllCategories />} />
               <Route path="/categories/*" element={<AllCategories />} />
               <Route path="/products/:productId" element={<ProductPage />} />
+              <Route path="/scan" element={<Scan />} />
+              <Route path="/product-results" element={<ProductResults />} />
+              <Route path="/vision-product-results" element={<VisionProductResults />} />
+              <Route path="/barcode-product-results" element={<BarcodeProductResults />} />
+              <Route path="/product-identification-results" element={<ProductIdentificationResults />} />
             </Route>
 
             {/* Catch all - redirect to onboarding */}
