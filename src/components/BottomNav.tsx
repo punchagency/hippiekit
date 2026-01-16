@@ -47,7 +47,7 @@ const BottomNav = () => {
     <div
       className="fixed bottom-0 left-0 right-0 z-30 flex justify-center"
       style={{
-        paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)',
+        paddingBottom: 'calc(env(safe-area-inset-bottom)',
       }}
     >
       <nav className="bg-white/95 backdrop-blur-lg rounded-full shadow-[0_4px_24px_rgba(0,0,0,0.12)] border border-gray-100/50 mx-4 px-2">
