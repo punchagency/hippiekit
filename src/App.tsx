@@ -23,7 +23,7 @@ import { Categories } from './components/Categories';
 import { Products } from './components/Products';
 import HomeSidebar from './pages/HomeSidebar';
 import { Link, useNavigate } from 'react-router-dom';
-import { useCategories, useProducts } from '@/services/categoryService';
+import { useTopCategories, useProducts } from '@/services/categoryService';
 import { Toaster } from 'sonner';
 import { toast } from '@/lib/toast.tsx';
 import { stripHtml, decodeHtmlEntities } from '@/utils/textHelpers';
@@ -49,8 +49,9 @@ function App() {
   const navigate = useNavigate();
 
   // Use cached queries instead of manual state management
+  // Fetch only 10 top categories for home page (instead of all categories)
   const { data: categories = [], isLoading: isLoadingCategories } =
-    useCategories();
+    useTopCategories(10);
 
   const { data: products = [], isLoading: isLoadingProducts } = useProducts(6); // Fetch 6 products
 

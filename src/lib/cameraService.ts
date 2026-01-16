@@ -39,7 +39,7 @@ export const takePicture = async (): Promise<CapturedPhoto | null> => {
     
     // Take photo - iOS will automatically prompt for permission if needed
     const photo = await Camera.getPhoto({
-      quality: 90,
+      quality: 75, // Reduced from 90 to prevent memory issues on mobile
       allowEditing: false,
       resultType: CameraResultType.Uri,
       source: CameraSource.Camera,
@@ -99,10 +99,12 @@ export const pickFromGallery = async (): Promise<CapturedPhoto | null> => {
 
     // Pick photo - iOS will automatically prompt for permission if needed
     const photo = await Camera.getPhoto({
-      quality: 90,
+      quality: 75, // Reduced from 90 to prevent memory issues on mobile
       allowEditing: false,
       resultType: CameraResultType.Uri,
       source: CameraSource.Photos,
+      width: 1920, // Max width to prevent huge images
+      height: 1920, // Max height to prevent huge images
     });
 
     if (!photo.webPath) {

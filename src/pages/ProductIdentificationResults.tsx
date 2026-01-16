@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import productResultsIcon from '@/assets/productResultsIcon.svg';
 import heartIcon from '@/assets/heartIcon.svg';
 import chemicalsIcon from '@/assets/chemicalsIcon.svg';
@@ -27,22 +27,69 @@ const formatTagName = (tag: string): string => {
     .join(' ');
 };
 
+// Helper function to detect network errors
+const isNetworkError = (error: any): boolean => {
+  if (!error) return false;
+
+  const errorMessage =
+    error instanceof Error
+      ? error.message.toLowerCase()
+      : String(error).toLowerCase();
+
+  // Check for common network error indicators
+  return (
+    errorMessage.includes('network') ||
+    errorMessage.includes('fetch') ||
+    errorMessage.includes('failed to fetch') ||
+    errorMessage.includes('networkerror') ||
+    errorMessage.includes('network request failed') ||
+    errorMessage.includes('offline') ||
+    errorMessage.includes('no internet') ||
+    errorMessage.includes('connection') ||
+    errorMessage.includes('resolve host') ||
+    errorMessage.includes('hostname') ||
+    errorMessage.includes('dns') ||
+    errorMessage.includes('enotfound') ||
+    errorMessage.includes('getaddrinfo') ||
+    error.name === 'NetworkError' ||
+    (error.name === 'TypeError' && errorMessage.includes('fetch'))
+  );
+};
+
 const ProductIdentificationResults = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { scannedImage } = location.state as {
-    scannedImage: string;
-  };
+  const isProcessingRef = useRef(false);
+
+  // Get scannedImage from location state or sessionStorage (for mobile app persistence)
+  const locationState = location.state as { scannedImage?: string } | null;
+  const storedImage =
+    typeof window !== 'undefined'
+      ? sessionStorage.getItem('scannedImage')
+      : null;
+  const scannedImage = locationState?.scannedImage || storedImage;
+
+  // Store image in sessionStorage to persist across potential mobile refreshes
+  useEffect(() => {
+    if (scannedImage && typeof window !== 'undefined') {
+      sessionStorage.setItem('scannedImage', scannedImage);
+      return () => {
+        // Clean up sessionStorage when component unmounts properly
+        sessionStorage.removeItem('scannedImage');
+      };
+    }
+  }, [scannedImage]);
 
   // State for product data (starts with null, builds progressively)
   const [product, setProduct] = useState<any>(null); // Basic product info
-  const [loadingBasicData, setLoadingBasicData] = useState(true);
+  const [loadingBasicData, setLoadingBasicData] = useState(false);
   const [processingError, setProcessingError] = useState<string | null>(null);
+  const [isNetworkIssue, setIsNetworkIssue] = useState(false);
 
   // Progressive loading states
-  const [loadingIngredients, setLoadingIngredients] = useState(true);
+  const [loadingIngredients, setLoadingIngredients] = useState(false);
   const [loadingDescriptions, setLoadingDescriptions] = useState(false);
-  const [loadingPackaging, setLoadingPackaging] = useState(true);
+  const [loadingPackaging, setLoadingPackaging] = useState(false);
   const [loadingPackagingDescriptions, setLoadingPackagingDescriptions] =
     useState(false);
 
@@ -62,7 +109,7 @@ const ProductIdentificationResults = () => {
   // State for recommendations
   const [recommendations, setRecommendations] =
     useState<ProductRecommendations | null>(null);
-  const [loadingRecommendations, setLoadingRecommendations] = useState(true);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
 
   // Progressive loading - Step by step like BarcodeProductResults
   useEffect(() => {
@@ -75,12 +122,27 @@ const ProductIdentificationResults = () => {
       return;
     }
 
+    // Prevent duplicate processing
+    if (isProcessingRef.current) {
+      console.log('Already processing, skipping duplicate call');
+      return;
+    }
+
     const loadData = async () => {
+      // Prevent page unload during processing (mobile browsers)
+      const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+        e.preventDefault();
+        e.returnValue = '';
+      };
+
       try {
+        isProcessingRef.current = true;
         setLoadingBasicData(true);
         setLoadingIngredients(true);
         setLoadingPackaging(true);
         setLoadingRecommendations(true);
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
 
         // Step 1: Get basic product info FAST (1-2s)
         console.log('🔍 Fetching basic product info from image...');
@@ -114,8 +176,8 @@ const ProductIdentificationResults = () => {
         // Step 2A: Separate ingredients FAST (2-3s) - Show names immediately
         separatePhotoIngredients(
           basicInfo.product_name,
-          basicInfo.brand,
-          basicInfo.category
+          basicInfo.brand || '',
+          basicInfo.category || ''
         )
           .then((separationResult) => {
             console.log('🧪 Ingredient separation received:', separationResult);
@@ -184,11 +246,13 @@ const ProductIdentificationResults = () => {
             setLoadingDescriptions(false);
           });
 
-        // Step 3A: Separate packaging FAST (1-2s) - Show names immediately
+        // Step 3A: Separate packaging FAST (<1s with vision data) - Show names immediately
         separatePhotoPackaging(
           basicInfo.product_name,
-          basicInfo.brand,
-          basicInfo.category
+          basicInfo.brand || '',
+          basicInfo.category || '',
+          basicInfo.container_info?.material || '',
+          basicInfo.container_info?.type || ''
         )
           .then((separationResult) => {
             console.log('📦 Packaging separation received:', separationResult);
@@ -252,15 +316,29 @@ const ProductIdentificationResults = () => {
           });
       } catch (error) {
         console.error('❌ Error loading product:', error);
-        setProcessingError(
-          error instanceof Error
-            ? error.message
-            : 'Failed to identify product. Please try again.'
-        );
+
+        // Check if it's a network error
+        const networkError = isNetworkError(error);
+        setIsNetworkIssue(networkError);
+
+        if (networkError) {
+          setProcessingError('No internet connection detected');
+        } else {
+          setProcessingError(
+            error instanceof Error
+              ? error.message
+              : 'Failed to identify product. Please try again.'
+          );
+        }
+
         setLoadingBasicData(false);
         setLoadingIngredients(false);
         setLoadingPackaging(false);
         setLoadingRecommendations(false);
+      } finally {
+        isProcessingRef.current = false;
+        // Remove beforeunload listener
+        window.removeEventListener('beforeunload', handleBeforeUnload);
       }
     };
 
@@ -287,7 +365,7 @@ const ProductIdentificationResults = () => {
           product.marketing_claims?.join(', '),
           product.certifications_visible?.join(', '),
           product.product_type,
-          scannedImage // Pass the scanned image for multimodal search
+          scannedImage || undefined // Pass the scanned image for multimodal search
         );
         console.log('Recommendations received:', recs);
         setRecommendations(recs);
@@ -318,19 +396,44 @@ const ProductIdentificationResults = () => {
       <section className="relative px-5 pt-6 pb-4 md:mx-7">
         <PageHeader title="Product Analysis" />
         <div className="flex flex-col items-center justify-center min-h-[400px] p-4">
-          <div className="text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
-            {processingError ? 'Analysis Failed' : 'No Product Data'}
-          </h2>
-          <p className="text-gray-600 mb-6 text-center">
-            {processingError || 'No product data available'}
-          </p>
-          <button
-            onClick={() => navigate('/')}
-            className="px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-primary/90 transition-colors"
-          >
-            Back to Home
-          </button>
+          {isNetworkIssue ? (
+            <>
+              <div className="text-6xl mb-4">📡</div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                No Internet Connection
+              </h2>
+              <p className="text-gray-600 mb-6 text-center max-w-md">
+                Please connect to Wi-Fi or mobile data and try again.
+              </p>
+              <button
+                onClick={() => {
+                  // Reset error state and reload the page to retry with same image
+                  setProcessingError(null);
+                  setIsNetworkIssue(false);
+                  window.location.reload();
+                }}
+                className="px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-primary/90 transition-colors"
+              >
+                Try Again
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="text-6xl mb-4">⚠️</div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                {processingError ? 'Analysis Failed' : 'No Product Data'}
+              </h2>
+              <p className="text-gray-600 mb-6 text-center">
+                {processingError || 'No product data available'}
+              </p>
+              <button
+                onClick={() => navigate('/')}
+                className="px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-primary/90 transition-colors"
+              >
+                Back to Home
+              </button>
+            </>
+          )}
         </div>
       </section>
     );

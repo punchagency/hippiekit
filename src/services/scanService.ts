@@ -654,18 +654,23 @@ export const describePhotoIngredients = async (
 };
 
 /**
- * Step 4: Get packaging material names (FAST - 1-2s)
+ * Step 4: Get packaging material names (FAST - <1s with vision data)
  */
 export const separatePhotoPackaging = async (
   productName: string,
   brand: string,
-  category?: string
+  category?: string,
+  containerMaterial?: string,
+  containerType?: string
 ) => {
   try {
     const formData = new FormData();
     formData.append('product_name', productName);
     formData.append('brand', brand);
     if (category) formData.append('category', category);
+    if (containerMaterial)
+      formData.append('container_material', containerMaterial);
+    if (containerType) formData.append('container_type', containerType);
 
     const res = await fetch(`${AI_SERVICE_URL}/identify/packaging/separate`, {
       method: 'POST',

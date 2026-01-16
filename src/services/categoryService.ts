@@ -99,6 +99,48 @@ export const fetchCategories = async (): Promise<Category[]> => {
   }
 };
 
+/**
+ * Fetch limited number of top categories for home page (optimized for speed)
+ * @param limit - Maximum number of categories to fetch (default: 10)
+ */
+export const fetchTopCategories = async (
+  limit: number = 10
+): Promise<Category[]> => {
+  try {
+    const data = await httpGetJson<Category[]>(
+      `${WP_API_URL}/categories?per_page=${limit}&parent=0`
+    );
+
+    const categoriesWithImages = await Promise.all(
+      data.map(async (category: Category) => {
+        if (category.meta?.featured_image) {
+          try {
+            const mediaData = await httpGetJson<{ source_url?: string }>(
+              `${WP_API_URL}/media/${category.meta.featured_image}`
+            );
+            return {
+              ...category,
+              meta: {
+                ...category.meta,
+                featured_image:
+                  mediaData.source_url || category.meta.featured_image,
+              },
+            };
+          } catch {
+            console.error('Failed to fetch media for category:', category.id);
+          }
+        }
+        return category;
+      })
+    );
+
+    return categoriesWithImages;
+  } catch (error) {
+    console.error('Error fetching top categories:', error);
+    throw error;
+  }
+};
+
 export const fetchSubCategories = async (
   parentId: number
 ): Promise<Category[]> => {
@@ -299,6 +341,25 @@ export const useCategories = (): UseQueryResult<Category[], Error> => {
   return useQuery({
     queryKey: ['categories'],
     queryFn: fetchCategories,
+    staleTime: Infinity, // Categories never go stale - they're static content
+    gcTime: Infinity, // Keep in cache forever
+    refetchOnMount: false, // Don't refetch on component mount
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    refetchOnReconnect: false, // Don't refetch on reconnect
+    networkMode: 'offlineFirst', // Use cache first, even if online
+  });
+};
+
+/**
+ * Hook to fetch limited top categories for home page (optimized for speed)
+ * @param limit - Maximum number of categories to fetch (default: 10)
+ */
+export const useTopCategories = (
+  limit: number = 10
+): UseQueryResult<Category[], Error> => {
+  return useQuery({
+    queryKey: ['categories', 'top', limit],
+    queryFn: () => fetchTopCategories(limit),
     staleTime: Infinity, // Categories never go stale - they're static content
     gcTime: Infinity, // Keep in cache forever
     refetchOnMount: false, // Don't refetch on component mount
