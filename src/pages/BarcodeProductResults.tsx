@@ -31,9 +31,9 @@ const formatTagName = (tag: string): string => {
 // Helper function to detect network errors
 const isNetworkError = (error: any): boolean => {
   if (!error) return false;
-  
+
   const errorMessage = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
-  
+
   // Check for common network error indicators
   return (
     errorMessage.includes('network') ||
@@ -384,11 +384,11 @@ const BarcodeProductResults = () => {
           stack: err instanceof Error ? err.stack : undefined,
           type: typeof err,
         });
-        
+
         // Check if it's a network error
         const networkError = isNetworkError(err);
         setIsNetworkIssue(networkError);
-        
+
         if (networkError) {
           setError('No internet connection detected');
         } else {
@@ -396,7 +396,7 @@ const BarcodeProductResults = () => {
             err instanceof Error ? err.message : 'Failed to load product data'
           );
         }
-        
+
         setLoadingBasicData(false);
         setLoadingIngredients(false);
         setLoadingPackaging(false);
@@ -619,8 +619,6 @@ const BarcodeProductResults = () => {
           >
             Browse Photo
           </button>
-            </>
-          )}
         </div>
       </section>
     );
