@@ -346,8 +346,10 @@ const AllCategories = () => {
         <PageHeader
           title={pageTitle}
           onBack={
-            categoryPath.length > 0 && !fromFavorites
-              ? () => navigate(-1)
+            !fromFavorites
+              ? categoryPath.length > 0
+                ? () => navigate(-1)
+                : () => navigate('/')
               : undefined
           }
         />

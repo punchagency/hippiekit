@@ -18,6 +18,8 @@ import {
 import { ProductResultInfoCard } from '@/components/ProductResultInfoCard';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/PageHeader';
+import { saveScanResult } from '@/services/scanResultService';
+import { useUploadThing } from '@/lib/uploadthing';
 
 // Format tag names: replace underscores with spaces and capitalize each word
 const formatTagName = (tag: string): string => {
@@ -61,13 +63,17 @@ const ProductIdentificationResults = () => {
   const navigate = useNavigate();
   const isProcessingRef = useRef(false);
 
-  // Get scannedImage from location state or sessionStorage (for mobile app persistence)
-  const locationState = location.state as { scannedImage?: string } | null;
+  // Get scannedImage and savedScanData from location state or sessionStorage
+  const locationState = location.state as {
+    scannedImage?: string;
+    savedScanData?: any;
+  } | null;
   const storedImage =
     typeof window !== 'undefined'
       ? sessionStorage.getItem('scannedImage')
       : null;
   const scannedImage = locationState?.scannedImage || storedImage;
+  const savedScanData = locationState?.savedScanData;
 
   // Store image in sessionStorage to persist across potential mobile refreshes
   useEffect(() => {
@@ -110,11 +116,15 @@ const ProductIdentificationResults = () => {
   const [recommendations, setRecommendations] =
     useState<ProductRecommendations | null>(null);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
+  const [scanSaved, setScanSaved] = useState(false);
+
+  // UploadThing hook for image upload
+  const { startUpload: uploadScannedImage } = useUploadThing('scannedImage');
 
   // Progressive loading - Step by step like BarcodeProductResults
   useEffect(() => {
-    if (!scannedImage) {
-      setProcessingError('No image provided');
+    if (!scannedImage && !savedScanData) {
+      setProcessingError('No image or saved data provided');
       setLoadingBasicData(false);
       setLoadingIngredients(false);
       setLoadingPackaging(false);
@@ -129,6 +139,97 @@ const ProductIdentificationResults = () => {
     }
 
     const loadData = async () => {
+      // If we have savedScanData (from notification), use it directly
+      if (savedScanData) {
+        console.log('📦 Loading from saved scan data:', savedScanData);
+        isProcessingRef.current = true;
+
+        setLoadingBasicData(true);
+        setLoadingIngredients(true);
+        setLoadingPackaging(true);
+        setLoadingRecommendations(true);
+
+        // Convert saved data back to the component's expected format
+        const harmfulDescriptions: Record<string, string> = {};
+        const safeDescriptions: Record<string, string> = {};
+
+        savedScanData.harmfulIngredients?.forEach((ing: any) => {
+          harmfulDescriptions[ing.name] = ing.description;
+        });
+
+        savedScanData.safeIngredients?.forEach((ing: any) => {
+          safeDescriptions[ing.name] = ing.description;
+        });
+
+        const packagingDetails: Record<string, any> = {};
+        savedScanData.packaging?.forEach((pkg: any) => {
+          packagingDetails[pkg.name] = { description: pkg.description };
+        });
+
+        // Populate all state from saved data with proper structure
+        setProduct({
+          product_name: savedScanData.productName,
+          brand: savedScanData.productBrand,
+          category: '',
+          product_type: '',
+          marketing_claims: [],
+          certifications_visible: [],
+          productImage: savedScanData.productImage,
+          ingredients: {
+            safe: Object.keys(safeDescriptions),
+            harmful: Object.keys(harmfulDescriptions),
+          },
+          ingredient_descriptions: {
+            safe: safeDescriptions,
+            harmful: harmfulDescriptions,
+          },
+          packaging: savedScanData.packaging?.map((p: any) => p.name) || [],
+          packaging_analysis: {
+            materials: savedScanData.packaging?.map((p: any) => p.name) || [],
+            analysis: packagingDetails,
+            summary: savedScanData.packagingSummary || '',
+            overall_safety: savedScanData.packagingSafety || 'unknown',
+          },
+          packaging_summary: savedScanData.packagingSummary || '',
+          packaging_safety: savedScanData.packagingSafety || 'unknown',
+        });
+
+        setRecommendations({
+          status: 'success',
+          products:
+            savedScanData.recommendations
+              ?.filter((r: any) => r.source === 'wordpress')
+              .map((r: any) => ({
+                id: r.id,
+                name: r.name,
+                price: r.price || '',
+                image_url: r.image_url,
+                permalink: r.permalink,
+                description: r.description,
+                similarity_score: 1,
+                affiliate_url: r.permalink,
+              })) || [],
+          ai_alternatives:
+            savedScanData.recommendations?.filter(
+              (r: any) => r.source === 'ai'
+            ) || [],
+          message: 'Loaded from saved scan',
+        });
+
+        // Mark all loading as complete
+        setLoadingBasicData(false);
+        setLoadingIngredients(false);
+        setLoadingPackaging(false);
+        setLoadingRecommendations(false);
+
+        // Mark as already saved to prevent duplicate save
+        setScanSaved(true);
+
+        isProcessingRef.current = false;
+        return;
+      }
+
+      // Original scanning flow when scannedImage is provided
       // Prevent page unload during processing (mobile browsers)
       const handleBeforeUnload = (e: BeforeUnloadEvent) => {
         e.preventDefault();
@@ -146,6 +247,11 @@ const ProductIdentificationResults = () => {
 
         // Step 1: Get basic product info FAST (1-2s)
         console.log('🔍 Fetching basic product info from image...');
+
+        if (!scannedImage) {
+          throw new Error('No image provided for identification');
+        }
+
         const basicInfo = await identifyProductBasic(scannedImage);
         console.log('✅ Basic info received:', basicInfo);
 
@@ -343,13 +449,20 @@ const ProductIdentificationResults = () => {
     };
 
     loadData();
-  }, [scannedImage]);
+  }, [scannedImage, savedScanData]);
 
   // Fetch recommendations asynchronously using product name and brand
   useEffect(() => {
     const fetchRecommendations = async () => {
       // Don't fetch if still loading basic data or no product
       if (loadingBasicData || !product?.product_name) {
+        setLoadingRecommendations(false);
+        return;
+      }
+
+      // Skip fetching if we already have recommendations from savedScanData
+      if (savedScanData && recommendations) {
+        console.log('Using saved recommendations, skipping fetch');
         setLoadingRecommendations(false);
         return;
       }
@@ -388,6 +501,114 @@ const ProductIdentificationResults = () => {
     product?.certifications_visible,
     product?.product_type,
     scannedImage,
+  ]);
+
+  // Save scan result after all data is loaded
+  useEffect(() => {
+    const savePhotoScan = async () => {
+      // Don't save if already saved or if still loading or no product
+      if (
+        scanSaved ||
+        loadingBasicData ||
+        loadingIngredients ||
+        loadingPackaging ||
+        loadingRecommendations ||
+        !product?.product_name
+      ) {
+        return;
+      }
+
+      try {
+        console.log('💾 Saving photo scan result...');
+
+        // Upload scanned image to UploadThing if available
+        let uploadedImageUrl: string | undefined;
+        if (scannedImage && scannedImage.startsWith('blob:')) {
+          try {
+            console.log('📤 Uploading scanned image to UploadThing...');
+            // Convert blob URL to File
+            const response = await fetch(scannedImage);
+            const blob = await response.blob();
+            const file = new File([blob], 'scanned-product.jpg', {
+              type: blob.type || 'image/jpeg',
+            });
+
+            const uploadResult = await uploadScannedImage([file]);
+            if (uploadResult && uploadResult.length > 0) {
+              uploadedImageUrl = uploadResult[0].url;
+              console.log('✅ Image uploaded successfully:', uploadedImageUrl);
+            }
+          } catch (uploadError) {
+            console.error('⚠️ Failed to upload image:', uploadError);
+            // Continue with save even if upload fails
+          }
+        }
+
+        // Extract harmful and safe ingredients
+        const harmfulDescriptions =
+          product?.ingredient_descriptions?.harmful || {};
+        const safeDescriptions = product?.ingredient_descriptions?.safe || {};
+        const harmfulTags = Object.keys(harmfulDescriptions);
+        const safeTags = Object.keys(safeDescriptions);
+
+        // Extract packaging data
+        const packagingAnalysis = product?.packaging_analysis;
+        const packagingMaterials = packagingAnalysis?.materials || [];
+        const packagingDetails = packagingAnalysis?.analysis || {};
+
+        await saveScanResult({
+          scanType: 'photo',
+          productName: product.product_name,
+          productBrand: product.brand,
+          productImage: product.productImage,
+          scannedImage: uploadedImageUrl || scannedImage || undefined, // Use uploaded URL or fallback to original
+          safeIngredients: safeTags.map((tag) => ({
+            name: tag,
+            description: safeDescriptions[tag] || 'Safe ingredient',
+          })),
+          harmfulIngredients: harmfulTags.map((tag) => ({
+            name: tag,
+            description:
+              harmfulDescriptions[tag] || 'Potentially harmful ingredient',
+          })),
+          packaging: packagingMaterials.map((material: string) => ({
+            name: material,
+            description:
+              packagingDetails[material]?.description || 'Packaging material',
+          })),
+          packagingSummary: packagingAnalysis?.summary,
+          packagingSafety: packagingAnalysis?.overall_safety || 'unknown',
+          recommendations:
+            recommendations?.products.map((p) => ({
+              id: p.id,
+              name: p.name,
+              brand: p.name.split(' ')[0] || 'Unknown', // Extract brand from product name or use Unknown
+              description: p.description,
+              image_url: p.image_url,
+              price: p.price,
+              permalink: p.permalink,
+              source: 'wordpress' as const,
+            })) || [],
+          chemicalAnalysis: product.chemicalAnalysis,
+        });
+
+        setScanSaved(true);
+        console.log('✅ Photo scan saved successfully');
+      } catch (error) {
+        console.error('❌ Failed to save photo scan:', error);
+      }
+    };
+
+    savePhotoScan();
+  }, [
+    scanSaved,
+    loadingBasicData,
+    loadingIngredients,
+    loadingPackaging,
+    loadingRecommendations,
+    product,
+    scannedImage,
+    recommendations,
   ]);
 
   // Show error state
@@ -547,7 +768,16 @@ const ProductIdentificationResults = () => {
       ) : product ? (
         <div className="mt-2.5 py-4 sm:py-5 px-3 sm:px-3.5 bg-white rounded-[13px] shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] flex flex-col gap-4 sm:gap-6 overflow-hidden">
           {/* Product Image */}
-          {scannedImage && (
+          {(scannedImage && !scannedImage.startsWith('blob:')) ||
+          product.productImage ? (
+            <div className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] overflow-hidden">
+              <img
+                src={product.productImage || scannedImage}
+                alt={product.product_name}
+                className="w-full h-auto object-cover"
+              />
+            </div>
+          ) : scannedImage && scannedImage.startsWith('blob:') ? (
             <div className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] overflow-hidden">
               <img
                 src={scannedImage}
@@ -555,7 +785,7 @@ const ProductIdentificationResults = () => {
                 className="w-full h-auto object-cover"
               />
             </div>
-          )}
+          ) : null}
 
           <div className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex gap-2 sm:gap-3 items-start">
             {/* Product Info */}
@@ -772,7 +1002,8 @@ const ProductIdentificationResults = () => {
                   {recommendations.products.map((product) => (
                     <div
                       key={product.id}
-                      className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex flex-col sm:flex-row gap-2 sm:gap-3 items-start sm:items-center overflow-hidden"
+                      onClick={() => navigate(`/products/${product.id}`)}
+                      className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex flex-col sm:flex-row gap-2 sm:gap-3 items-start sm:items-center overflow-hidden cursor-pointer hover:shadow-[0px_2px_15px_0px_rgba(0,0,0,0.22)] transition-shadow"
                     >
                       <img
                         src={product.image_url}
@@ -795,7 +1026,13 @@ const ProductIdentificationResults = () => {
                       </div>
 
                       <Button
-                        onClick={() => window.open(product.permalink, '_blank')}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(
+                            product.affiliate_url || product.permalink,
+                            '_blank'
+                          );
+                        }}
                         className="bg-[#00A23E] text-white px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm hover:bg-[#008f35] transition-colors flex-shrink-0 whitespace-nowrap"
                       >
                         Buy now
@@ -806,65 +1043,66 @@ const ProductIdentificationResults = () => {
               </div>
             )}
 
-            {/* AI-Generated Alternatives */}
-            {recommendations.ai_alternatives.length > 0 && (
-              <div>
-                <header className="font-family-roboto text-base sm:text-[18px] font-medium mb-3.5 flex items-center gap-2">
-                  Healthier Eco-Friendly Recommendation
-                  <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-purple-100 to-blue-100 rounded-full">
-                    <img src={aiIcon} alt="AI" className="w-4 h-4" />
-                    <span className="text-xs font-semibold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                      AI
-                    </span>
-                  </div>
-                </header>
-                <div className="flex flex-col gap-2.5">
-                  {recommendations.ai_alternatives.map((alt, index) => (
-                    <div
-                      key={index}
-                      onClick={() => setSelectedAIAlternative(alt)}
-                      className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex flex-col sm:flex-row gap-2 sm:gap-3 items-start sm:items-center overflow-hidden cursor-pointer hover:shadow-[0px_2px_15px_0px_rgba(0,0,0,0.22)] transition-shadow"
-                    >
-                      <div className="w-14 h-14 sm:w-[60px] sm:h-[60px] bg-gradient-to-br from-[#00A23E] to-[#20799F] rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
-                        {alt.logo_url ? (
-                          <img
-                            src={alt.logo_url}
-                            alt={`${alt.brand} logo`}
-                            className="w-full h-full object-contain p-1"
-                            onError={(e) => {
-                              // Fallback to emoji if image fails to load
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              const parent = target.parentElement;
-                              if (parent) {
-                                parent.innerHTML =
-                                  '<span class="text-white font-bold text-lg sm:text-xl">🌱</span>';
-                              }
-                            }}
-                          />
-                        ) : (
-                          <span className="text-white font-bold text-lg sm:text-xl">
-                            🌱
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex flex-col flex-1 gap-1 min-w-0">
-                        <h3 className="font-roboto font-semibold text-sm sm:text-[16px] text-black leading-snug break-words">
-                          {alt.name}
-                        </h3>
-                        <p className="font-roboto text-xs sm:text-[12px] font-medium text-[#00A23E]">
-                          {alt.brand}
-                        </p>
-                        <p className="font-roboto font-normal text-xs sm:text-[13px] text-[#4e4e4e] leading-normal line-clamp-2">
-                          {alt.description}
-                        </p>
-                      </div>
+            {/* AI-Generated Alternatives - Only show when no WordPress products */}
+            {recommendations.ai_alternatives.length > 0 &&
+              recommendations.products.length === 0 && (
+                <div>
+                  <header className="font-family-roboto text-base sm:text-[18px] font-medium mb-3.5 flex items-center gap-2">
+                    Healthier Eco-Friendly Recommendation
+                    <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-purple-100 to-blue-100 rounded-full">
+                      <img src={aiIcon} alt="AI" className="w-4 h-4" />
+                      <span className="text-xs font-semibold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                        AI
+                      </span>
                     </div>
-                  ))}
+                  </header>
+                  <div className="flex flex-col gap-2.5">
+                    {recommendations.ai_alternatives.map((alt, index) => (
+                      <div
+                        key={index}
+                        onClick={() => setSelectedAIAlternative(alt)}
+                        className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex flex-col sm:flex-row gap-2 sm:gap-3 items-start sm:items-center overflow-hidden cursor-pointer hover:shadow-[0px_2px_15px_0px_rgba(0,0,0,0.22)] transition-shadow"
+                      >
+                        <div className="w-14 h-14 sm:w-[60px] sm:h-[60px] bg-gradient-to-br from-[#00A23E] to-[#20799F] rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                          {alt.logo_url ? (
+                            <img
+                              src={alt.logo_url}
+                              alt={`${alt.brand} logo`}
+                              className="w-full h-full object-contain p-1"
+                              onError={(e) => {
+                                // Fallback to emoji if image fails to load
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const parent = target.parentElement;
+                                if (parent) {
+                                  parent.innerHTML =
+                                    '<span class="text-white font-bold text-lg sm:text-xl">🌱</span>';
+                                }
+                              }}
+                            />
+                          ) : (
+                            <span className="text-white font-bold text-lg sm:text-xl">
+                              🌱
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex flex-col flex-1 gap-1 min-w-0">
+                          <h3 className="font-roboto font-semibold text-sm sm:text-[16px] text-black leading-snug break-words">
+                            {alt.name}
+                          </h3>
+                          <p className="font-roboto text-xs sm:text-[12px] font-medium text-[#00A23E]">
+                            {alt.brand}
+                          </p>
+                          <p className="font-roboto font-normal text-xs sm:text-[13px] text-[#4e4e4e] leading-normal line-clamp-2">
+                            {alt.description}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
           </div>
         ) : null}
       </section>
@@ -972,24 +1210,26 @@ const ProductIdentificationResults = () => {
         </div>
       )}
 
-      {/* AI Note - Only show if we have AI-generated recommendations */}
-      {recommendations && recommendations.ai_alternatives.length > 0 && (
-        <section className="mt-6 sm:mt-8 mb-20 p-3 sm:p-4 text-white font-family-roboto leading-6 rounded-[10px] bg-[#20799F]">
-          <header className="flex gap-2.5 font-medium text-base sm:text-[18px] items-center">
-            <img
-              src={aiIcon}
-              alt=""
-              className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0"
-            />
-            <span>AI Note</span>
-          </header>
+      {/* AI Note - Only show if AI-generated recommendations are displayed */}
+      {recommendations &&
+        recommendations.ai_alternatives.length > 0 &&
+        recommendations.products.length === 0 && (
+          <section className="mt-6 sm:mt-8 mb-20 p-3 sm:p-4 text-white font-family-roboto leading-6 rounded-[10px] bg-[#20799F]">
+            <header className="flex gap-2.5 font-medium text-base sm:text-[18px] items-center">
+              <img
+                src={aiIcon}
+                alt=""
+                className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0"
+              />
+              <span>AI Note</span>
+            </header>
 
-          <p className="mt-3.5 text-sm sm:text-base">
-            These products have not been researched by Hippiekit yet, please
-            research before purchasing.
-          </p>
-        </section>
-      )}
+            <p className="mt-3.5 text-sm sm:text-base">
+              These products have not been researched by Hippiekit yet, please
+              research before purchasing.
+            </p>
+          </section>
+        )}
     </section>
   );
 };

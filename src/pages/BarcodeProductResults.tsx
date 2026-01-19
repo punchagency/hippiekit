@@ -30,9 +30,12 @@ const formatTagName = (tag: string): string => {
 // Helper function to detect network errors
 const isNetworkError = (error: any): boolean => {
   if (!error) return false;
-  
-  const errorMessage = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
-  
+
+  const errorMessage =
+    error instanceof Error
+      ? error.message.toLowerCase()
+      : String(error).toLowerCase();
+
   // Check for common network error indicators
   return (
     errorMessage.includes('network') ||
@@ -49,7 +52,7 @@ const isNetworkError = (error: any): boolean => {
     errorMessage.includes('enotfound') ||
     errorMessage.includes('getaddrinfo') ||
     error.name === 'NetworkError' ||
-    error.name === 'TypeError' && errorMessage.includes('fetch')
+    (error.name === 'TypeError' && errorMessage.includes('fetch'))
   );
 };
 
@@ -57,21 +60,33 @@ const BarcodeProductResults = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  const { product: initialProduct, barcode } = location.state as {
+  const {
+    product: initialProduct,
+    barcode,
+    savedScanData,
+  } = location.state as {
     product: BarcodeProduct | null;
     barcode: string;
+    savedScanData?: any;
   };
 
   // State for product data (starts with basic, updates progressively)
   const [product, setProduct] = useState<BarcodeProduct | null>(initialProduct);
-  const [loadingBasicData, setLoadingBasicData] = useState(!initialProduct);
+  const [loadingBasicData, setLoadingBasicData] = useState(
+    !initialProduct && !savedScanData
+  );
   const [error, setError] = useState<string | null>(null);
   const [isNetworkIssue, setIsNetworkIssue] = useState(false);
-  const [loadingIngredients, setLoadingIngredients] = useState(!initialProduct); // Start as true to show skeleton immediately
+  const [loadingIngredients, setLoadingIngredients] = useState(
+    !initialProduct && !savedScanData
+  ); // Start as true to show skeleton immediately
   const [loadingDescriptions, setLoadingDescriptions] = useState(false);
-  const [loadingPackaging, setLoadingPackaging] = useState(!initialProduct); // Start as true to show skeleton immediately
+  const [loadingPackaging, setLoadingPackaging] = useState(
+    !initialProduct && !savedScanData
+  ); // Start as true to show skeleton immediately
   const [loadingPackagingDescriptions, setLoadingPackagingDescriptions] =
     useState(false);
+  const [scanSaved, setScanSaved] = useState(false);
 
   // Use ref to track latest product data for recommendations
   const productRef = useRef<BarcodeProduct | null>(initialProduct);
@@ -109,6 +124,104 @@ const BarcodeProductResults = () => {
     if (!barcode) return;
 
     const loadData = async () => {
+      // If we have savedScanData (from notification), use it directly
+      if (savedScanData) {
+        console.log('📦 Loading from saved barcode scan data:', savedScanData);
+
+        // Convert saved data back to BarcodeProduct format
+        const harmfulDescriptions: Record<string, string> = {};
+        const safeDescriptions: Record<string, string> = {};
+
+        savedScanData.harmfulIngredients?.forEach((ing: any) => {
+          harmfulDescriptions[ing.name] = ing.description;
+        });
+
+        savedScanData.safeIngredients?.forEach((ing: any) => {
+          safeDescriptions[ing.name] = ing.description;
+        });
+
+        const packagingDetails: Record<string, any> = {};
+        savedScanData.packaging?.forEach((pkg: any) => {
+          packagingDetails[pkg.name] = { description: pkg.description };
+        });
+
+        setProduct({
+          barcode: savedScanData.barcode || barcode,
+          name: savedScanData.productName,
+          brand: savedScanData.productBrand || '',
+          source: 'database',
+          image_url: savedScanData.productImage || '',
+          quantity: '',
+          categories: '',
+          ingredients: [
+            ...Object.keys(harmfulDescriptions).map((name) => ({
+              text: name,
+              type: 'harmful' as const,
+            })),
+            ...Object.keys(safeDescriptions).map((name) => ({
+              text: name,
+              type: 'safe' as const,
+            })),
+          ],
+          packaging:
+            savedScanData.packaging?.map((p: any) => p.name).join(', ') || '',
+          materials: {
+            packaging: '',
+            packaging_text: savedScanData.packagingSummary || '',
+            packaging_tags:
+              savedScanData.packaging?.map((p: any) => p.name) || [],
+            materials: savedScanData.packaging?.map((p: any) => p.name) || [],
+          },
+          nutrition: {},
+          labels: '',
+          countries: '',
+          url: '',
+          ingredient_descriptions: {
+            harmful: harmfulDescriptions,
+            safe: safeDescriptions,
+          },
+          packaging_analysis: {
+            materials: savedScanData.packaging?.map((p: any) => p.name) || [],
+            analysis: packagingDetails,
+            summary: savedScanData.packagingSummary || '',
+            overall_safety: savedScanData.packagingSafety || 'unknown',
+          },
+          chemical_analysis: savedScanData.chemicalAnalysis,
+        });
+
+        setRecommendations({
+          status: 'success',
+          products:
+            savedScanData.recommendations
+              ?.filter((r: any) => r.source === 'wordpress')
+              .map((r: any) => ({
+                id: r.id,
+                name: r.name,
+                price: r.price || '',
+                image_url: r.image_url,
+                permalink: r.permalink,
+                description: r.description,
+                similarity_score: 1,
+                affiliate_url: r.permalink,
+              })) || [],
+          ai_alternatives:
+            savedScanData.recommendations?.filter(
+              (r: any) => r.source === 'ai'
+            ) || [],
+          message: 'Loaded from saved scan',
+        });
+
+        // Mark all loading as complete
+        setLoadingBasicData(false);
+        setLoadingIngredients(false);
+        setLoadingPackaging(false);
+        setLoadingRecommendations(false);
+
+        // Mark as already saved to prevent duplicate save
+        setScanSaved(true);
+        return;
+      }
+
       try {
         setLoadingBasicData(true);
         setLoadingIngredients(true);
@@ -383,11 +496,11 @@ const BarcodeProductResults = () => {
           stack: err instanceof Error ? err.stack : undefined,
           type: typeof err,
         });
-        
+
         // Check if it's a network error
         const networkError = isNetworkError(err);
         setIsNetworkIssue(networkError);
-        
+
         if (networkError) {
           setError('No internet connection detected');
         } else {
@@ -395,7 +508,7 @@ const BarcodeProductResults = () => {
             err instanceof Error ? err.message : 'Failed to load product data'
           );
         }
-        
+
         setLoadingBasicData(false);
         setLoadingIngredients(false);
         setLoadingPackaging(false);
@@ -417,7 +530,23 @@ const BarcodeProductResults = () => {
       !loadingPackaging &&
       !loadingPackagingDescriptions &&
       !loadingRecommendations &&
-      barcode;
+      barcode &&
+      !scanSaved; // Don't save if already saved
+
+    // Debug logging to understand why save might not trigger
+    console.log('💾 Save check:', {
+      hasProduct: !!product,
+      loadingBasicData,
+      loadingIngredients,
+      loadingDescriptions,
+      loadingPackaging,
+      loadingPackagingDescriptions,
+      loadingRecommendations,
+      hasBarcode: !!barcode,
+      scanSaved,
+      shouldSave,
+      isAuthenticated,
+    });
 
     if (!shouldSave) return;
 
@@ -425,7 +554,9 @@ const BarcodeProductResults = () => {
       try {
         // Check if user is authenticated
         if (!isAuthenticated) {
-          console.log('💾 User not authenticated, skipping scan result save');
+          console.warn(
+            '⚠️ User not authenticated, skipping scan result save. User must be logged in to save scan results and receive notifications.'
+          );
           return;
         }
 
@@ -485,6 +616,7 @@ const BarcodeProductResults = () => {
         if (recommendations?.products) {
           recommendationsData.push(
             ...recommendations.products.map((product) => ({
+              id: product.id,
               name: product.name,
               brand: product.name.split(' ')[0] || 'Unknown',
               description: product.description,
@@ -520,6 +652,7 @@ const BarcodeProductResults = () => {
 
         // Save to database
         const scanData = {
+          scanType: 'barcode' as const,
           barcode,
           productName: product.name,
           productBrand: product.brand,
@@ -528,21 +661,41 @@ const BarcodeProductResults = () => {
           harmfulIngredients,
           packaging: packagingData,
           packagingSummary: packagingAnalysis?.summary,
-          packagingSafety: packagingAnalysis?.overall_safety as
-            | 'safe'
-            | 'harmful'
-            | 'caution'
-            | undefined,
+          packagingSafety: (() => {
+            const safety = packagingAnalysis?.overall_safety;
+            if (
+              safety === 'safe' ||
+              safety === 'harmful' ||
+              safety === 'caution'
+            ) {
+              return safety;
+            }
+            return 'unknown' as const;
+          })(),
           recommendations: recommendationsData,
           chemicalAnalysis,
         };
 
         console.log('💾 Saving scan result to database:', scanData);
         await saveScanResult(scanData);
-        console.log('✅ Scan result saved successfully');
+        setScanSaved(true);
+        console.log('✅ Scan result saved successfully - Notification created');
       } catch (error) {
         console.error('❌ Failed to save scan result:', error);
-        // Don't show error to user - saving is a background operation
+        console.error('Error details:', {
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        });
+        // Show error to user since notifications depend on successful save
+        if (error instanceof Error) {
+          if (error.message.includes('Authentication') || error.message.includes('401')) {
+            console.warn('⚠️ Authentication error - user may need to log in again');
+          } else if (error.message.includes('Network') || error.message.includes('fetch')) {
+            console.warn('⚠️ Network error - scan result and notification not saved');
+          } else {
+            console.warn('⚠️ Scan result save failed - notification not created:', error.message);
+          }
+        }
       }
     };
 
@@ -558,6 +711,7 @@ const BarcodeProductResults = () => {
     recommendations,
     barcode,
     isAuthenticated,
+    scanSaved,
   ]);
 
   // Show error state
@@ -569,7 +723,9 @@ const BarcodeProductResults = () => {
           {isNetworkIssue ? (
             <>
               <div className="text-6xl mb-4">📡</div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">No Internet Connection</h2>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                No Internet Connection
+              </h2>
               <p className="text-gray-600 mb-4 text-center max-w-md">
                 Please connect to Wi-Fi or mobile data and try again.
               </p>
@@ -590,46 +746,46 @@ const BarcodeProductResults = () => {
               <p className="text-gray-600 mb-4 text-center">
                 Product not found via barcode lookup. Try Scanning the Image.
               </p>
-          <button
-            onClick={async () => {
-              try {
-                const photo = await takePicture();
-                if (!photo?.webPath) return;
+              <button
+                onClick={async () => {
+                  try {
+                    const photo = await takePicture();
+                    if (!photo?.webPath) return;
 
-                // Navigate immediately to results page - data will load there
-                navigate('/product-identification-results', {
-                  state: {
-                    scannedImage: photo.webPath,
-                  },
-                });
-              } catch (e) {
-                console.error('Product identification error:', e);
-              }
-            }}
-            className="px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
-          >
-            Take Picture
-          </button>
-          <button
-            onClick={async () => {
-              try {
-                const photo = await pickFromGallery();
-                if (!photo?.webPath) return;
+                    // Navigate immediately to results page - data will load there
+                    navigate('/product-identification-results', {
+                      state: {
+                        scannedImage: photo.webPath,
+                      },
+                    });
+                  } catch (e) {
+                    console.error('Product identification error:', e);
+                  }
+                }}
+                className="px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+              >
+                Take Picture
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const photo = await pickFromGallery();
+                    if (!photo?.webPath) return;
 
-                // Navigate immediately to results page - data will load there
-                navigate('/product-identification-results', {
-                  state: {
-                    scannedImage: photo.webPath,
-                  },
-                });
-              } catch (e) {
-                console.error('Product identification error:', e);
-              }
-            }}
-            className="px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
-          >
-            Browse Photo
-          </button>
+                    // Navigate immediately to results page - data will load there
+                    navigate('/product-identification-results', {
+                      state: {
+                        scannedImage: photo.webPath,
+                      },
+                    });
+                  } catch (e) {
+                    console.error('Product identification error:', e);
+                  }
+                }}
+                className="px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+              >
+                Browse Photo
+              </button>
             </>
           )}
         </div>
@@ -1043,7 +1199,8 @@ const BarcodeProductResults = () => {
                   {recommendations.products.map((product) => (
                     <div
                       key={product.id}
-                      className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex flex-col sm:flex-row gap-2 sm:gap-3 items-start sm:items-center overflow-hidden"
+                      onClick={() => navigate(`/products/${product.id}`)}
+                      className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex flex-col sm:flex-row gap-2 sm:gap-3 items-start sm:items-center overflow-hidden cursor-pointer hover:shadow-[0px_2px_15px_0px_rgba(0,0,0,0.22)] transition-shadow"
                     >
                       <img
                         src={product.image_url}
@@ -1066,7 +1223,13 @@ const BarcodeProductResults = () => {
                       </div>
 
                       <Button
-                        onClick={() => window.open(product.permalink, '_blank')}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(
+                            product.affiliate_url || product.permalink,
+                            '_blank'
+                          );
+                        }}
                         className="bg-[#00A23E] text-white px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm hover:bg-[#008f35] transition-colors flex-shrink-0 whitespace-nowrap"
                       >
                         Buy now
@@ -1077,65 +1240,66 @@ const BarcodeProductResults = () => {
               </div>
             )}
 
-            {/* AI-Generated Alternatives */}
-            {recommendations.ai_alternatives.length > 0 && (
-              <div>
-                <header className="font-family-roboto text-base sm:text-[18px] font-medium mb-3.5 flex items-center gap-2">
-                  Healthier Eco-Friendly Recommendation
-                  <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-purple-100 to-blue-100 rounded-full">
-                    <img src={aiIcon} alt="AI" className="w-4 h-4" />
-                    <span className="text-xs font-semibold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                      AI
-                    </span>
-                  </div>
-                </header>
-                <div className="flex flex-col gap-2.5">
-                  {recommendations.ai_alternatives.map((alt, index) => (
-                    <div
-                      key={index}
-                      onClick={() => setSelectedAIAlternative(alt)}
-                      className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex flex-col sm:flex-row gap-2 sm:gap-3 items-start sm:items-center overflow-hidden cursor-pointer hover:shadow-[0px_2px_15px_0px_rgba(0,0,0,0.22)] transition-shadow"
-                    >
-                      <div className="w-14 h-14 sm:w-[60px] sm:h-[60px] bg-gradient-to-br from-[#00A23E] to-[#20799F] rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
-                        {alt.logo_url ? (
-                          <img
-                            src={alt.logo_url}
-                            alt={`${alt.brand} logo`}
-                            className="w-full h-full object-contain p-1"
-                            onError={(e) => {
-                              // Fallback to emoji if image fails to load
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              const parent = target.parentElement;
-                              if (parent) {
-                                parent.innerHTML =
-                                  '<span class="text-white font-bold text-lg sm:text-xl">🌱</span>';
-                              }
-                            }}
-                          />
-                        ) : (
-                          <span className="text-white font-bold text-lg sm:text-xl">
-                            🌱
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex flex-col flex-1 gap-1 min-w-0">
-                        <h3 className="font-roboto font-semibold text-sm sm:text-[16px] text-black leading-snug break-words">
-                          {alt.name}
-                        </h3>
-                        <p className="font-roboto text-xs sm:text-[12px] font-medium text-[#00A23E]">
-                          {alt.brand}
-                        </p>
-                        <p className="font-roboto font-normal text-xs sm:text-[13px] text-[#4e4e4e] leading-normal line-clamp-2">
-                          {alt.description}
-                        </p>
-                      </div>
+            {/* AI-Generated Alternatives - Only show when no WordPress products */}
+            {recommendations.ai_alternatives.length > 0 &&
+              recommendations.products.length === 0 && (
+                <div>
+                  <header className="font-family-roboto text-base sm:text-[18px] font-medium mb-3.5 flex items-center gap-2">
+                    Healthier Eco-Friendly Recommendation
+                    <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-purple-100 to-blue-100 rounded-full">
+                      <img src={aiIcon} alt="AI" className="w-4 h-4" />
+                      <span className="text-xs font-semibold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                        AI
+                      </span>
                     </div>
-                  ))}
+                  </header>
+                  <div className="flex flex-col gap-2.5">
+                    {recommendations.ai_alternatives.map((alt, index) => (
+                      <div
+                        key={index}
+                        onClick={() => setSelectedAIAlternative(alt)}
+                        className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex flex-col sm:flex-row gap-2 sm:gap-3 items-start sm:items-center overflow-hidden cursor-pointer hover:shadow-[0px_2px_15px_0px_rgba(0,0,0,0.22)] transition-shadow"
+                      >
+                        <div className="w-14 h-14 sm:w-[60px] sm:h-[60px] bg-gradient-to-br from-[#00A23E] to-[#20799F] rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                          {alt.logo_url ? (
+                            <img
+                              src={alt.logo_url}
+                              alt={`${alt.brand} logo`}
+                              className="w-full h-full object-contain p-1"
+                              onError={(e) => {
+                                // Fallback to emoji if image fails to load
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const parent = target.parentElement;
+                                if (parent) {
+                                  parent.innerHTML =
+                                    '<span class="text-white font-bold text-lg sm:text-xl">🌱</span>';
+                                }
+                              }}
+                            />
+                          ) : (
+                            <span className="text-white font-bold text-lg sm:text-xl">
+                              🌱
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex flex-col flex-1 gap-1 min-w-0">
+                          <h3 className="font-roboto font-semibold text-sm sm:text-[16px] text-black leading-snug break-words">
+                            {alt.name}
+                          </h3>
+                          <p className="font-roboto text-xs sm:text-[12px] font-medium text-[#00A23E]">
+                            {alt.brand}
+                          </p>
+                          <p className="font-roboto font-normal text-xs sm:text-[13px] text-[#4e4e4e] leading-normal line-clamp-2">
+                            {alt.description}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
           </div>
         ) : null}
       </section>
@@ -1322,24 +1486,26 @@ const BarcodeProductResults = () => {
         </div>
       </section> */}
 
-      {/* AI Note - Only show if we have AI-generated recommendations */}
-      {recommendations && recommendations.ai_alternatives.length > 0 && (
-        <section className="mt-6 sm:mt-8 mb-20 p-3 sm:p-4 text-white font-family-roboto leading-6 rounded-[10px] bg-[#20799F]">
-          <header className="flex gap-2.5 font-medium text-base sm:text-[18px] items-center">
-            <img
-              src={aiIcon}
-              alt=""
-              className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0"
-            />
-            <span>AI Note</span>
-          </header>
+      {/* AI Note - Only show if AI-generated recommendations are displayed */}
+      {recommendations &&
+        recommendations.ai_alternatives.length > 0 &&
+        recommendations.products.length === 0 && (
+          <section className="mt-6 sm:mt-8 mb-20 p-3 sm:p-4 text-white font-family-roboto leading-6 rounded-[10px] bg-[#20799F]">
+            <header className="flex gap-2.5 font-medium text-base sm:text-[18px] items-center">
+              <img
+                src={aiIcon}
+                alt=""
+                className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0"
+              />
+              <span>AI Note</span>
+            </header>
 
-          <p className="mt-3.5 text-sm sm:text-base">
-            These products have not been researched by Hippiekit yet, please
-            research before purchasing.
-          </p>
-        </section>
-      )}
+            <p className="mt-3.5 text-sm sm:text-base">
+              These products have not been researched by Hippiekit yet, please
+              research before purchasing.
+            </p>
+          </section>
+        )}
     </section>
   );
 };

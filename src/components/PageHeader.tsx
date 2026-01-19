@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import backButton from '@/assets/backButton.svg';
-import { NotificationIcon } from '@/assets/icons';
+import { NotificationBadge } from './NotificationBadge';
 
 interface PageHeaderProps {
   title: string;
@@ -101,7 +101,7 @@ export const PageHeader = ({
           className="flex-shrink-0 rounded-[7px] p-2.5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]"
           aria-label="Notifications"
         >
-          <NotificationIcon />
+          <NotificationBadge />
         </button>
       ) : (
         <div className="flex-shrink-0 w-10" aria-hidden />

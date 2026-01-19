@@ -18,7 +18,7 @@ import {
   QRIcon,
   CameraIcon,
 } from '@/assets/homeIcons';
-import { NotificationIcon } from './assets/icons';
+import { NotificationBadge } from './components/NotificationBadge';
 import { Categories } from './components/Categories';
 import { Products } from './components/Products';
 import HomeSidebar from './pages/HomeSidebar';
@@ -229,7 +229,7 @@ function App() {
                   to="/notifications"
                   className="cursor-pointer w-full h-full"
                 >
-                  <NotificationIcon />
+                  <NotificationBadge />
                 </Link>
               </button>
             </div>
