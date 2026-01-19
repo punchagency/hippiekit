@@ -14,6 +14,7 @@ import {
 import barcodeAnalysisService from '@/services/barcodeAnalysisService';
 import { saveScanResult } from '@/services/scanResultService';
 import { useAuth } from '@/context/AuthContext';
+import { useScanCache } from '@/context/ScanCacheContext';
 import { ProductResultInfoCard } from '@/components/ProductResultInfoCard';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/PageHeader';
@@ -60,6 +61,8 @@ const BarcodeProductResults = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { getBarcodeScan, setBarcodeScan } = useScanCache();
+
   const {
     product: initialProduct,
     barcode,
@@ -70,19 +73,37 @@ const BarcodeProductResults = () => {
     savedScanData?: any;
   };
 
+  // Capture these values on mount to prevent re-running useEffect
+  const initialDataRef = useRef({
+    initialProduct,
+    barcode,
+    savedScanData,
+    captured: false,
+  });
+
+  // Capture values only once on mount
+  if (!initialDataRef.current.captured) {
+    initialDataRef.current = {
+      initialProduct,
+      barcode,
+      savedScanData,
+      captured: true,
+    };
+  }
+
   // State for product data (starts with basic, updates progressively)
   const [product, setProduct] = useState<BarcodeProduct | null>(initialProduct);
   const [loadingBasicData, setLoadingBasicData] = useState(
-    !initialProduct && !savedScanData
+    !initialProduct && !savedScanData,
   );
   const [error, setError] = useState<string | null>(null);
   const [isNetworkIssue, setIsNetworkIssue] = useState(false);
   const [loadingIngredients, setLoadingIngredients] = useState(
-    !initialProduct && !savedScanData
+    !initialProduct && !savedScanData,
   ); // Start as true to show skeleton immediately
   const [loadingDescriptions, setLoadingDescriptions] = useState(false);
   const [loadingPackaging, setLoadingPackaging] = useState(
-    !initialProduct && !savedScanData
+    !initialProduct && !savedScanData,
   ); // Start as true to show skeleton immediately
   const [loadingPackagingDescriptions, setLoadingPackagingDescriptions] =
     useState(false);
@@ -100,7 +121,7 @@ const BarcodeProductResults = () => {
   const [selectedHarmful, setSelectedHarmful] = useState<string | null>(null);
   const [selectedSafe, setSelectedSafe] = useState<string | null>(null);
   const [selectedPackaging, setSelectedPackaging] = useState<string | null>(
-    null
+    null,
   );
   const [selectedAIAlternative, setSelectedAIAlternative] = useState<{
     name: string;
@@ -115,16 +136,22 @@ const BarcodeProductResults = () => {
   // State for recommendations
   const [recommendations, setRecommendations] =
     useState<ProductRecommendations | null>(null);
-  const [loadingRecommendations, setLoadingRecommendations] = useState(
-    !initialProduct
-  ); // Start as true to show skeleton immediately
+  const [loadingRecommendations, setLoadingRecommendations] =
+    useState(!initialProduct); // Start as true to show skeleton immediately
 
   // Use modular API to progressively load data
   useEffect(() => {
+    // Use captured values from mount to prevent re-running
+    const { barcode, savedScanData } = initialDataRef.current;
+
     if (!barcode) return;
 
     const loadData = async () => {
-      // If we have savedScanData (from notification), use it directly
+      // Priority 1: Check location state (savedScanData from notification/navigation)
+      // Priority 2: Check context cache (from recent scan)
+      // Priority 3: Perform fresh scan (new barcode)
+
+      // Check if we have savedScanData from location state
       if (savedScanData) {
         console.log('📦 Loading from saved barcode scan data:', savedScanData);
 
@@ -206,7 +233,7 @@ const BarcodeProductResults = () => {
               })) || [],
           ai_alternatives:
             savedScanData.recommendations?.filter(
-              (r: any) => r.source === 'ai'
+              (r: any) => r.source === 'ai',
             ) || [],
           message: 'Loaded from saved scan',
         });
@@ -222,22 +249,37 @@ const BarcodeProductResults = () => {
         return;
       }
 
+      // Check context cache
+      const cachedScan = getBarcodeScan(barcode);
+      if (cachedScan) {
+        console.log('📦 Restoring from context cache:', barcode);
+        setProduct(cachedScan.product);
+        setRecommendations(cachedScan.recommendations);
+        setLoadingBasicData(false);
+        setLoadingIngredients(false);
+        setLoadingPackaging(false);
+        setLoadingRecommendations(false);
+        setScanSaved(true);
+        return;
+      }
+
+      // No cached data, perform fresh scan
       try {
         setLoadingBasicData(true);
         setLoadingIngredients(true);
         setLoadingPackaging(true);
 
+        console.log('🔍 No cache found, performing fresh scan...');
         // Step 1: Fast lookup (1-2s)
         console.log('📦 Fetching basic product info...');
-        const lookupResult = await barcodeAnalysisService.lookupBarcode(
-          barcode
-        );
+        const lookupResult =
+          await barcodeAnalysisService.lookupBarcode(barcode);
 
         console.log('✅ Lookup result:', lookupResult);
 
         if (!lookupResult.found) {
           setError(
-            'Product not found via barcode lookup. Try Scanning the Image.'
+            'Product not found via barcode lookup. Try Scanning the Image.',
           );
           setLoadingBasicData(false);
           setLoadingIngredients(false);
@@ -267,7 +309,7 @@ const BarcodeProductResults = () => {
             (ingredient: string) => ({
               text: ingredient,
               type: 'ingredient',
-            })
+            }),
           ),
           packaging: lookupResult.product.packaging || '',
           materials: {
@@ -299,12 +341,12 @@ const BarcodeProductResults = () => {
               .describeIngredients(
                 barcode,
                 separationResult.harmful,
-                separationResult.safe
+                separationResult.safe,
               )
               .then((descriptionsResult) => {
                 console.log(
                   '📝 Ingredient descriptions received:',
-                  descriptionsResult
+                  descriptionsResult,
                 );
                 setProduct((prev) => {
                   if (!prev) return prev;
@@ -381,12 +423,12 @@ const BarcodeProductResults = () => {
                 separationResult.packaging_text,
                 separationResult.packaging_tags,
                 separationResult.materials, // Pass normalized materials
-                separationResult.product_context // Pass product context for better analysis
+                separationResult.product_context, // Pass product context for better analysis
               )
               .then((descriptionsResult) => {
                 console.log(
                   '📝 Packaging descriptions received:',
-                  descriptionsResult
+                  descriptionsResult,
                 );
                 setProduct((prev) => {
                   if (!prev) return prev;
@@ -505,7 +547,7 @@ const BarcodeProductResults = () => {
           setError('No internet connection detected');
         } else {
           setError(
-            err instanceof Error ? err.message : 'Failed to load product data'
+            err instanceof Error ? err.message : 'Failed to load product data',
           );
         }
 
@@ -517,7 +559,7 @@ const BarcodeProductResults = () => {
     };
 
     loadData();
-  }, [barcode]);
+  }, []); // Empty dependency - only run once on mount
 
   // Save scan result to database when all data is loaded
   useEffect(() => {
@@ -555,7 +597,7 @@ const BarcodeProductResults = () => {
         // Check if user is authenticated
         if (!isAuthenticated) {
           console.warn(
-            '⚠️ User not authenticated, skipping scan result save. User must be logged in to save scan results and receive notifications.'
+            '⚠️ User not authenticated, skipping scan result save. User must be logged in to save scan results and receive notifications.',
           );
           return;
         }
@@ -577,7 +619,7 @@ const BarcodeProductResults = () => {
           ([name, description]) => ({
             name,
             description: String(description),
-          })
+          }),
         );
 
         // Prepare safe ingredients
@@ -585,7 +627,7 @@ const BarcodeProductResults = () => {
           ([name, description]) => ({
             name,
             description: String(description),
-          })
+          }),
         );
 
         // Prepare packaging data
@@ -606,7 +648,7 @@ const BarcodeProductResults = () => {
           })
           .filter(
             (item): item is { name: string; description: string } =>
-              item !== null
+              item !== null,
           );
 
         // Prepare recommendations
@@ -624,7 +666,7 @@ const BarcodeProductResults = () => {
               price: product.price,
               permalink: product.permalink,
               source: 'wordpress' as const,
-            }))
+            })),
           );
         }
 
@@ -637,7 +679,7 @@ const BarcodeProductResults = () => {
               description: alt.description,
               image_url: alt.logo_url,
               source: 'ai' as const,
-            }))
+            })),
           );
         }
 
@@ -680,6 +722,13 @@ const BarcodeProductResults = () => {
         await saveScanResult(scanData);
         setScanSaved(true);
         console.log('✅ Scan result saved successfully - Notification created');
+
+        // Also save to context cache for fast access
+        setBarcodeScan({
+          barcode,
+          product,
+          recommendations,
+        });
       } catch (error) {
         console.error('❌ Failed to save scan result:', error);
         console.error('Error details:', {
@@ -688,12 +737,25 @@ const BarcodeProductResults = () => {
         });
         // Show error to user since notifications depend on successful save
         if (error instanceof Error) {
-          if (error.message.includes('Authentication') || error.message.includes('401')) {
-            console.warn('⚠️ Authentication error - user may need to log in again');
-          } else if (error.message.includes('Network') || error.message.includes('fetch')) {
-            console.warn('⚠️ Network error - scan result and notification not saved');
+          if (
+            error.message.includes('Authentication') ||
+            error.message.includes('401')
+          ) {
+            console.warn(
+              '⚠️ Authentication error - user may need to log in again',
+            );
+          } else if (
+            error.message.includes('Network') ||
+            error.message.includes('fetch')
+          ) {
+            console.warn(
+              '⚠️ Network error - scan result and notification not saved',
+            );
           } else {
-            console.warn('⚠️ Scan result save failed - notification not created:', error.message);
+            console.warn(
+              '⚠️ Scan result save failed - notification not created:',
+              error.message,
+            );
           }
         }
       }
@@ -834,7 +896,7 @@ const BarcodeProductResults = () => {
 
   // Format packaging tags for display (replace underscores and capitalize)
   const packagingTags = packagingMaterials.map((material) =>
-    formatTagName(material)
+    formatTagName(material),
   );
 
   // Create tag descriptions mappings
@@ -1031,8 +1093,8 @@ const BarcodeProductResults = () => {
                   loadingDescriptions
                     ? 'Analyzing ingredients with AI...'
                     : selectedHarmful && harmfulTagDescriptions[selectedHarmful]
-                    ? String(harmfulTagDescriptions[selectedHarmful])
-                    : 'Click on a chemical above to see why it may be harmful'
+                      ? String(harmfulTagDescriptions[selectedHarmful])
+                      : 'Click on a chemical above to see why it may be harmful'
                 }
                 isLoadingDescription={loadingDescriptions}
               />
@@ -1084,8 +1146,8 @@ const BarcodeProductResults = () => {
               loadingDescriptions
                 ? 'Analyzing ingredients with AI...'
                 : selectedSafe && safeTagDescriptions[selectedSafe]
-                ? String(safeTagDescriptions[selectedSafe])
-                : 'Click on an ingredient above to learn more about it'
+                  ? String(safeTagDescriptions[selectedSafe])
+                  : 'Click on an ingredient above to learn more about it'
             }
             isLoadingDescription={loadingDescriptions}
           />
@@ -1127,16 +1189,16 @@ const BarcodeProductResults = () => {
               packagingAnalysis?.overall_safety === 'harmful'
                 ? 'negative'
                 : packagingAnalysis?.overall_safety === 'safe'
-                ? 'positive'
-                : 'normal'
+                  ? 'positive'
+                  : 'normal'
             }
             tags={packagingTags}
             tagColor={
               packagingAnalysis?.overall_safety === 'harmful'
                 ? 'red'
                 : packagingAnalysis?.overall_safety === 'safe'
-                ? 'green'
-                : undefined
+                  ? 'green'
+                  : undefined
             }
             tagDescriptions={packagingTagDescriptions}
             onTagClick={(tag) => setSelectedPackaging(tag)}
@@ -1145,11 +1207,11 @@ const BarcodeProductResults = () => {
               loadingPackagingDescriptions
                 ? 'Analyzing packaging materials with AI...'
                 : selectedPackaging &&
-                  packagingTagDescriptions[selectedPackaging]
-                ? String(packagingTagDescriptions[selectedPackaging])
-                : packagingAnalysis?.summary
-                ? String(packagingAnalysis.summary)
-                : 'Click on a material above to see details'
+                    packagingTagDescriptions[selectedPackaging]
+                  ? String(packagingTagDescriptions[selectedPackaging])
+                  : packagingAnalysis?.summary
+                    ? String(packagingAnalysis.summary)
+                    : 'Click on a material above to see details'
             }
             isLoadingDescription={loadingPackagingDescriptions}
           />
@@ -1227,7 +1289,7 @@ const BarcodeProductResults = () => {
                           e.stopPropagation();
                           window.open(
                             product.affiliate_url || product.permalink,
-                            '_blank'
+                            '_blank',
                           );
                         }}
                         className="bg-[#00A23E] text-white px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm hover:bg-[#008f35] transition-colors flex-shrink-0 whitespace-nowrap"
