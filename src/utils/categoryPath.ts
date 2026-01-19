@@ -1,15 +1,18 @@
 import type { Category } from '@/services/categoryService';
 import { fetchSubCategories } from '@/services/categoryService';
+import type { QueryClient } from '@tanstack/react-query';
 
 /**
- * Build category path array from URL slug segments
+ * Build category path array from URL slug segments using React Query cache
  * @param slugs - Array of category slugs from URL (e.g., ['skincare', 'moisturizers'])
  * @param topLevelCategories - All top-level categories
+ * @param queryClient - React Query client to access cached data
  * @returns Promise resolving to array of Category objects in hierarchical order
  */
 export const buildCategoryPath = async (
   slugs: string[],
-  topLevelCategories: Category[]
+  topLevelCategories: Category[],
+  queryClient?: QueryClient
 ): Promise<Category[]> => {
   if (slugs.length === 0) {
     return [];
@@ -19,8 +22,33 @@ export const buildCategoryPath = async (
   let parentId = 0;
 
   for (const slug of slugs) {
-    const candidates =
-      parentId === 0 ? topLevelCategories : await fetchSubCategories(parentId);
+    let candidates: Category[];
+
+    if (parentId === 0) {
+      candidates = topLevelCategories;
+    } else if (queryClient) {
+      // Try to get from cache first
+      const cachedData = queryClient.getQueryData<Category[]>([
+        'categories',
+        'subcategories',
+        parentId,
+      ]);
+
+      if (cachedData) {
+        // Use cached data - instant, no API call!
+        candidates = cachedData;
+      } else {
+        // Not in cache, fetch and cache it
+        candidates = await queryClient.fetchQuery({
+          queryKey: ['categories', 'subcategories', parentId],
+          queryFn: () => fetchSubCategories(parentId),
+          staleTime: 1000 * 60 * 60 * 24 * 7, // 7 days
+        });
+      }
+    } else {
+      // Fallback to direct fetch if no queryClient (shouldn't happen)
+      candidates = await fetchSubCategories(parentId);
+    }
 
     const match = candidates.find((c) => c.slug === slug);
     if (!match) {

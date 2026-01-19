@@ -19,7 +19,7 @@ const config: CapacitorConfig = {
   // Uncomment and update IP when using live reload during development
   // Comment out for production builds
   // server: {
-  //   url: 'http://192.168.1.211:5173',
+  //   url: 'http://172.20.10.6:5173',
   //   cleartext: true,
   // },
 };

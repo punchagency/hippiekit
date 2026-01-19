@@ -70,9 +70,6 @@ const AllCategories = () => {
     subcategoriesCount: subcategories.length,
   });
 
-  // Immediate loading state when category is clicked
-  const [isNavigating, setIsNavigating] = useState(false);
-
   // Refresh handler
   const handleRefresh = useCallback(async () => {
     if (showProducts && currentSlug) {
@@ -134,9 +131,13 @@ const AllCategories = () => {
       }
 
       try {
-        // Build category path from URL slugs
+        // Build category path from URL slugs using React Query cache
         const slugArray = slugPath.split('/').filter(Boolean);
-        const resolvedPath = await buildCategoryPath(slugArray, wpCategories);
+        const resolvedPath = await buildCategoryPath(
+          slugArray,
+          wpCategories,
+          queryClient
+        );
         setCategoryPath(resolvedPath);
       } catch (error) {
         console.error('Error resolving category path:', error);
@@ -146,7 +147,7 @@ const AllCategories = () => {
     };
 
     syncUrlToState();
-  }, [slugPath, wpCategories, fromFavorites]);
+  }, [slugPath, wpCategories, fromFavorites, queryClient]);
 
   // Determine current categories based on parent ID (computed, not state)
   const currentCategories =
@@ -205,17 +206,7 @@ const AllCategories = () => {
     _categoryId: number,
     categorySlug: string
   ) => {
-    console.log('🖱️ Category clicked:', { categorySlug, isNavigating });
-
-    // Prevent multiple clicks
-    if (isNavigating) {
-      console.log('⚠️ Already navigating, ignoring click');
-      return;
-    }
-
-    // Set navigating state immediately to show spinner
-    setIsNavigating(true);
-    console.log('✈️ Navigation started');
+    console.log('🖱️ Category clicked:', { categorySlug });
 
     if (fromFavorites) {
       // Navigate back to favorites with the selected category
@@ -223,7 +214,7 @@ const AllCategories = () => {
       return;
     }
 
-    // Build the new URL path with the category slug
+    // Navigate immediately - let the destination page handle loading states
     const newSlugs = [...slugs, categorySlug];
     const newUrl = buildCategoryUrl(newSlugs);
     navigate(newUrl);
@@ -244,40 +235,6 @@ const AllCategories = () => {
 
   // Use favorite categories when from favorites, otherwise use current categories
   const categories = fromFavorites ? favoriteCategories : currentCategories;
-  // Only consider loading if we don't have cached data
-  const isLoadingCategories = fromFavorites
-    ? isLoadingFavoriteCategories
-    : (isLoadingWPCategories && wpCategories.length === 0) ||
-      (isLoadingSubcategories && subcategories.length === 0);
-
-  // Reset navigating state when loading completes
-  useEffect(() => {
-    console.log('⏱️ Loading state check effect running:', {
-      isNavigating,
-      isLoadingCategories,
-      isLoadingProducts,
-      showProducts,
-    });
-
-    // For category view: only wait for categories to load
-    // For product view: wait for both categories and products to load
-    const shouldResetLoading = showProducts
-      ? !isLoadingCategories && !isLoadingProducts
-      : !isLoadingCategories;
-
-    console.log('🔍 Should reset loading?', shouldResetLoading);
-
-    if (shouldResetLoading) {
-      console.log('✅ Loading complete, resetting navigation state');
-      setIsNavigating(false);
-    } else {
-      console.log('⏳ Still loading...', {
-        reason: showProducts
-          ? `Products view: isLoadingCategories=${isLoadingCategories}, isLoadingProducts=${isLoadingProducts}`
-          : `Category view: isLoadingCategories=${isLoadingCategories}`,
-      });
-    }
-  }, [isNavigating, isLoadingCategories, isLoadingProducts, showProducts]);
 
   // Transform categories for the Categories component
   const categoryProducts = categories.map((cat) => {
@@ -365,7 +322,25 @@ const AllCategories = () => {
         ) : (
           // CATEGORY VIEW
           <div className="mt-6">
-            {categoryProducts.length > 0 ? (
+            {(isLoadingSubcategories && currentParentId > 0) ||
+              isLoadingFavoriteCategories ? (
+              // Loading state for subcategories or favorites - inline skeleton
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                  <p className="text-sm text-gray-600">Loading categories...</p>
+                </div>
+                <div className="grid grid-cols-2 min-[430px]:grid-cols-4 gap-3 sm:gap-4 md:gap-7.5">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="animate-pulse">
+                      <div className="aspect-square bg-gray-200 rounded-[10px] mb-2"></div>
+                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-1"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : categoryProducts.length > 0 ? (
               <Categories
                 products={categoryProducts}
                 selection={fromFavorites ? 'filter' : 'hierarchical'}
