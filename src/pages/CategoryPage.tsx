@@ -278,8 +278,8 @@ export default function CategoryPage() {
                             }, 150);
                           }}
                           className={`h-2 rounded-full transition-all duration-300 ${index === currentProductIndex
-                              ? 'w-8 bg-white'
-                              : 'w-2 bg-white/50 hover:bg-white/70'
+                            ? 'w-8 bg-white'
+                            : 'w-2 bg-white/50 hover:bg-white/70'
                             }`}
                         />
                       ))}

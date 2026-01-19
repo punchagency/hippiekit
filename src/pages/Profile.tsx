@@ -63,7 +63,7 @@ const Profile = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] font-family-roboto">
+    <div>
       {/* Header */}
       <div className="px-5 pt-6 pb-4">
         <div className="flex items-center justify-center gap-2">

@@ -115,7 +115,11 @@ const AllCategories = () => {
 
       try {
         const slugArray = slugPath.split('/').filter(Boolean);
-        const resolvedPath = await buildCategoryPath(slugArray, wpCategories);
+        const resolvedPath = await buildCategoryPath(
+          slugArray,
+          wpCategories,
+          queryClient
+        );
         setCategoryPath(resolvedPath);
       } catch (error) {
         console.error('Error resolving category path:', error);
@@ -124,7 +128,7 @@ const AllCategories = () => {
     };
 
     syncUrlToState();
-  }, [slugPath, wpCategories, fromFavorites]);
+  }, [slugPath, wpCategories, fromFavorites, queryClient]);
 
   // Determine current categories based on parent ID
   const currentCategories =
@@ -252,7 +256,7 @@ const AllCategories = () => {
   return (
     <PullToRefresh onRefresh={handleRefresh}>
       <section
-        className="relative min-h-screen pb-24"
+        className="relative"
       >
         {/* Header Section */}
         <div className="px-5">

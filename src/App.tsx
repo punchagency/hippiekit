@@ -300,9 +300,9 @@ function App() {
           </header>
 
           {/* Scrollable Content - Add padding-top to account for fixed header */}
-          <div className="pt-[calc(300px+env(safe-area-inset-top))] sm:pt-[calc(340px+env(safe-area-inset-top))]">
+          <div className="pt-[300px]">
             {/* Top Categories */}
-            <section className="mx-2 sm:mx-3.5 rounded-[7px] px-2 sm:px-4 py-3 sm:py-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex flex-col gap-3 sm:gap-7.5">
+            <section className="max-[320px]:mx-2 mx-4 rounded-[7px] px-2 sm:px-4 py-3 sm:py-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex flex-col gap-3 sm:gap-7.5">
               <div className="flex justify-between items-center gap-2">
                 <h2 className="text-primary font-family-segoe text-[14px] sm:text-[18px] font-bold capitalize">
                   Top Categories
@@ -346,7 +346,7 @@ function App() {
             </section>
 
             {/* Products Grid */}
-            <section className="mx-2 sm:mx-3.5 mt-3 mb-20 rounded-[7px] px-2 sm:px-4 py-3 sm:py-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex flex-col gap-3 sm:gap-7.5">
+            <section className="max-[320px]:mx-2 mx-4 mt-3 mb-4 rounded-[7px] px-2 sm:px-4 py-3 sm:py-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex flex-col gap-3 sm:gap-7.5">
               <h2 className="text-primary font-family-segoe text-[14px] sm:text-[18px] font-bold capitalize">
                 New Product Corner
               </h2>

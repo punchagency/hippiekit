@@ -189,34 +189,10 @@ function Root() {
               }
             />
             <Route
-              path="/shopping-list"
-              element={
-                <ProtectedRoute>
-                  <ShoppingList />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/kitchen-items"
               element={
                 <ProtectedRoute>
                   <KitchenItems />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/monthly-specials"
-              element={
-                <ProtectedRoute>
-                  <MonthlySpecials />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/notifications"
-              element={
-                <ProtectedRoute>
-                  <Notifications />
                 </ProtectedRoute>
               }
             />
@@ -265,6 +241,9 @@ function Root() {
               <Route path="/vision-product-results" element={<VisionProductResults />} />
               <Route path="/barcode-product-results" element={<BarcodeProductResults />} />
               <Route path="/product-identification-results" element={<ProductIdentificationResults />} />
+              <Route path="/monthly-specials" element={<MonthlySpecials />} />
+              <Route path="/notifications" element={<Notifications />} />
+              <Route path="/shopping-list" element={<ShoppingList />} />
             </Route>
 
             {/* Catch all - redirect to onboarding */}
