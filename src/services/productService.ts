@@ -79,7 +79,7 @@ export const searchProductsSemantic = async (
   } = options || {};
 
   return await httpPostJson<SemanticSearchResponse>(
-    `${AI_SERVICE_URL}/api/search`,
+    `${AI_SERVICE_URL}/api/search/`,
     {
       query,
       limit,
