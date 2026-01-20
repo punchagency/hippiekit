@@ -7,6 +7,7 @@ import {
   useCategories,
   useInfiniteSearchProducts,
 } from '@/services/categoryService';
+import { useSemanticSearch } from '@/services/useSemanticSearch';
 import ProductInfo from '@/components/ProductInfo';
 import {
   addFavorite,
@@ -37,11 +38,12 @@ export const Search = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const queryClient = useQueryClient();
   const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [useSemanticSearchMode, setUseSemanticSearchMode] = useState(true);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [favoriteIds, setFavoriteIds] = useState<Set<number>>(new Set());
   const [loadingFavoriteIds, setLoadingFavoriteIds] = useState<Set<number>>(
-    new Set()
+    new Set(),
   );
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
 
@@ -54,26 +56,81 @@ export const Search = () => {
     await queryClient.invalidateQueries({ queryKey: ['search-products'] });
   }, [queryClient]);
 
+  // Debounce the search query (300ms delay)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery.trim());
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   // Use cached queries
   const { data: categories = [] } = useCategories();
+
+  // Semantic search (AI-powered)
+  const {
+    data: semanticData,
+    isLoading: isSemanticLoading,
+    error: semanticError,
+  } = useSemanticSearch(debouncedQuery, {
+    limit: 50,
+    minScore: 0.5,
+    category: selectedCategory || undefined,
+  });
+
+  // WordPress fallback search
   const {
     data: searchData,
-    isLoading,
+    isLoading: isWordPressLoading,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteSearchProducts(
     debouncedQuery,
     selectedCategory || undefined,
-    15
+    15,
   );
+
+  // Determine which search results to use
+  const isLoading = useSemanticSearchMode
+    ? isSemanticLoading
+    : isWordPressLoading;
+
+  // Auto-fallback to WordPress if semantic search fails
+  useEffect(() => {
+    if (semanticError && useSemanticSearchMode) {
+      console.warn(
+        'Semantic search failed, falling back to WordPress search:',
+        semanticError,
+      );
+      setUseSemanticSearchMode(false);
+    }
+  }, [semanticError, useSemanticSearchMode]);
 
   // Flatten all pages of products with useMemo
   const products = useMemo(() => {
+    if (useSemanticSearchMode && semanticData?.results) {
+      // Convert semantic search results to product format
+      return semanticData.results
+        .map((result) => ({
+          id: parseInt(result.id) || 0, // Parse ID with fallback
+          title: { rendered: result.name },
+          content: { rendered: result.description },
+          meta: { cta_button_text: result.price },
+          _embedded: {
+            'wp:featuredmedia': result.image
+              ? [{ source_url: result.image }]
+              : [],
+          },
+        }))
+        .filter((p) => p.id > 0); // Filter out invalid IDs
+    }
+
     if (!searchData) return [];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (searchData as any).pages.flatMap((page: any) => page.products);
-  }, [searchData]);
+  }, [useSemanticSearchMode, semanticData, searchData]);
 
   const hasSearched = !!debouncedQuery.trim();
 
@@ -85,7 +142,7 @@ export const Search = () => {
         fetchNextPage();
       }
     },
-    [fetchNextPage, hasNextPage, isFetchingNextPage]
+    [fetchNextPage, hasNextPage, isFetchingNextPage],
   );
 
   useEffect(() => {
@@ -104,7 +161,7 @@ export const Search = () => {
     const searchParam = searchParams.get('search') || '';
     const categoryParam = searchParams.get('category') || '';
     setSearchQuery(searchParam);
-    setDebouncedQuery(searchParam.trim());
+    // Don't set debouncedQuery here - let debounce effect handle it
     setSelectedCategory(categoryParam);
   }, [searchParams]);
 
@@ -140,7 +197,7 @@ export const Search = () => {
 
   // Handle search submission (triggered on Enter key)
   const handleSearch = async () => {
-    setDebouncedQuery(searchQuery.trim());
+    setDebouncedQuery(searchQuery.trim()); // Immediately apply search
     // Update URL params
     const newParams: Record<string, string> = {};
     if (searchQuery.trim()) newParams.search = searchQuery.trim();
