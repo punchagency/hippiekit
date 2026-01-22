@@ -14,6 +14,7 @@ import {
 import barcodeAnalysisService from '@/services/barcodeAnalysisService';
 import { saveScanResult } from '@/services/scanResultService';
 import { useAuth } from '@/context/AuthContext';
+import { useScanCache } from '@/context/ScanCacheContext';
 import { ProductResultInfoCard } from '@/components/ProductResultInfoCard';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/PageHeader';
@@ -50,7 +51,7 @@ const isNetworkError = (error: any): boolean => {
     errorMessage.includes('enotfound') ||
     errorMessage.includes('getaddrinfo') ||
     error.name === 'NetworkError' ||
-    error.name === 'TypeError' && errorMessage.includes('fetch')
+    (error.name === 'TypeError' && errorMessage.includes('fetch'))
   );
 };
 
@@ -58,21 +59,53 @@ const BarcodeProductResults = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  const { product: initialProduct, barcode } = location.state as {
+  const { getBarcodeScan, setBarcodeScan } = useScanCache();
+
+  const {
+    product: initialProduct,
+    barcode,
+    savedScanData,
+  } = location.state as {
     product: BarcodeProduct | null;
     barcode: string;
+    savedScanData?: any;
   };
+
+  // Capture these values on mount to prevent re-running useEffect
+  const initialDataRef = useRef({
+    initialProduct,
+    barcode,
+    savedScanData,
+    captured: false,
+  });
+
+  // Capture values only once on mount
+  if (!initialDataRef.current.captured) {
+    initialDataRef.current = {
+      initialProduct,
+      barcode,
+      savedScanData,
+      captured: true,
+    };
+  }
 
   // State for product data (starts with basic, updates progressively)
   const [product, setProduct] = useState<BarcodeProduct | null>(initialProduct);
-  const [loadingBasicData, setLoadingBasicData] = useState(!initialProduct);
+  const [loadingBasicData, setLoadingBasicData] = useState(
+    !initialProduct && !savedScanData,
+  );
   const [error, setError] = useState<string | null>(null);
   const [isNetworkIssue, setIsNetworkIssue] = useState(false);
-  const [loadingIngredients, setLoadingIngredients] = useState(!initialProduct); // Start as true to show skeleton immediately
+  const [loadingIngredients, setLoadingIngredients] = useState(
+    !initialProduct && !savedScanData,
+  ); // Start as true to show skeleton immediately
   const [loadingDescriptions, setLoadingDescriptions] = useState(false);
-  const [loadingPackaging, setLoadingPackaging] = useState(!initialProduct); // Start as true to show skeleton immediately
+  const [loadingPackaging, setLoadingPackaging] = useState(
+    !initialProduct && !savedScanData,
+  ); // Start as true to show skeleton immediately
   const [loadingPackagingDescriptions, setLoadingPackagingDescriptions] =
     useState(false);
+  const [scanSaved, setScanSaved] = useState(false);
 
   // Use ref to track latest product data for recommendations
   const productRef = useRef<BarcodeProduct | null>(initialProduct);
@@ -86,7 +119,7 @@ const BarcodeProductResults = () => {
   const [selectedHarmful, setSelectedHarmful] = useState<string | null>(null);
   const [selectedSafe, setSelectedSafe] = useState<string | null>(null);
   const [selectedPackaging, setSelectedPackaging] = useState<string | null>(
-    null
+    null,
   );
   const [selectedAIAlternative, setSelectedAIAlternative] = useState<{
     name: string;
@@ -101,31 +134,150 @@ const BarcodeProductResults = () => {
   // State for recommendations
   const [recommendations, setRecommendations] =
     useState<ProductRecommendations | null>(null);
-  const [loadingRecommendations, setLoadingRecommendations] = useState(
-    !initialProduct
-  ); // Start as true to show skeleton immediately
+  const [loadingRecommendations, setLoadingRecommendations] =
+    useState(!initialProduct); // Start as true to show skeleton immediately
 
   // Use modular API to progressively load data
   useEffect(() => {
+    // Use captured values from mount to prevent re-running
+    const { barcode, savedScanData } = initialDataRef.current;
+
     if (!barcode) return;
 
     const loadData = async () => {
+      // Priority 1: Check location state (savedScanData from notification/navigation)
+      // Priority 2: Check context cache (from recent scan)
+      // Priority 3: Perform fresh scan (new barcode)
+
+      // Check if we have savedScanData from location state
+      if (savedScanData) {
+        console.log('📦 Loading from saved barcode scan data:', savedScanData);
+
+        // Convert saved data back to BarcodeProduct format
+        const harmfulDescriptions: Record<string, string> = {};
+        const safeDescriptions: Record<string, string> = {};
+
+        savedScanData.harmfulIngredients?.forEach((ing: any) => {
+          harmfulDescriptions[ing.name] = ing.description;
+        });
+
+        savedScanData.safeIngredients?.forEach((ing: any) => {
+          safeDescriptions[ing.name] = ing.description;
+        });
+
+        const packagingDetails: Record<string, any> = {};
+        savedScanData.packaging?.forEach((pkg: any) => {
+          packagingDetails[pkg.name] = { description: pkg.description };
+        });
+
+        setProduct({
+          barcode: savedScanData.barcode || barcode,
+          name: savedScanData.productName,
+          brand: savedScanData.productBrand || '',
+          source: 'database',
+          image_url: savedScanData.productImage || '',
+          quantity: '',
+          categories: '',
+          ingredients: [
+            ...Object.keys(harmfulDescriptions).map((name) => ({
+              text: name,
+              type: 'harmful' as const,
+            })),
+            ...Object.keys(safeDescriptions).map((name) => ({
+              text: name,
+              type: 'safe' as const,
+            })),
+          ],
+          packaging:
+            savedScanData.packaging?.map((p: any) => p.name).join(', ') || '',
+          materials: {
+            packaging: '',
+            packaging_text: savedScanData.packagingSummary || '',
+            packaging_tags:
+              savedScanData.packaging?.map((p: any) => p.name) || [],
+            materials: savedScanData.packaging?.map((p: any) => p.name) || [],
+          },
+          nutrition: {},
+          labels: '',
+          countries: '',
+          url: '',
+          ingredient_descriptions: {
+            harmful: harmfulDescriptions,
+            safe: safeDescriptions,
+          },
+          packaging_analysis: {
+            materials: savedScanData.packaging?.map((p: any) => p.name) || [],
+            analysis: packagingDetails,
+            summary: savedScanData.packagingSummary || '',
+            overall_safety: savedScanData.packagingSafety || 'unknown',
+          },
+          chemical_analysis: savedScanData.chemicalAnalysis,
+        });
+
+        setRecommendations({
+          status: 'success',
+          products:
+            savedScanData.recommendations
+              ?.filter((r: any) => r.source === 'wordpress')
+              .map((r: any) => ({
+                id: r.id,
+                name: r.name,
+                price: r.price || '',
+                image_url: r.image_url,
+                permalink: r.permalink,
+                description: r.description,
+                similarity_score: 1,
+                affiliate_url: r.permalink,
+              })) || [],
+          ai_alternatives:
+            savedScanData.recommendations?.filter(
+              (r: any) => r.source === 'ai',
+            ) || [],
+          message: 'Loaded from saved scan',
+        });
+
+        // Mark all loading as complete
+        setLoadingBasicData(false);
+        setLoadingIngredients(false);
+        setLoadingPackaging(false);
+        setLoadingRecommendations(false);
+
+        // Mark as already saved to prevent duplicate save
+        setScanSaved(true);
+        return;
+      }
+
+      // Check context cache
+      const cachedScan = getBarcodeScan(barcode);
+      if (cachedScan) {
+        console.log('📦 Restoring from context cache:', barcode);
+        setProduct(cachedScan.product);
+        setRecommendations(cachedScan.recommendations);
+        setLoadingBasicData(false);
+        setLoadingIngredients(false);
+        setLoadingPackaging(false);
+        setLoadingRecommendations(false);
+        setScanSaved(true);
+        return;
+      }
+
+      // No cached data, perform fresh scan
       try {
         setLoadingBasicData(true);
         setLoadingIngredients(true);
         setLoadingPackaging(true);
 
+        console.log('🔍 No cache found, performing fresh scan...');
         // Step 1: Fast lookup (1-2s)
         console.log('📦 Fetching basic product info...');
-        const lookupResult = await barcodeAnalysisService.lookupBarcode(
-          barcode
-        );
+        const lookupResult =
+          await barcodeAnalysisService.lookupBarcode(barcode);
 
         console.log('✅ Lookup result:', lookupResult);
 
         if (!lookupResult.found) {
           setError(
-            'Product not found via barcode lookup. Try Scanning the Image.'
+            'Product not found via barcode lookup. Try Scanning the Image.',
           );
           setLoadingBasicData(false);
           setLoadingIngredients(false);
@@ -155,7 +307,7 @@ const BarcodeProductResults = () => {
             (ingredient: string) => ({
               text: ingredient,
               type: 'ingredient',
-            })
+            }),
           ),
           packaging: lookupResult.product.packaging || '',
           materials: {
@@ -187,12 +339,12 @@ const BarcodeProductResults = () => {
               .describeIngredients(
                 barcode,
                 separationResult.harmful,
-                separationResult.safe
+                separationResult.safe,
               )
               .then((descriptionsResult) => {
                 console.log(
                   '📝 Ingredient descriptions received:',
-                  descriptionsResult
+                  descriptionsResult,
                 );
                 setProduct((prev) => {
                   if (!prev) return prev;
@@ -269,12 +421,12 @@ const BarcodeProductResults = () => {
                 separationResult.packaging_text,
                 separationResult.packaging_tags,
                 separationResult.materials, // Pass normalized materials
-                separationResult.product_context // Pass product context for better analysis
+                separationResult.product_context, // Pass product context for better analysis
               )
               .then((descriptionsResult) => {
                 console.log(
                   '📝 Packaging descriptions received:',
-                  descriptionsResult
+                  descriptionsResult,
                 );
                 setProduct((prev) => {
                   if (!prev) return prev;
@@ -393,7 +545,7 @@ const BarcodeProductResults = () => {
           setError('No internet connection detected');
         } else {
           setError(
-            err instanceof Error ? err.message : 'Failed to load product data'
+            err instanceof Error ? err.message : 'Failed to load product data',
           );
         }
 
@@ -405,7 +557,7 @@ const BarcodeProductResults = () => {
     };
 
     loadData();
-  }, [barcode]);
+  }, []); // Empty dependency - only run once on mount
 
   // Save scan result to database when all data is loaded
   useEffect(() => {
@@ -418,7 +570,23 @@ const BarcodeProductResults = () => {
       !loadingPackaging &&
       !loadingPackagingDescriptions &&
       !loadingRecommendations &&
-      barcode;
+      barcode &&
+      !scanSaved; // Don't save if already saved
+
+    // Debug logging to understand why save might not trigger
+    console.log('💾 Save check:', {
+      hasProduct: !!product,
+      loadingBasicData,
+      loadingIngredients,
+      loadingDescriptions,
+      loadingPackaging,
+      loadingPackagingDescriptions,
+      loadingRecommendations,
+      hasBarcode: !!barcode,
+      scanSaved,
+      shouldSave,
+      isAuthenticated,
+    });
 
     if (!shouldSave) return;
 
@@ -426,7 +594,9 @@ const BarcodeProductResults = () => {
       try {
         // Check if user is authenticated
         if (!isAuthenticated) {
-          console.log('💾 User not authenticated, skipping scan result save');
+          console.warn(
+            '⚠️ User not authenticated, skipping scan result save. User must be logged in to save scan results and receive notifications.',
+          );
           return;
         }
 
@@ -447,7 +617,7 @@ const BarcodeProductResults = () => {
           ([name, description]) => ({
             name,
             description: String(description),
-          })
+          }),
         );
 
         // Prepare safe ingredients
@@ -455,7 +625,7 @@ const BarcodeProductResults = () => {
           ([name, description]) => ({
             name,
             description: String(description),
-          })
+          }),
         );
 
         // Prepare packaging data
@@ -475,7 +645,7 @@ const BarcodeProductResults = () => {
           })
           .filter(
             (item): item is { name: string; description: string } =>
-              item !== null
+              item !== null,
           );
 
         // Prepare recommendations
@@ -485,6 +655,7 @@ const BarcodeProductResults = () => {
         if (recommendations?.products) {
           recommendationsData.push(
             ...recommendations.products.map((product) => ({
+              id: product.id,
               name: product.name,
               brand: product.name.split(' ')[0] || 'Unknown',
               description: product.description,
@@ -492,7 +663,7 @@ const BarcodeProductResults = () => {
               price: product.price,
               permalink: product.permalink,
               source: 'wordpress' as const,
-            }))
+            })),
           );
         }
 
@@ -505,7 +676,7 @@ const BarcodeProductResults = () => {
               description: alt.description,
               image_url: alt.logo_url,
               source: 'ai' as const,
-            }))
+            })),
           );
         }
 
@@ -520,6 +691,7 @@ const BarcodeProductResults = () => {
 
         // Save to database
         const scanData = {
+          scanType: 'barcode' as const,
           barcode,
           productName: product.name,
           productBrand: product.brand,
@@ -528,21 +700,61 @@ const BarcodeProductResults = () => {
           harmfulIngredients,
           packaging: packagingData,
           packagingSummary: packagingAnalysis?.summary,
-          packagingSafety: packagingAnalysis?.overall_safety as
-            | 'safe'
-            | 'harmful'
-            | 'caution'
-            | undefined,
+          packagingSafety: (() => {
+            const safety = packagingAnalysis?.overall_safety;
+            if (
+              safety === 'safe' ||
+              safety === 'harmful' ||
+              safety === 'caution'
+            ) {
+              return safety;
+            }
+            return 'unknown' as const;
+          })(),
           recommendations: recommendationsData,
           chemicalAnalysis,
         };
 
         console.log('💾 Saving scan result to database:', scanData);
         await saveScanResult(scanData);
-        console.log('✅ Scan result saved successfully');
+        setScanSaved(true);
+        console.log('✅ Scan result saved successfully - Notification created');
+
+        // Also save to context cache for fast access
+        setBarcodeScan({
+          barcode,
+          product,
+          recommendations,
+        });
       } catch (error) {
         console.error('❌ Failed to save scan result:', error);
-        // Don't show error to user - saving is a background operation
+        console.error('Error details:', {
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        });
+        // Show error to user since notifications depend on successful save
+        if (error instanceof Error) {
+          if (
+            error.message.includes('Authentication') ||
+            error.message.includes('401')
+          ) {
+            console.warn(
+              '⚠️ Authentication error - user may need to log in again',
+            );
+          } else if (
+            error.message.includes('Network') ||
+            error.message.includes('fetch')
+          ) {
+            console.warn(
+              '⚠️ Network error - scan result and notification not saved',
+            );
+          } else {
+            console.warn(
+              '⚠️ Scan result save failed - notification not created:',
+              error.message,
+            );
+          }
+        }
       }
     };
 
@@ -558,6 +770,7 @@ const BarcodeProductResults = () => {
     recommendations,
     barcode,
     isAuthenticated,
+    scanSaved,
   ]);
 
   // Show error state
@@ -566,59 +779,84 @@ const BarcodeProductResults = () => {
       <section className="relative px-5 pt-6 pb-4 md:mx-7">
         <PageHeader title="Product Analysis" />
         <div className="flex flex-col gap-5 p-4 items-center justify-center min-h-[400px]">
-          <p className="text-gray-600 mb-4 text-center">
-            Product not found via barcode lookup. Try Scanning the Image.
-          </p>
-          <button
-            onClick={async () => {
-              try {
-                const photo = await takePicture();
-                if (!photo?.webPath) return;
+          {isNetworkIssue ? (
+            <>
+              <div className="text-6xl mb-4">📡</div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                No Internet Connection
+              </h2>
+              <p className="text-gray-600 mb-4 text-center max-w-md">
+                Please connect to Wi-Fi or mobile data and try again.
+              </p>
+              <button
+                onClick={() => {
+                  // Reset error state and reload the page to retry with same barcode
+                  setError(null);
+                  setIsNetworkIssue(false);
+                  window.location.reload();
+                }}
+                className="px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+              >
+                Try Again
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-gray-600 mb-4 text-center">
+                Product not found via barcode lookup. Try Scanning the Image.
+              </p>
+              <button
+                onClick={async () => {
+                  try {
+                    const photo = await takePicture();
+                    if (!photo?.webPath) return;
 
-                // Navigate immediately to results page - data will load there
-                navigate('/product-identification-results', {
-                  state: {
-                    scannedImage: photo.webPath,
-                  },
-                });
-              } catch (e) {
-                console.error('Product identification error:', e);
-                if (e instanceof Error) {
-                  toast.error(e.message);
-                } else {
-                  toast.error('Failed to take photo. Please try again.');
-                }
-              }
-            }}
-            className="px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
-          >
-            Take Picture
-          </button>
-          <button
-            onClick={async () => {
-              try {
-                const photo = await pickFromGallery();
-                if (!photo?.webPath) return;
+                    // Navigate immediately to results page - data will load there
+                    navigate('/product-identification-results', {
+                      state: {
+                        scannedImage: photo.webPath,
+                      },
+                    });
+                  } catch (e) {
+                    console.error('Product identification error:', e);
+                    if (e instanceof Error) {
+                      toast.error(e.message);
+                    } else {
+                      toast.error('Failed to take photo. Please try again.');
+                    }
+                  }
+                }}
+                className="px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+              >
+                Take Picture
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const photo = await pickFromGallery();
+                    if (!photo?.webPath) return;
 
-                // Navigate immediately to results page - data will load there
-                navigate('/product-identification-results', {
-                  state: {
-                    scannedImage: photo.webPath,
-                  },
-                });
-              } catch (e) {
-                console.error('Product identification error:', e);
-                if (e instanceof Error) {
-                  toast.error(e.message);
-                } else {
-                  toast.error('Failed to select photo. Please try again.');
-                }
-              }
-            }}
-            className="px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
-          >
-            Browse Photo
-          </button>
+                    // Navigate immediately to results page - data will load there
+                    navigate('/product-identification-results', {
+                      state: {
+                        scannedImage: photo.webPath,
+                      },
+                    });
+                  } catch (e) {
+                    console.error('Product identification error:', e);
+                    if (e instanceof Error) {
+                      toast.error(e.message);
+                    } else {
+                      toast.error('Failed to select photo. Please try again.');
+                    }
+                  }
+                }}
+                className="px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+              >
+                Browse Photo
+              </button>
+            </>
+          )}
         </div>
       </section>
     );
@@ -665,7 +903,7 @@ const BarcodeProductResults = () => {
 
   // Format packaging tags for display (replace underscores and capitalize)
   const packagingTags = packagingMaterials.map((material) =>
-    formatTagName(material)
+    formatTagName(material),
   );
 
   // Create tag descriptions mappings
@@ -1031,7 +1269,8 @@ const BarcodeProductResults = () => {
                   {recommendations.products.map((product) => (
                     <div
                       key={product.id}
-                      className="bg-white rounded-2xl w-full shadow-sm p-3.5 flex flex-col sm:flex-row gap-3 items-start sm:items-center overflow-hidden hover:shadow-md active:scale-[0.99] transition-all"
+                      onClick={() => navigate(`/products/${product.id}`)}
+                      className="bg-white rounded-2xl w-full shadow-sm p-3.5 flex flex-col sm:flex-row gap-3 items-start sm:items-center overflow-hidden hover:shadow-md active:scale-[0.99] transition-all cursor-pointer"
                     >
                       <img
                         src={product.image_url}
@@ -1054,7 +1293,13 @@ const BarcodeProductResults = () => {
                       </div>
 
                       <Button
-                        onClick={() => window.open(product.permalink, '_blank')}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(
+                            product.affiliate_url || product.permalink,
+                            '_blank',
+                          );
+                        }}
                         className="bg-[#00A23E] text-white px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-xl hover:bg-[#008f35] active:scale-95 transition-all flex-shrink-0 whitespace-nowrap shadow-sm"
                       >
                         Buy now
@@ -1129,9 +1374,6 @@ const BarcodeProductResults = () => {
                       </div>
                     </div>
                   ))}
-                </div>
-              </div>
-            )}
           </div>
         ) : null}
       </section>

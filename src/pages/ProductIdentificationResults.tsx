@@ -18,6 +18,9 @@ import {
 import { ProductResultInfoCard } from '@/components/ProductResultInfoCard';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/PageHeader';
+import { saveScanResult, getScanResults } from '@/services/scanResultService';
+import { useUploadThing } from '@/lib/uploadthing';
+import { useScanCache } from '@/context/ScanCacheContext';
 
 // Format tag names: replace underscores with spaces and capitalize each word
 const formatTagName = (tag: string): string => {
@@ -60,25 +63,32 @@ const ProductIdentificationResults = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const isProcessingRef = useRef(false);
+  const { getLatestPhotoScan, setPhotoScan } = useScanCache();
 
-  // Get scannedImage from location state or sessionStorage (for mobile app persistence)
-  const locationState = location.state as { scannedImage?: string } | null;
-  const storedImage =
-    typeof window !== 'undefined'
-      ? sessionStorage.getItem('scannedImage')
-      : null;
-  const scannedImage = locationState?.scannedImage || storedImage;
+  // Get scannedImage and savedScanData from location state
+  const locationState = location.state as {
+    scannedImage?: string;
+    savedScanData?: any;
+  } | null;
 
-  // Store image in sessionStorage to persist across potential mobile refreshes
-  useEffect(() => {
-    if (scannedImage && typeof window !== 'undefined') {
-      sessionStorage.setItem('scannedImage', scannedImage);
-      return () => {
-        // Clean up sessionStorage when component unmounts properly
-        sessionStorage.removeItem('scannedImage');
-      };
-    }
-  }, [scannedImage]);
+  const scannedImage = locationState?.scannedImage;
+  const savedScanData = locationState?.savedScanData;
+
+  // Capture these values on mount to prevent re-running useEffect
+  const initialDataRef = useRef({
+    scannedImage,
+    savedScanData,
+    captured: false,
+  });
+
+  // Capture values only once on mount
+  if (!initialDataRef.current.captured) {
+    initialDataRef.current = {
+      scannedImage,
+      savedScanData,
+      captured: true,
+    };
+  }
 
   // State for product data (starts with null, builds progressively)
   const [product, setProduct] = useState<any>(null); // Basic product info
@@ -97,7 +107,7 @@ const ProductIdentificationResults = () => {
   const [selectedHarmful, setSelectedHarmful] = useState<string | null>(null);
   const [selectedSafe, setSelectedSafe] = useState<string | null>(null);
   const [selectedPackaging, setSelectedPackaging] = useState<string | null>(
-    null
+    null,
   );
   const [selectedAIAlternative, setSelectedAIAlternative] = useState<{
     name: string;
@@ -110,15 +120,68 @@ const ProductIdentificationResults = () => {
   const [recommendations, setRecommendations] =
     useState<ProductRecommendations | null>(null);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
+  const [scanSaved, setScanSaved] = useState(false);
+
+  // UploadThing hook for image upload
+  const { startUpload: uploadScannedImage } = useUploadThing('scannedImage');
 
   // Progressive loading - Step by step like BarcodeProductResults
   useEffect(() => {
-    if (!scannedImage) {
-      setProcessingError('No image provided');
+    // Use captured values from mount to prevent re-running
+    const { scannedImage, savedScanData } = initialDataRef.current;
+
+    // Priority 1: Check context cache (fastest - instant restore)
+    // Priority 2: Check savedScanData from location state (from notification)
+    // Priority 3: Perform fresh scan with scannedImage
+    // Priority 4: Fetch from MongoDB (last resort)
+
+    // ALWAYS check cache first - even if we have scannedImage
+    const cachedScan = getLatestPhotoScan();
+    if (cachedScan && cachedScan.scannedImage === scannedImage) {
+      console.log('📦 Restoring from context cache');
+      setProduct(cachedScan.product);
+      setRecommendations(cachedScan.recommendations);
       setLoadingBasicData(false);
       setLoadingIngredients(false);
       setLoadingPackaging(false);
       setLoadingRecommendations(false);
+      setScanSaved(true);
+      return;
+    }
+
+    // No cache match, check if we have savedScanData or need to scan
+    if (!scannedImage && !savedScanData) {
+      // No image and no saved data - try MongoDB as last resort
+      const fetchLatestScan = async () => {
+        try {
+          setLoadingBasicData(true);
+          console.log('📡 Fetching latest scan from MongoDB...');
+          const response = await getScanResults(1, 1);
+
+          if (response.data && response.data.length > 0) {
+            const latestScan = response.data[0];
+
+            if (latestScan.scanType === 'photo') {
+              navigate('/product-identification-results', {
+                state: { savedScanData: latestScan },
+                replace: true,
+              });
+              return;
+            }
+          }
+
+          setProcessingError(
+            'No scan data available. Please scan a product first.',
+          );
+          setLoadingBasicData(false);
+        } catch (error) {
+          console.error('Error fetching latest scan:', error);
+          setProcessingError('Failed to load scan data');
+          setLoadingBasicData(false);
+        }
+      };
+
+      fetchLatestScan();
       return;
     }
 
@@ -129,6 +192,111 @@ const ProductIdentificationResults = () => {
     }
 
     const loadData = async () => {
+      // If we have savedScanData (from notification or MongoDB), use it directly
+      if (savedScanData) {
+        console.log(
+          '📦 Loading from saved scan data (MongoDB):',
+          savedScanData,
+        );
+        isProcessingRef.current = true;
+
+        setLoadingBasicData(true);
+        setLoadingIngredients(true);
+        setLoadingPackaging(true);
+        setLoadingRecommendations(true);
+
+        // Convert MongoDB scan data to component format
+        console.log('📦 Converting from MongoDB format');
+        // Convert saved data back to the component's expected format
+        const harmfulDescriptions: Record<string, string> = {};
+        const safeDescriptions: Record<string, string> = {};
+
+        savedScanData.harmfulIngredients?.forEach((ing: any) => {
+          harmfulDescriptions[ing.name] = ing.description;
+        });
+
+        savedScanData.safeIngredients?.forEach((ing: any) => {
+          safeDescriptions[ing.name] = ing.description;
+        });
+
+        const packagingDetails: Record<string, any> = {};
+        savedScanData.packaging?.forEach((pkg: any) => {
+          packagingDetails[pkg.name] = { description: pkg.description };
+        });
+
+        // Populate all state from saved data with proper structure
+        setProduct({
+          product_name: savedScanData.productName,
+          brand: savedScanData.productBrand,
+          category: '',
+          product_type: '',
+          marketing_claims: [],
+          certifications_visible: [],
+          productImage: savedScanData.productImage,
+          ingredients: {
+            safe: Object.keys(safeDescriptions),
+            harmful: Object.keys(harmfulDescriptions),
+          },
+          ingredient_descriptions: {
+            safe: safeDescriptions,
+            harmful: harmfulDescriptions,
+          },
+          packaging: savedScanData.packaging?.map((p: any) => p.name) || [],
+          packaging_analysis: {
+            materials: savedScanData.packaging?.map((p: any) => p.name) || [],
+            analysis: packagingDetails,
+            summary: savedScanData.packagingSummary || '',
+            overall_safety: savedScanData.packagingSafety || 'unknown',
+          },
+          packaging_summary: savedScanData.packagingSummary || '',
+          packaging_safety: savedScanData.packagingSafety || 'unknown',
+        });
+
+        // Handle recommendations - could be from notification (array) or sessionStorage (object)
+        if (savedScanData.recommendations) {
+          if (Array.isArray(savedScanData.recommendations)) {
+            // From notification - recommendations is an array
+            setRecommendations({
+              status: 'success',
+              products:
+                savedScanData.recommendations
+                  ?.filter((r: any) => r.source === 'wordpress')
+                  .map((r: any) => ({
+                    id: r.id,
+                    name: r.name,
+                    price: r.price || '',
+                    image_url: r.image_url,
+                    permalink: r.permalink,
+                    description: r.description,
+                    similarity_score: 1,
+                    affiliate_url: r.permalink,
+                  })) || [],
+              ai_alternatives:
+                savedScanData.recommendations?.filter(
+                  (r: any) => r.source === 'ai',
+                ) || [],
+              message: 'Loaded from saved scan',
+            });
+          } else {
+            // From sessionStorage - recommendations is already the full object
+            setRecommendations(savedScanData.recommendations);
+          }
+        }
+
+        // Mark all loading as complete
+        setLoadingBasicData(false);
+        setLoadingIngredients(false);
+        setLoadingPackaging(false);
+        setLoadingRecommendations(false);
+
+        // Mark as already saved to prevent duplicate save
+        setScanSaved(true);
+
+        isProcessingRef.current = false;
+        return;
+      }
+
+      // Original scanning flow when scannedImage is provided
       // Prevent page unload during processing (mobile browsers)
       const handleBeforeUnload = (e: BeforeUnloadEvent) => {
         e.preventDefault();
@@ -146,6 +314,11 @@ const ProductIdentificationResults = () => {
 
         // Step 1: Get basic product info FAST (1-2s)
         console.log('🔍 Fetching basic product info from image...');
+
+        if (!scannedImage) {
+          throw new Error('No image provided for identification');
+        }
+
         const basicInfo = await identifyProductBasic(scannedImage);
         console.log('✅ Basic info received:', basicInfo);
 
@@ -177,7 +350,7 @@ const ProductIdentificationResults = () => {
         separatePhotoIngredients(
           basicInfo.product_name,
           basicInfo.brand || '',
-          basicInfo.category || ''
+          basicInfo.category || '',
         )
           .then((separationResult) => {
             console.log('🧪 Ingredient separation received:', separationResult);
@@ -193,7 +366,7 @@ const ProductIdentificationResults = () => {
                 .then((descriptionsResult) => {
                   console.log(
                     '📝 Ingredient descriptions received:',
-                    descriptionsResult
+                    descriptionsResult,
                   );
                   setProduct((prev: any) => {
                     if (!prev) return prev;
@@ -252,7 +425,7 @@ const ProductIdentificationResults = () => {
           basicInfo.brand || '',
           basicInfo.category || '',
           basicInfo.container_info?.material || '',
-          basicInfo.container_info?.type || ''
+          basicInfo.container_info?.type || '',
         )
           .then((separationResult) => {
             console.log('📦 Packaging separation received:', separationResult);
@@ -273,12 +446,12 @@ const ProductIdentificationResults = () => {
               separationResult.materials || [],
               basicInfo.brand,
               basicInfo.product_name,
-              basicInfo.category
+              basicInfo.category,
             )
               .then((descriptionsResult) => {
                 console.log(
                   '📝 Packaging descriptions received:',
-                  descriptionsResult
+                  descriptionsResult,
                 );
                 setProduct((prev: any) => {
                   if (!prev) return prev;
@@ -327,7 +500,7 @@ const ProductIdentificationResults = () => {
           setProcessingError(
             error instanceof Error
               ? error.message
-              : 'Failed to identify product. Please try again.'
+              : 'Failed to identify product. Please try again.',
           );
         }
 
@@ -343,13 +516,20 @@ const ProductIdentificationResults = () => {
     };
 
     loadData();
-  }, [scannedImage]);
+  }, []); // Empty dependency - only run once on mount
 
   // Fetch recommendations asynchronously using product name and brand
   useEffect(() => {
     const fetchRecommendations = async () => {
       // Don't fetch if still loading basic data or no product
       if (loadingBasicData || !product?.product_name) {
+        setLoadingRecommendations(false);
+        return;
+      }
+
+      // Skip fetching if we already have recommendations (from cache or savedScanData)
+      if (recommendations) {
+        console.log('Already have recommendations, skipping fetch');
         setLoadingRecommendations(false);
         return;
       }
@@ -365,7 +545,7 @@ const ProductIdentificationResults = () => {
           product.marketing_claims?.join(', '),
           product.certifications_visible?.join(', '),
           product.product_type,
-          scannedImage || undefined // Pass the scanned image for multimodal search
+          scannedImage || undefined, // Pass the scanned image for multimodal search
         );
         console.log('Recommendations received:', recs);
         setRecommendations(recs);
@@ -388,6 +568,122 @@ const ProductIdentificationResults = () => {
     product?.certifications_visible,
     product?.product_type,
     scannedImage,
+    recommendations, // Add this to detect when recommendations are set from cache
+  ]);
+
+  // Save scan result after all data is loaded
+  useEffect(() => {
+    const savePhotoScan = async () => {
+      // Don't save if already saved or if still loading or no product
+      if (
+        scanSaved ||
+        loadingBasicData ||
+        loadingIngredients ||
+        loadingPackaging ||
+        loadingRecommendations ||
+        !product?.product_name
+      ) {
+        return;
+      }
+
+      try {
+        console.log('💾 Saving photo scan result...');
+
+        // Upload scanned image to UploadThing if available
+        let uploadedImageUrl: string | undefined;
+        if (scannedImage && scannedImage.startsWith('blob:')) {
+          try {
+            console.log('📤 Uploading scanned image to UploadThing...');
+            // Convert blob URL to File
+            const response = await fetch(scannedImage);
+            const blob = await response.blob();
+            const file = new File([blob], 'scanned-product.jpg', {
+              type: blob.type || 'image/jpeg',
+            });
+
+            const uploadResult = await uploadScannedImage([file]);
+            if (uploadResult && uploadResult.length > 0) {
+              uploadedImageUrl = uploadResult[0].url;
+              console.log('✅ Image uploaded successfully:', uploadedImageUrl);
+            }
+          } catch (uploadError) {
+            console.error('⚠️ Failed to upload image:', uploadError);
+            // Continue with save even if upload fails
+          }
+        }
+
+        // Extract harmful and safe ingredients
+        const harmfulDescriptions =
+          product?.ingredient_descriptions?.harmful || {};
+        const safeDescriptions = product?.ingredient_descriptions?.safe || {};
+        const harmfulTags = Object.keys(harmfulDescriptions);
+        const safeTags = Object.keys(safeDescriptions);
+
+        // Extract packaging data
+        const packagingAnalysis = product?.packaging_analysis;
+        const packagingMaterials = packagingAnalysis?.materials || [];
+        const packagingDetails = packagingAnalysis?.analysis || {};
+
+        await saveScanResult({
+          scanType: 'photo',
+          productName: product.product_name,
+          productBrand: product.brand,
+          productImage: product.productImage,
+          scannedImage: uploadedImageUrl || scannedImage || undefined, // Use uploaded URL or fallback to original
+          safeIngredients: safeTags.map((tag) => ({
+            name: tag,
+            description: safeDescriptions[tag] || 'Safe ingredient',
+          })),
+          harmfulIngredients: harmfulTags.map((tag) => ({
+            name: tag,
+            description:
+              harmfulDescriptions[tag] || 'Potentially harmful ingredient',
+          })),
+          packaging: packagingMaterials.map((material: string) => ({
+            name: material,
+            description:
+              packagingDetails[material]?.description || 'Packaging material',
+          })),
+          packagingSummary: packagingAnalysis?.summary,
+          packagingSafety: packagingAnalysis?.overall_safety || 'unknown',
+          recommendations:
+            recommendations?.products.map((p) => ({
+              id: p.id,
+              name: p.name,
+              brand: p.name.split(' ')[0] || 'Unknown', // Extract brand from product name or use Unknown
+              description: p.description,
+              image_url: p.image_url,
+              price: p.price,
+              permalink: p.permalink,
+              source: 'wordpress' as const,
+            })) || [],
+          chemicalAnalysis: product.chemicalAnalysis,
+        });
+
+        setScanSaved(true);
+        console.log('✅ Photo scan saved successfully');
+
+        // Also save to context cache for fast access
+        setPhotoScan({
+          product,
+          recommendations,
+          scannedImage: scannedImage || '',
+        });
+      } catch (error) {
+        console.error('❌ Failed to save photo scan:', error);
+      }
+    };
+
+    savePhotoScan();
+  }, [
+    scanSaved,
+    loadingBasicData,
+    loadingIngredients,
+    loadingPackaging,
+    loadingRecommendations,
+    product,
+    scannedImage,
+    recommendations,
   ]);
 
   // Show error state
@@ -458,7 +754,7 @@ const ProductIdentificationResults = () => {
 
   // Format packaging tags for display (replace underscores and capitalize)
   const packagingTags = packagingMaterials.map((material: string) =>
-    formatTagName(material)
+    formatTagName(material),
   );
   const packagingTagDescriptions: Record<string, string> = {};
 
@@ -775,7 +1071,8 @@ const ProductIdentificationResults = () => {
                   {recommendations.products.map((product) => (
                     <div
                       key={product.id}
-                      className="bg-white rounded-2xl w-full shadow-sm p-3.5 flex flex-col sm:flex-row gap-3 items-start sm:items-center overflow-hidden hover:shadow-md active:scale-[0.99] transition-all"
+                      onClick={() => navigate(`/products/${product.id}`)}
+                      className="bg-white rounded-2xl w-full shadow-sm p-3.5 flex flex-col sm:flex-row gap-3 items-start sm:items-center overflow-hidden hover:shadow-md active:scale-[0.99] transition-all cursor-pointer"
                     >
                       <img
                         src={product.image_url}
@@ -798,7 +1095,13 @@ const ProductIdentificationResults = () => {
                       </div>
 
                       <Button
-                        onClick={() => window.open(product.permalink, '_blank')}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(
+                            product.affiliate_url || product.permalink,
+                            '_blank',
+                          );
+                        }}
                         className="bg-[#00A23E] text-white px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-xl hover:bg-[#008f35] active:scale-95 transition-all flex-shrink-0 whitespace-nowrap shadow-sm"
                       >
                         Buy now
@@ -873,9 +1176,6 @@ const ProductIdentificationResults = () => {
                       </div>
                     </div>
                   ))}
-                </div>
-              </div>
-            )}
           </div>
         ) : null}
       </section>

@@ -1,19 +1,22 @@
 import axios from 'axios';
 import { tokenStore } from '@/lib/tokenStore';
 
-const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export interface SaveScanResultRequest {
-  barcode: string;
+  scanType?: 'barcode' | 'photo';
+  barcode?: string;
   productName: string;
   productBrand?: string;
   productImage?: string;
+  scannedImage?: string;
   safeIngredients: { name: string; description: string }[];
   harmfulIngredients: { name: string; description: string }[];
   packaging: { name: string; description: string }[];
   packagingSummary?: string;
-  packagingSafety?: 'safe' | 'harmful' | 'caution';
+  packagingSafety?: 'safe' | 'harmful' | 'caution' | 'unknown';
   recommendations: {
+    id?: string;
     name: string;
     brand: string;
     description: string;

@@ -9,6 +9,7 @@ export interface ScanProduct {
   permalink: string;
   description: string;
   similarity_score: number;
+  affiliate_url?: string;
 }
 
 export interface AIGeneratedProduct {

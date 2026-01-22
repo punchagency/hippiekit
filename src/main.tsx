@@ -25,6 +25,7 @@ import AllCategories from './pages/AllCategories.tsx';
 import Favorites from './pages/Favorites.tsx';
 import FavoritesSearch from './pages/FavoritesSearch.tsx';
 import { AuthProvider } from './context/AuthContext.tsx';
+import { ScanCacheProvider } from './context/ScanCacheContext.tsx';
 import { ProtectedRoute } from './components/ProtectedRoute.tsx';
 import { PublicRoute } from './components/PublicRoute.tsx';
 import FavoriteItems from './pages/FavoriteItems.tsx';
@@ -72,184 +73,186 @@ function Root() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <BrowserRouter>
-          <ScrollToTop />
-          <DeepLinkListener />
-          <Routes>
-            {/* OAuth Callback Route - Public (no auth check needed) */}
-            <Route path="/oauth-callback" element={<OAuthCallback />} />
+        <ScanCacheProvider>
+          <BrowserRouter>
+            <ScrollToTop />
+            <DeepLinkListener />
+            <Routes>
+              {/* OAuth Callback Route - Public (no auth check needed) */}
+              <Route path="/oauth-callback" element={<OAuthCallback />} />
 
-            {/* Public Routes WITHOUT bottom nav - redirect to home if authenticated */}
+              {/* Public Routes WITHOUT bottom nav - redirect to home if authenticated */}
 
-            <Route
-              path="/productresbef"
-              element={
-                <PublicRoute>
-                  <ProductResultsBefore />
-                </PublicRoute>
-              }
-            />
-            <Route
-              path="/onboarding"
-              element={
-                <PublicRoute>
-                  <Onboarding />
-                </PublicRoute>
-              }
-            />
-            <Route
-              path="/signin"
-              element={
-                <PublicRoute>
-                  <SignIn />
-                </PublicRoute>
-              }
-            />
-            <Route
-              path="/signup"
-              element={
-                <PublicRoute>
-                  <SignUp />
-                </PublicRoute>
-              }
-            />
-            <Route
-              path="/verify-email"
-              element={
-                <PublicRoute>
-                  <VerifyEmail />
-                </PublicRoute>
-              }
-            />
-            <Route
-              path="/reset-password"
-              element={
-                <PublicRoute>
-                  <ResetPassword />
-                </PublicRoute>
-              }
-            />
-            <Route
-              path="/reset-password/confirm"
-              element={
-                <PublicRoute>
-                  <ResetPasswordConfirm />
-                </PublicRoute>
-              }
-            />
-            <Route
-              path="/otp-verification"
-              element={
-                <PublicRoute>
-                  <OtpVerification />
-                </PublicRoute>
-              }
-            />
+              <Route
+                path="/productresbef"
+                element={
+                  <PublicRoute>
+                    <ProductResultsBefore />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="/onboarding"
+                element={
+                  <PublicRoute>
+                    <Onboarding />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="/signin"
+                element={
+                  <PublicRoute>
+                    <SignIn />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="/signup"
+                element={
+                  <PublicRoute>
+                    <SignUp />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="/verify-email"
+                element={
+                  <PublicRoute>
+                    <VerifyEmail />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="/reset-password"
+                element={
+                  <PublicRoute>
+                    <ResetPassword />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="/reset-password/confirm"
+                element={
+                  <PublicRoute>
+                    <ResetPasswordConfirm />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="/otp-verification"
+                element={
+                  <PublicRoute>
+                    <OtpVerification />
+                  </PublicRoute>
+                }
+              />
 
-            {/* Protected Routes WITHOUT bottom nav */}
-            <Route
-              path="/search"
-              element={
-                <ProtectedRoute>
-                  <Search />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/splash"
-              element={
-                <ProtectedRoute>
-                  <Splash />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/gallery"
-              element={
-                <ProtectedRoute>
-                  <Gallery />
-                </ProtectedRoute>
-              }
-            />
+              {/* Protected Routes WITHOUT bottom nav */}
+              <Route
+                path="/search"
+                element={
+                  <ProtectedRoute>
+                    <Search />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/splash"
+                element={
+                  <ProtectedRoute>
+                    <Splash />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/gallery"
+                element={
+                  <ProtectedRoute>
+                    <Gallery />
+                  </ProtectedRoute>
+                }
+              />
 
-            <Route
-              path="/favorites/search"
-              element={
-                <ProtectedRoute>
-                  <FavoritesSearch />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/favorite-items"
-              element={
-                <ProtectedRoute>
-                  <FavoriteItems />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/kitchen-items"
-              element={
-                <ProtectedRoute>
-                  <KitchenItems />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/zero-plastic"
-              element={
-                <ProtectedRoute>
-                  <ZeroPlastic />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/terms-of-use"
-              element={
-                <ProtectedRoute>
-                  <TermsOfUse />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/privacy-policy"
-              element={
-                <ProtectedRoute>
-                  <PrivacyPolicy />
-                </ProtectedRoute>
-              }
-            />
+              <Route
+                path="/favorites/search"
+                element={
+                  <ProtectedRoute>
+                    <FavoritesSearch />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/favorite-items"
+                element={
+                  <ProtectedRoute>
+                    <FavoriteItems />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/kitchen-items"
+                element={
+                  <ProtectedRoute>
+                    <KitchenItems />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/zero-plastic"
+                element={
+                  <ProtectedRoute>
+                    <ZeroPlastic />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/terms-of-use"
+                element={
+                  <ProtectedRoute>
+                    <TermsOfUse />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/privacy-policy"
+                element={
+                  <ProtectedRoute>
+                    <PrivacyPolicy />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Protected Routes WITH bottom nav */}
-            <Route
-              element={
-                <ProtectedRoute>
-                  <MainLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="/" element={<App />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/edit-profile" element={<EditProfile />} />
-              <Route path="/favorites" element={<Favorites />} />
-              <Route path="/categories" element={<AllCategories />} />
-              <Route path="/categories/*" element={<AllCategories />} />
-              <Route path="/products/:productId" element={<ProductPage />} />
-              <Route path="/scan" element={<Scan />} />
-              <Route path="/product-results" element={<ProductResults />} />
-              <Route path="/vision-product-results" element={<VisionProductResults />} />
-              <Route path="/barcode-product-results" element={<BarcodeProductResults />} />
-              <Route path="/product-identification-results" element={<ProductIdentificationResults />} />
-              <Route path="/monthly-specials" element={<MonthlySpecials />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/shopping-list" element={<ShoppingList />} />
-            </Route>
+              {/* Protected Routes WITH bottom nav */}
+              <Route
+                element={
+                  <ProtectedRoute>
+                    <MainLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route path="/" element={<App />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/edit-profile" element={<EditProfile />} />
+                <Route path="/favorites" element={<Favorites />} />
+                <Route path="/categories" element={<AllCategories />} />
+                <Route path="/categories/*" element={<AllCategories />} />
+                <Route path="/products/:productId" element={<ProductPage />} />
+                <Route path="/scan" element={<Scan />} />
+                <Route path="/product-results" element={<ProductResults />} />
+                <Route path="/vision-product-results" element={<VisionProductResults />} />
+                <Route path="/barcode-product-results" element={<BarcodeProductResults />} />
+                <Route path="/product-identification-results" element={<ProductIdentificationResults />} />
+                <Route path="/monthly-specials" element={<MonthlySpecials />} />
+                <Route path="/notifications" element={<Notifications />} />
+                <Route path="/shopping-list" element={<ShoppingList />} />
+              </Route>
 
-            {/* Catch all - redirect to onboarding */}
-            <Route path="*" element={<Navigate to="/onboarding" replace />} />
-          </Routes>
-        </BrowserRouter>
+              {/* Catch all - redirect to onboarding */}
+              <Route path="*" element={<Navigate to="/onboarding" replace />} />
+            </Routes>
+          </BrowserRouter>
+        </ScanCacheProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
