@@ -41,7 +41,7 @@ export const OnboardingCard = ({
       </div>
 
       {/* Content Below Icons */}
-      <div className="font-family-lato text-secondary bg-[#FFF] rounded-tl-[40px] rounded-tr-[40px] shadow-[0px_-10px_40px_0px_rgba(0,0,0,0.06)] px-[25px] py-[30px] w-full max-[400px]:px-4 max-[400px]:py-5">
+      <div className="font-family-lato text-secondary bg-white rounded-tl-[40px] rounded-tr-[40px] shadow-[0px_-10px_40px_0px_rgba(0,0,0,0.06)] px-[25px] py-[30px] w-full max-[400px]:px-4 max-[400px]:py-5">
         <div className="px-2.5 flex flex-col gap-[30px] items-center max-[400px]:px-0 max-[400px]:gap-5">
           <div
             className="w-[100px] h-[100px] rounded-[59px] bg-[#FDF6FF] flex items-center justify-center max-[400px]:w-20 max-[400px]:h-20 onboarding-content-enter"

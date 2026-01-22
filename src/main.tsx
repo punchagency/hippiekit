@@ -13,6 +13,7 @@ import OtpVerification from './pages/OtpVerification.tsx';
 import Onboarding from './pages/Onboarding.tsx';
 import Profile from './pages/Profile.tsx';
 import MainLayout from './layouts/MainLayout.tsx';
+import AuthLayout from './layouts/AuthLayout.tsx';
 import EditProfile from './pages/EditProfile.tsx';
 import { Search } from './pages/Search.tsx';
 import Scan from './pages/Scan.tsx';
@@ -91,62 +92,66 @@ function Root() {
                   </PublicRoute>
                 }
               />
-              <Route
-                path="/onboarding"
-                element={
-                  <PublicRoute>
-                    <Onboarding />
-                  </PublicRoute>
-                }
-              />
-              <Route
-                path="/signin"
-                element={
-                  <PublicRoute>
-                    <SignIn />
-                  </PublicRoute>
-                }
-              />
-              <Route
-                path="/signup"
-                element={
-                  <PublicRoute>
-                    <SignUp />
-                  </PublicRoute>
-                }
-              />
-              <Route
-                path="/verify-email"
-                element={
-                  <PublicRoute>
-                    <VerifyEmail />
-                  </PublicRoute>
-                }
-              />
-              <Route
-                path="/reset-password"
-                element={
-                  <PublicRoute>
-                    <ResetPassword />
-                  </PublicRoute>
-                }
-              />
-              <Route
-                path="/reset-password/confirm"
-                element={
-                  <PublicRoute>
-                    <ResetPasswordConfirm />
-                  </PublicRoute>
-                }
-              />
-              <Route
-                path="/otp-verification"
-                element={
-                  <PublicRoute>
-                    <OtpVerification />
-                  </PublicRoute>
-                }
-              />
+
+              {/* Auth and Onboarding Routes WITH safe area padding and AuthLayout */}
+              <Route element={<AuthLayout />}>
+                <Route
+                  path="/onboarding"
+                  element={
+                    <PublicRoute>
+                      <Onboarding />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/signin"
+                  element={
+                    <PublicRoute>
+                      <SignIn />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/signup"
+                  element={
+                    <PublicRoute>
+                      <SignUp />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/verify-email"
+                  element={
+                    <PublicRoute>
+                      <VerifyEmail />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/reset-password"
+                  element={
+                    <PublicRoute>
+                      <ResetPassword />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/reset-password/confirm"
+                  element={
+                    <PublicRoute>
+                      <ResetPasswordConfirm />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/otp-verification"
+                  element={
+                    <PublicRoute>
+                      <OtpVerification />
+                    </PublicRoute>
+                  }
+                />
+              </Route>
 
               {/* Protected Routes WITHOUT bottom nav */}
               <Route

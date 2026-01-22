@@ -2,7 +2,6 @@ import { Button } from '@/components/ui/button';
 import { TitleSubtitle } from '@/components/auth/title-subtitle';
 import { useState, useRef, type KeyboardEvent } from 'react';
 import { Input } from '@/components/ui/input';
-import { SafeAreaLayout } from '@/components/layouts/SafeAreaLayout';
 
 function OtpVerification() {
   const [otp, setOtp] = useState(['', '', '', '']);
@@ -54,8 +53,7 @@ function OtpVerification() {
   };
 
   return (
-    <SafeAreaLayout>
-      <section className="mt-20 mx-[25.45px] font-family-poppins text-[#222]">
+    <section className="mt-20 mx-[25.45px] font-family-poppins text-[#222]">
         <TitleSubtitle
           title="OTP Verification"
           subtitle="Verify Your Mobile Number"
@@ -174,7 +172,6 @@ function OtpVerification() {
           <p className="capitalize text-[14px]">Remember this device.</p>
         </div>
       </section>
-    </SafeAreaLayout>
   );
 }
 

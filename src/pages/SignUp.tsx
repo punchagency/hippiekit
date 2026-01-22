@@ -30,7 +30,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { signInWithGoogle } from '@/lib/auth';
 import EmailVerificationModal from '@/components/EmailVerificationModal';
-import { SafeAreaLayout } from '@/components/layouts/SafeAreaLayout';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters long'),
@@ -128,8 +127,7 @@ function SignUp() {
     navigate('/signin');
   };
   return (
-    <SafeAreaLayout>
-      <section className="mx-[25.45px] font-family-poppins text-[#222]">
+    <section className="mx-[25.45px] font-family-poppins text-[#222]">
         <TitleSubtitle
           title="Create Account"
           subtitle="Sign up to get started"
@@ -317,7 +315,6 @@ function SignUp() {
           email={registeredEmail}
         />
       </section>
-    </SafeAreaLayout>
   );
 }
 

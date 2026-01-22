@@ -20,7 +20,6 @@ import { useAuth } from '@/context/AuthContext';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PasswordResetOtpModal from '@/components/PasswordResetOtpModal';
-import { SafeAreaLayout } from '@/components/layouts/SafeAreaLayout';
 
 const formSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -79,8 +78,7 @@ export default function ResetPassword() {
   };
 
   return (
-    <SafeAreaLayout>
-      <section className="mt-20 mx-[25.45px] font-family-poppins text-[#222] pb-20">
+    <section className="mt-20 mx-[25.45px] font-family-poppins text-[#222] pb-20">
         <TitleSubtitle
           title="Reset Password"
           subtitle="Enter email address and a verification code will be sent to you."
@@ -185,6 +183,5 @@ export default function ResetPassword() {
           email={userEmail}
         />
       </section>
-    </SafeAreaLayout>
   );
 }

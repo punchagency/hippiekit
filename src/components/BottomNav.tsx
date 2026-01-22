@@ -50,7 +50,7 @@ const BottomNav = () => {
         paddingBottom: 'calc(env(safe-area-inset-bottom)',
       }}
     >
-      <nav className="bg-white/98 backdrop-blur-lg rounded-full shadow-[0_-2px_16px_rgba(0,0,0,0.08),0_4px_32px_rgba(0,0,0,0.12)] border-2 border-gray-200/80 mx-4 px-2 ring-1 ring-primary/30">
+      <nav className="bg-white/98 backdrop-blur-lg rounded-full shadow-[0_-2px_16px_rgba(0,0,0,0.08),0_4px_32px_rgba(0,0,0,0.12)] border-2 border-gray-200/80 mx-4 px-2 ring-1 ring-secondary/30">
         <ul className="flex justify-around items-center h-[60px] gap-1">
           {navItems.map((item) => (
             <li key={item.path}>

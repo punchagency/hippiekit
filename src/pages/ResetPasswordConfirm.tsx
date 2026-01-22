@@ -19,7 +19,6 @@ import { TitleSubtitle } from '@/components/auth/title-subtitle';
 import { useAuth } from '@/context/AuthContext';
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { SafeAreaLayout } from '@/components/layouts/SafeAreaLayout';
 
 const formSchema = z
   .object({
@@ -90,8 +89,7 @@ export default function ResetPasswordConfirm() {
   }
 
   return (
-    <SafeAreaLayout>
-      <section className="mt-20 mx-[25.45px] font-family-poppins text-[#222] pb-20">
+    <section className="mt-20 mx-[25.45px] font-family-poppins text-[#222] pb-20">
         <TitleSubtitle
           title="Create New Password"
           subtitle="Create a new password to access your account."
@@ -233,6 +231,5 @@ export default function ResetPasswordConfirm() {
           </p>
         </div>
       </section>
-    </SafeAreaLayout>
   );
 }

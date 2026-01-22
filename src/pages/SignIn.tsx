@@ -30,7 +30,6 @@ import { useAuth } from '@/context/AuthContext';
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { signInWithGoogle } from '@/lib/auth';
-import { SafeAreaLayout } from '@/components/layouts/SafeAreaLayout';
 
 const formSchema = z.object({
   email: z.email('Invalid email address'),
@@ -139,8 +138,7 @@ function SignIn() {
   }
 
   return (
-    <SafeAreaLayout>
-      <section className="mt-12 sm:mt-20 mx-4 sm:mx-[25.43px] font-family-poppins text-[#222] pb-20">
+    <section className="mt-12 sm:mt-20 mx-4 sm:mx-[25.43px] font-family-poppins text-[#222] pb-20">
         <TitleSubtitle title="Login" subtitle="Login to get started" />
 
         {showVerificationSuccess && (
@@ -338,7 +336,6 @@ function SignIn() {
           </div>
         </div>
       </section>
-    </SafeAreaLayout>
   );
 }
 

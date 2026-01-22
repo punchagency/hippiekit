@@ -4,7 +4,6 @@ import { OnboardingCard } from '@/components/OnboardingCard';
 import { Button } from '@/components/ui/button';
 import { onboardingIconsMap } from '@/constants';
 import { ArrowLeft, ArrowRight } from '@/assets/onboardingIcons';
-import { SafeAreaLayout } from '@/components/layouts/SafeAreaLayout';
 
 const Onboarding = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -39,8 +38,7 @@ const Onboarding = () => {
       if (contentType && contentType.includes('application/json')) {
         const data = await response.json();
         setServerStatus(
-          `✅ Server: ${data.message || 'Running!'} (Status: ${
-            response.status
+          `✅ Server: ${data.message || 'Running!'} (Status: ${response.status
           })`
         );
       } else {
@@ -53,8 +51,7 @@ const Onboarding = () => {
     } catch (error) {
       console.error('Server test error:', error);
       setServerStatus(
-        `❌ Error: ${
-          error instanceof Error ? error.message : 'Failed to connect'
+        `❌ Error: ${error instanceof Error ? error.message : 'Failed to connect'
         }`
       );
     } finally {
@@ -109,7 +106,7 @@ const Onboarding = () => {
   const currentData = onboardingIconsMap[currentStep];
 
   return (
-    <SafeAreaLayout className="bg-white">
+    <div>
       {/* Skip Button and Test Server - Fixed at top */}
       <div className="flex justify-between items-center p-4 max-[400px]:p-3">
         <Button
@@ -131,13 +128,12 @@ const Onboarding = () => {
       {serverStatus && (
         <div className="px-4 pb-2">
           <div
-            className={`p-3 rounded-lg text-sm ${
-              serverStatus.startsWith('✅')
-                ? 'bg-green-100 text-green-800'
-                : serverStatus.startsWith('❌')
+            className={`p-3 rounded-lg text-sm ${serverStatus.startsWith('✅')
+              ? 'bg-green-100 text-green-800'
+              : serverStatus.startsWith('❌')
                 ? 'bg-red-100 text-red-800'
                 : 'bg-blue-100 text-blue-800'
-            }`}
+              }`}
           >
             {serverStatus}
           </div>
@@ -146,7 +142,7 @@ const Onboarding = () => {
 
       {/* Onboarding Card - Fills remaining space */}
       <div
-        className="flex-1 overflow-hidden"
+        className="flex-1 overflow-hidden fixed bottom-16"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -164,15 +160,14 @@ const Onboarding = () => {
       </div>
 
       {/* Progress Dots & Navigation - Fixed at bottom */}
-      <div className="pb-6 bg-white max-[400px]:pb-4">
+      <div className="pb-6 bg-white max-[400px]:pb-8 fixed bottom-0 left-0 right-0">
         {/* Navigation Buttons and Progress Dots on Same Level */}
         <div className="flex justify-between items-center px-6 ">
           <Button
             onClick={handleBack}
             disabled={currentStep === 0}
-            className={`bg-transparent border border-primary text-primary rounded-[60px] px-6 py-2 max-[400px]:px-4 max-[400px]:text-sm ${
-              currentStep === 0 ? 'invisible' : 'visible'
-            }`}
+            className={`bg-transparent border border-primary text-primary rounded-[60px] px-6 py-2 max-[400px]:px-4 max-[400px]:text-sm ${currentStep === 0 ? 'invisible' : 'visible'
+              }`}
           >
             <ArrowLeft /> Back
           </Button>
@@ -183,11 +178,10 @@ const Onboarding = () => {
               <button
                 key={index}
                 onClick={() => setCurrentStep(index)}
-                className={`h-2 rounded-full transition-all ${
-                  index === currentStep
-                    ? 'w-8 max-[400px]:w-6 bg-primary'
-                    : 'w-2 bg-gray-300'
-                }`}
+                className={`h-2 rounded-full transition-all ${index === currentStep
+                  ? 'w-8 max-[400px]:w-6 bg-primary'
+                  : 'w-2 bg-gray-300'
+                  }`}
                 aria-label={`Go to step ${index + 1}`}
               />
             ))}
@@ -207,7 +201,7 @@ const Onboarding = () => {
           </Button>
         </div>
       </div>
-    </SafeAreaLayout>
+    </div>
   );
 };
 
