@@ -1374,6 +1374,9 @@ const BarcodeProductResults = () => {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
           </div>
         ) : null}
       </section>

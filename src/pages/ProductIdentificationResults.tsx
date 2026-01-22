@@ -1176,6 +1176,9 @@ const ProductIdentificationResults = () => {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
           </div>
         ) : null}
       </section>
