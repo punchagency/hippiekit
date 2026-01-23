@@ -44,6 +44,7 @@ import { DeepLinkListener } from './components/DeepLinkListener.tsx';
 // import CategoryPage from './pages/CategoryPage.tsx';
 import ProductPage from './pages/ProductPage.tsx';
 import ProductResultsBefore from './pages/ProductResultsBefore.tsx';
+import CategorySearch from './pages/CategorySearch.tsx';
 
 // Initialize TanStack Query client with caching config
 const queryClient = new QueryClient({
@@ -232,6 +233,14 @@ function Root() {
                 element={
                   <ProtectedRoute>
                     <ProductPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/categorysearch/:categorySlug"
+                element={
+                  <ProtectedRoute>
+                    <CategorySearch />
                   </ProtectedRoute>
                 }
               />

@@ -74,7 +74,7 @@ export const fetchCategories = async (): Promise<Category[]> => {
         if (category.meta?.featured_image) {
           try {
             const mediaData = await httpGetJson<{ source_url?: string }>(
-              `${WP_API_URL}/media/${category.meta.featured_image}`
+              `${WP_API_URL}/media/${category.meta.featured_image}`,
             );
             return {
               ...category,
@@ -89,7 +89,7 @@ export const fetchCategories = async (): Promise<Category[]> => {
           }
         }
         return category;
-      })
+      }),
     );
 
     return categoriesWithImages;
@@ -104,11 +104,11 @@ export const fetchCategories = async (): Promise<Category[]> => {
  * @param limit - Maximum number of categories to fetch (default: 10)
  */
 export const fetchTopCategories = async (
-  limit: number = 10
+  limit: number = 10,
 ): Promise<Category[]> => {
   try {
     const data = await httpGetJson<Category[]>(
-      `${WP_API_URL}/categories?per_page=${limit}&parent=0`
+      `${WP_API_URL}/categories?per_page=${limit}&parent=0`,
     );
 
     const categoriesWithImages = await Promise.all(
@@ -116,7 +116,7 @@ export const fetchTopCategories = async (
         if (category.meta?.featured_image) {
           try {
             const mediaData = await httpGetJson<{ source_url?: string }>(
-              `${WP_API_URL}/media/${category.meta.featured_image}`
+              `${WP_API_URL}/media/${category.meta.featured_image}`,
             );
             return {
               ...category,
@@ -131,7 +131,7 @@ export const fetchTopCategories = async (
           }
         }
         return category;
-      })
+      }),
     );
 
     return categoriesWithImages;
@@ -142,11 +142,11 @@ export const fetchTopCategories = async (
 };
 
 export const fetchSubCategories = async (
-  parentId: number
+  parentId: number,
 ): Promise<Category[]> => {
   try {
     const data = await httpGetJson<Category[]>(
-      `${WP_API_URL}/categories?parent=${parentId}`
+      `${WP_API_URL}/categories?parent=${parentId}`,
     );
 
     const categoriesWithImages = await Promise.all(
@@ -154,7 +154,7 @@ export const fetchSubCategories = async (
         if (category.meta?.featured_image) {
           try {
             const mediaData = await httpGetJson<{ source_url?: string }>(
-              `${WP_API_URL}/media/${category.meta.featured_image}`
+              `${WP_API_URL}/media/${category.meta.featured_image}`,
             );
             return {
               ...category,
@@ -169,7 +169,7 @@ export const fetchSubCategories = async (
           }
         }
         return category;
-      })
+      }),
     );
 
     return categoriesWithImages;
@@ -180,11 +180,11 @@ export const fetchSubCategories = async (
 };
 
 export const fetchProducts = async (
-  perPage: number = 10
+  perPage: number = 10,
 ): Promise<Product[]> => {
   try {
     return await httpGetJson<Product[]>(
-      `${WP_API_URL}/products?per_page=${perPage}`
+      `${WP_API_URL}/products?per_page=${perPage}`,
     );
   } catch (error) {
     console.error('Error fetching products:', error);
@@ -195,7 +195,7 @@ export const fetchProducts = async (
 export const fetchProductsPaginated = async (
   page: number = 1,
   perPage: number = 15,
-  categorySlug?: string
+  categorySlug?: string,
 ): Promise<Product[]> => {
   try {
     let url = `${WP_API_URL}/products?page=${page}&per_page=${perPage}`;
@@ -203,7 +203,7 @@ export const fetchProductsPaginated = async (
     // If category slug is provided, fetch by category
     if (categorySlug) {
       const categories = await httpGetJson<Category[]>(
-        `${WP_API_URL}/categories?slug=${categorySlug}`
+        `${WP_API_URL}/categories?slug=${categorySlug}`,
       );
 
       if (!categories || categories.length === 0) {
@@ -223,7 +223,7 @@ export const fetchProductsPaginated = async (
 
 export const fetchLatestProductsPaginated = async (
   page: number = 1,
-  perPage: number = 15
+  perPage: number = 15,
 ): Promise<Product[]> => {
   try {
     const url = `${WP_API_URL}/products?page=${page}&per_page=${perPage}&orderby=date&order=desc`;
@@ -234,8 +234,32 @@ export const fetchLatestProductsPaginated = async (
   }
 };
 
+/**
+ * Fetch paginated products by category ID
+ * @param categoryId - WordPress category ID
+ * @param page - Page number (1-indexed)
+ * @param perPage - Products per page
+ */
+export const fetchProductsByCategoryId = async (
+  categoryId: number,
+  page: number = 1,
+  perPage: number = 15,
+): Promise<Product[]> => {
+  try {
+    if (!categoryId) {
+      return [];
+    }
+
+    const url = `${WP_API_URL}/products?page=${page}&per_page=${perPage}&category_id=${categoryId}`;
+    return await httpGetJson<Product[]>(url);
+  } catch (error) {
+    console.error('Error fetching products by category ID:', error);
+    throw error;
+  }
+};
+
 export const fetchProductsByCategory = async (
-  categorySlug: string
+  categorySlug: string,
 ): Promise<Product[]> => {
   try {
     if (!categorySlug) {
@@ -244,7 +268,7 @@ export const fetchProductsByCategory = async (
 
     // First, fetch the category to get its ID
     const categories = await httpGetJson<Category[]>(
-      `${WP_API_URL}/categories?slug=${categorySlug}`
+      `${WP_API_URL}/categories?slug=${categorySlug}`,
     );
 
     if (!categories || categories.length === 0) {
@@ -255,7 +279,7 @@ export const fetchProductsByCategory = async (
 
     // Then fetch products by category ID
     return await httpGetJson<Product[]>(
-      `${WP_API_URL}/products?category_id=${categoryId}`
+      `${WP_API_URL}/products?category_id=${categoryId}`,
     );
   } catch (error) {
     console.error('Error fetching products by category:', error);
@@ -265,7 +289,7 @@ export const fetchProductsByCategory = async (
 
 export const searchCategoriesAndProducts = async (
   searchTerm: string,
-  categorySlug?: string
+  categorySlug?: string,
 ): Promise<{ categories: Category[]; products: Product[] }> => {
   try {
     if (!searchTerm || searchTerm.trim() === '') {
@@ -273,18 +297,18 @@ export const searchCategoriesAndProducts = async (
     }
 
     let productUrl = `${WP_API_URL}/products?search=${encodeURIComponent(
-      searchTerm
+      searchTerm,
     )}&per_page=15`;
 
     // If searching within a category, get category ID first
     if (categorySlug) {
       const categories = await httpGetJson<Category[]>(
-        `${WP_API_URL}/categories?slug=${categorySlug}`
+        `${WP_API_URL}/categories?slug=${categorySlug}`,
       );
       if (categories && categories.length > 0) {
         const categoryId = categories[0].id;
         productUrl = `${WP_API_URL}/products?search=${encodeURIComponent(
-          searchTerm
+          searchTerm,
         )}&category_id=${categoryId}&per_page=15`;
       }
     }
@@ -292,7 +316,7 @@ export const searchCategoriesAndProducts = async (
     // Search categories and products in parallel
     const [categoriesData, productsData] = await Promise.all([
       httpGetJson<Category[]>(
-        `${WP_API_URL}/categories?search=${encodeURIComponent(searchTerm)}`
+        `${WP_API_URL}/categories?search=${encodeURIComponent(searchTerm)}`,
       ),
       httpGetJson<Product[]>(productUrl),
     ]);
@@ -303,7 +327,7 @@ export const searchCategoriesAndProducts = async (
         if (category.meta.featured_image) {
           try {
             const mediaData = await httpGetJson<{ source_url?: string }>(
-              `${WP_API_URL}/media/${category.meta.featured_image}`
+              `${WP_API_URL}/media/${category.meta.featured_image}`,
             );
             return {
               ...category,
@@ -318,7 +342,7 @@ export const searchCategoriesAndProducts = async (
           }
         }
         return category;
-      })
+      }),
     );
 
     return {
@@ -355,7 +379,7 @@ export const useCategories = (): UseQueryResult<Category[], Error> => {
  * @param limit - Maximum number of categories to fetch (default: 10)
  */
 export const useTopCategories = (
-  limit: number = 10
+  limit: number = 10,
 ): UseQueryResult<Category[], Error> => {
   return useQuery({
     queryKey: ['categories', 'top', limit],
@@ -374,7 +398,7 @@ export const useTopCategories = (
  * @param parentId - Parent category ID
  */
 export const useSubCategories = (
-  parentId: number
+  parentId: number,
 ): UseQueryResult<Category[], Error> => {
   return useQuery({
     queryKey: ['categories', 'subcategories', parentId],
@@ -393,7 +417,7 @@ export const useSubCategories = (
  * @param perPage - Number of products to fetch (default: 10)
  */
 export const useProducts = (
-  perPage: number = 10
+  perPage: number = 10,
 ): UseQueryResult<Product[], Error> => {
   return useQuery({
     queryKey: ['products', perPage],
@@ -412,7 +436,7 @@ export const useProducts = (
 export const useProductsPaginated = (
   page: number = 1,
   perPage: number = 15,
-  categorySlug?: string
+  categorySlug?: string,
 ): UseQueryResult<Product[], Error> => {
   return useQuery({
     queryKey: ['products', 'paginated', page, perPage, categorySlug],
@@ -425,7 +449,7 @@ export const useProductsPaginated = (
  * @param categorySlug - Category slug to filter products
  */
 export const useProductsByCategory = (
-  categorySlug: string
+  categorySlug: string,
 ): UseQueryResult<Product[], Error> => {
   return useQuery({
     queryKey: ['products', 'category', categorySlug],
@@ -441,7 +465,7 @@ export const useProductsByCategory = (
  */
 export const useSearchCategoriesAndProducts = (
   searchTerm: string,
-  categorySlug?: string
+  categorySlug?: string,
 ): UseQueryResult<{ categories: Category[]; products: Product[] }, Error> => {
   return useQuery({
     queryKey: ['search', searchTerm, categorySlug],
@@ -460,7 +484,7 @@ export const useSearchCategoriesAndProducts = (
 export const useInfiniteProductsByCategory = (
   categorySlug: string,
   perPage: number = 15,
-  enabled: boolean = true
+  enabled: boolean = true,
 ): UseInfiniteQueryResult<
   {
     products: Product[];
@@ -474,7 +498,7 @@ export const useInfiniteProductsByCategory = (
       const products = await fetchProductsPaginated(
         pageParam,
         perPage,
-        categorySlug
+        categorySlug,
       );
       return {
         products,
@@ -488,11 +512,45 @@ export const useInfiniteProductsByCategory = (
 };
 
 /**
+ * Hook to fetch products by category ID with infinite scroll
+ * @param categoryId - WordPress category ID
+ * @param perPage - Products per page (default: 15)
+ */
+export const useInfiniteProductsByCategoryId = (
+  categoryId: number,
+  perPage: number = 15,
+): UseInfiniteQueryResult<
+  {
+    products: Product[];
+    nextPage: number | undefined;
+  },
+  Error
+> => {
+  return useInfiniteQuery({
+    queryKey: ['products-by-category-id', categoryId],
+    queryFn: async ({ pageParam = 1 }) => {
+      const products = await fetchProductsByCategoryId(
+        categoryId,
+        pageParam,
+        perPage,
+      );
+      return {
+        products,
+        nextPage: products.length === perPage ? pageParam + 1 : undefined,
+      };
+    },
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    initialPageParam: 1,
+    enabled: !!categoryId,
+  });
+};
+
+/**
  * Hook to fetch products with infinite scroll (all products)
  * @param perPage - Products per page (default: 15)
  */
 export const useInfiniteProducts = (
-  perPage: number = 15
+  perPage: number = 15,
 ): UseInfiniteQueryResult<
   {
     products: Product[];
@@ -519,7 +577,7 @@ export const useInfiniteProducts = (
  * @param perPage - Products per page (default: 15)
  */
 export const useInfiniteLatestProducts = (
-  perPage: number = 15
+  perPage: number = 15,
 ): UseInfiniteQueryResult<
   {
     products: Product[];
@@ -550,7 +608,7 @@ export const useInfiniteLatestProducts = (
 export const useInfiniteSearchProducts = (
   searchTerm: string,
   categorySlug?: string,
-  perPage: number = 15
+  perPage: number = 15,
 ): UseInfiniteQueryResult<
   {
     products: Product[];
@@ -566,7 +624,7 @@ export const useInfiniteSearchProducts = (
       if (pageParam === 1) {
         const result = await searchCategoriesAndProducts(
           searchTerm,
-          categorySlug
+          categorySlug,
         );
         return {
           products: result.products.slice(0, perPage),

@@ -34,6 +34,14 @@ export const fetchProductById = async (productId: number): Promise<Product> => {
 
 // ==================== Semantic Search ====================
 
+export interface CategoryMatch {
+  id: number;
+  name: string;
+  slug: string;
+  image?: string;
+  product_count: number;
+}
+
 export interface SemanticSearchResult {
   id: string;
   score: number;
@@ -51,6 +59,7 @@ export interface SemanticSearchResult {
 export interface SemanticSearchResponse {
   query: string;
   results: SemanticSearchResult[];
+  matching_categories: CategoryMatch[];
   count: number;
   limit: number;
   min_score: number;

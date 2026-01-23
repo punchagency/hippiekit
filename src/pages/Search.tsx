@@ -389,37 +389,141 @@ export const Search = () => {
               </div>
             ))}
           </div>
-        ) : hasSearched && productsGridData.length > 0 ? (
+        ) : hasSearched &&
+          ((semanticData?.matching_categories &&
+            semanticData.matching_categories.length > 0) ||
+            productsGridData.length > 0) ? (
           <>
-            <div className="flex flex-col gap-2.5">
-              {productsGridData.map((product: (typeof productsGridData)[0]) => (
-                <ProductInfo
-                  key={product.id}
-                  name={product.productName}
-                  description={product.description}
-                  img={product.image}
-                  isFavorite={favoriteIds.has(product.id)}
-                  onClick={() => navigate(`/products/${product.id}`)}
-                  onToggleFavorite={() => handleToggleFavorite(product.id)}
-                />
-              ))}
-            </div>
+            {/* Matching Categories Section */}
+            {semanticData?.matching_categories &&
+              semanticData.matching_categories.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                    Categories
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {semanticData.matching_categories.map((category) => (
+                      <button
+                        key={category.slug}
+                        onClick={() =>
+                          navigate(`/categorysearch/${category.slug}`)
+                        }
+                        className="bg-white rounded-[13px] shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-3 cursor-pointer hover:shadow-lg active:scale-95 transition-all text-left w-full"
+                      >
+                        <div className="flex flex-col items-center gap-2">
+                          {category.image && category.image.trim() !== '' ? (
+                            <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
+                              <img
+                                src={category.image}
+                                alt={category.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  // Fallback to folder icon if image fails to load
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  const fallback =
+                                    target.nextElementSibling as HTMLElement;
+                                  if (fallback) fallback.style.display = 'flex';
+                                }}
+                              />
+                              <div className="w-full h-full bg-primary/10 hidden items-center justify-center">
+                                <svg
+                                  className="w-8 h-8 text-primary"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                                  />
+                                </svg>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <svg
+                                className="w-8 h-8 text-primary"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                                />
+                              </svg>
+                            </div>
+                          )}
+                          <div className="text-center">
+                            <p className="text-xs font-semibold text-gray-800 line-clamp-2">
+                              {decodeHtmlEntities(category.name)}
+                            </p>
+                            {/* <p className="text-[10px] text-gray-500 mt-0.5">
+                              {category.product_count}{' '}
+                              {category.product_count === 1
+                                ? 'product'
+                                : 'products'}
+                            </p> */}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-            {/* Infinite scroll trigger */}
-            <div ref={observerTarget} className="w-full py-4">
-              {isFetchingNextPage && (
-                <div className="flex justify-center items-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            {/* Products Section */}
+            {productsGridData.length > 0 && (
+              <div>
+                {semanticData?.matching_categories &&
+                  semanticData.matching_categories.length > 0 && (
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                      Products
+                    </h3>
+                  )}
+                <div className="flex flex-col gap-2.5">
+                  {productsGridData.map(
+                    (product: (typeof productsGridData)[0]) => (
+                      <ProductInfo
+                        key={product.id}
+                        name={product.productName}
+                        description={product.description}
+                        img={product.image}
+                        isFavorite={favoriteIds.has(product.id)}
+                        onClick={() => navigate(`/products/${product.id}`)}
+                        onToggleFavorite={() =>
+                          handleToggleFavorite(product.id)
+                        }
+                      />
+                    ),
+                  )}
                 </div>
-              )}
-              {!hasNextPage && products.length > 0 && (
-                <div className="flex justify-center items-center">
-                  <p className="text-gray-500 text-sm">No more results</p>
+
+                {/* Infinite scroll trigger */}
+                <div ref={observerTarget} className="w-full py-4">
+                  {isFetchingNextPage && (
+                    <div className="flex justify-center items-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+                    </div>
+                  )}
+                  {!hasNextPage && products.length > 0 && (
+                    <div className="flex justify-center items-center">
+                      <p className="text-gray-500 text-sm">No more results</p>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </>
-        ) : hasSearched && productsGridData.length === 0 ? (
+        ) : hasSearched &&
+          productsGridData.length === 0 &&
+          (!semanticData?.matching_categories ||
+            semanticData.matching_categories.length === 0) ? (
           <div className="flex justify-center items-center py-8">
             <p className="text-gray-500">
               No products found for "{debouncedQuery}"
