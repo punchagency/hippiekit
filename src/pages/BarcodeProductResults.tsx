@@ -219,8 +219,6 @@ const BarcodeProductResults = () => {
             harmful: harmfulDescriptions,
             questionable: questionableDescriptions,
             safe: safeDescriptions,
-            questionable: {},
-            safe: safeDescriptions,
           },
           packaging_analysis: {
             materials: savedScanData.packaging?.map((p: any) => p.name) || [],

@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import productResultsIcon from '@/assets/productResultsIcon.svg';
 import heartIcon from '@/assets/heartIcon.svg';
 import chemicalsIcon from '@/assets/chemicalsIcon.svg';
@@ -7,8 +7,10 @@ import cleanIngredientsIcon from '@/assets/cleanIngredientsIcon.svg';
 import productContainerIngIcon from '@/assets/productContainerIngIcon.svg';
 import aiIcon from '@/assets/aiIcon.svg';
 import type { VisionAnalysis } from '@/services/scanService';
+import { getProductRecommendations, type ProductRecommendations } from '@/services/scanService';
 import { ProductResultInfoCard } from '@/components/ProductResultInfoCard';
 import { PageHeader } from '@/components/PageHeader';
+import { Button } from '@/components/ui/button';
 
 export default function VisionProductResults() {
   const location = useLocation();
@@ -75,6 +77,11 @@ export default function VisionProductResults() {
       "These are common synthetic additives found in processed products. They're approved for use but not ideal for daily consumption if you're aiming for natural, plant-based products.";
   });
 
+  // Extract packaging information (must be before usage)
+  const packagingMaterial = analysis.packaging?.material || '';
+  const packagingType = analysis.packaging?.type || '';
+  const packagingRecyclable = analysis.packaging?.recyclable || '';
+
   // Determine if this is a "clean" scan (no harmful ingredients AND no plastic packaging)
   // A "clean" scan means: no harmful chemicals AND packaging is not plastic/harmful
   const hasPlasticPackaging = packagingMaterial.toLowerCase().includes('plastic') || 
@@ -100,11 +107,6 @@ export default function VisionProductResults() {
       'Common ingredient used in food and personal care products.';
   });
 
-  // Extract packaging information
-  const packagingMaterial = analysis.packaging?.material || '';
-  const packagingType = analysis.packaging?.type || '';
-  const packagingRecyclable = analysis.packaging?.recyclable || '';
-
   const packagingTags = packagingMaterial
     ? [packagingMaterial]
     : packagingType
@@ -129,7 +131,7 @@ export default function VisionProductResults() {
           analysis.product_info.name,
           analysis.product_info.brand || '',
           analysis.product_info.category || '',
-          allIngredients,
+          allIngredients.join(', '),
           undefined, // marketing_claims
           undefined, // certifications
           undefined, // product_type
@@ -344,7 +346,7 @@ export default function VisionProductResults() {
                   {isCleanScan ? 'Similar Products' : 'Hippiekit Vetted Swaps'}
                 </header>
                 <div className="flex flex-col gap-2.5">
-                  {recommendations.products.map((product) => (
+                  {recommendations.products.map((product: any) => (
                     <div
                       key={product.id}
                       onClick={() => navigate(`/products/${product.id}`)}
@@ -371,7 +373,7 @@ export default function VisionProductResults() {
                       </div>
 
                       <Button
-                        onClick={(e) => {
+                        onClick={(e: React.MouseEvent) => {
                           e.stopPropagation();
                           window.open(
                             product.affiliate_url || product.permalink,
@@ -402,7 +404,7 @@ export default function VisionProductResults() {
                     </div>
                   </header>
                   <div className="flex flex-col gap-2.5">
-                    {recommendations.ai_alternatives.map((alt, index) => (
+                    {recommendations.ai_alternatives.map((alt: any, index: number) => (
                       <div
                         key={index}
                         onClick={() => setSelectedAIAlternative(alt)}
