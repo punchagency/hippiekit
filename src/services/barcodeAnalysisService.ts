@@ -29,11 +29,14 @@ export interface IngredientsAnalysis {
   success: boolean;
   has_ingredients: boolean;
   harmful: string[];
+  questionable: string[];
   safe: string[];
   harmful_count: number;
+  questionable_count: number;
   safe_count: number;
   descriptions: {
     harmful: Record<string, string>;
+    questionable: Record<string, string>;
     safe: Record<string, string>;
   };
   message: string;
@@ -43,8 +46,10 @@ export interface IngredientsSeparation {
   success: boolean;
   has_ingredients: boolean;
   harmful: string[];
+  questionable: string[];
   safe: string[];
   harmful_count: number;
+  questionable_count: number;
   safe_count: number;
   total_count: number;
   message: string;
@@ -54,6 +59,7 @@ export interface IngredientsDescriptions {
   success: boolean;
   descriptions: {
     harmful: Record<string, string>;
+    questionable: Record<string, string>;
     safe: Record<string, string>;
   };
   message: string;
@@ -179,6 +185,7 @@ export const separateIngredients = async (
 export const describeIngredients = async (
   barcode: string,
   harmfulIngredients: string[],
+  questionableIngredients: string[],
   safeIngredients: string[]
 ): Promise<IngredientsDescriptions> => {
   const response = await fetch(
@@ -192,6 +199,7 @@ export const describeIngredients = async (
       body: JSON.stringify({
         barcode,
         harmful_ingredients: harmfulIngredients,
+        questionable_ingredients: questionableIngredients,
         safe_ingredients: safeIngredients,
       }),
     }

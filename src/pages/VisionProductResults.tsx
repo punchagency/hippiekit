@@ -20,10 +20,21 @@ export default function VisionProductResults() {
 
   // State for selected items
   const [selectedHarmful, setSelectedHarmful] = useState<string | null>(null);
+  const [selectedQuestionable, setSelectedQuestionable] = useState<string | null>(null);
   const [selectedSafe, setSelectedSafe] = useState<string | null>(null);
   const [selectedPackaging, setSelectedPackaging] = useState<string | null>(
     null
   );
+  const [selectedAIAlternative, setSelectedAIAlternative] = useState<{
+    name: string;
+    brand: string;
+    description: string;
+    logo_url?: string;
+  } | null>(null);
+
+  // State for recommendations
+  const [recommendations, setRecommendations] = useState<ProductRecommendations | null>(null);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
 
   if (!analysis) {
     return (
@@ -39,13 +50,36 @@ export default function VisionProductResults() {
     );
   }
 
-  // Extract harmful and safe ingredients from chemical_analysis
+  // Extract harmful, questionable, and safe ingredients from chemical_analysis
   const chemicalFlags = analysis.chemical_analysis?.flags || [];
-  const harmfulTags = chemicalFlags.map((flag) => flag.chemical);
+  
+  // Separate harmful (critical, high, moderate) from questionable
+  const harmfulFlags = chemicalFlags.filter((flag) => 
+    ['CRITICAL', 'HIGH', 'MODERATE', 'critical', 'high', 'moderate'].includes(flag.severity)
+  );
+  const questionableFlags = chemicalFlags.filter((flag) => 
+    ['QUESTIONABLE', 'questionable'].includes(flag.severity)
+  );
+  
+  const harmfulTags = harmfulFlags.map((flag) => flag.chemical);
+  const questionableTags = questionableFlags.map((flag) => flag.chemical);
+  
   const harmfulTagDescriptions: Record<string, string> = {};
-  chemicalFlags.forEach((flag) => {
+  harmfulFlags.forEach((flag) => {
     harmfulTagDescriptions[flag.chemical] = flag.why_flagged;
   });
+  
+  const questionableTagDescriptions: Record<string, string> = {};
+  questionableFlags.forEach((flag) => {
+    questionableTagDescriptions[flag.chemical] = flag.why_flagged || 
+      "These are common synthetic additives found in processed products. They're approved for use but not ideal for daily consumption if you're aiming for natural, plant-based products.";
+  });
+
+  // Determine if this is a "clean" scan (no harmful ingredients AND no plastic packaging)
+  // A "clean" scan means: no harmful chemicals AND packaging is not plastic/harmful
+  const hasPlasticPackaging = packagingMaterial.toLowerCase().includes('plastic') || 
+    packagingType.toLowerCase().includes('plastic');
+  const isCleanScan = harmfulTags.length === 0 && !hasPlasticPackaging;
 
   // For safe ingredients, we'll parse from the ingredients string
   const ingredientsText = analysis.ingredients || '';
@@ -53,8 +87,12 @@ export default function VisionProductResults() {
     .split(',')
     .map((ing) => ing.trim())
     .filter((ing) => ing);
+  
+  // Filter out both harmful AND questionable from safe ingredients
   const safeTags = allIngredients.filter(
-    (ing) => !harmfulTags.some((h) => h.toLowerCase() === ing.toLowerCase())
+    (ing) => 
+      !harmfulTags.some((h) => h.toLowerCase() === ing.toLowerCase()) &&
+      !questionableTags.some((q) => q.toLowerCase() === ing.toLowerCase())
   );
   const safeTagDescriptions: Record<string, string> = {};
   safeTags.forEach((ing) => {
@@ -79,6 +117,35 @@ export default function VisionProductResults() {
       packagingMaterial
     ] = `Type: ${packagingType}\nRecyclable: ${packagingRecyclable}`;
   }
+
+  // Fetch recommendations based on product info
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      if (!analysis?.product_info?.name) return;
+
+      setLoadingRecommendations(true);
+      try {
+        const recs = await getProductRecommendations(
+          analysis.product_info.name,
+          analysis.product_info.brand || '',
+          analysis.product_info.category || '',
+          allIngredients,
+          undefined, // marketing_claims
+          undefined, // certifications
+          undefined, // product_type
+          scannedImage // Pass the scanned image for multimodal search
+        );
+        setRecommendations(recs);
+      } catch (error) {
+        console.error('Failed to fetch recommendations:', error);
+        setRecommendations(null);
+      } finally {
+        setLoadingRecommendations(false);
+      }
+    };
+
+    fetchRecommendations();
+  }, [analysis?.product_info?.name, analysis?.product_info?.brand, analysis?.product_info?.category]);
 
   return (
     <section className="relative px-5 pt-6 pb-4 md:mx-7">
@@ -175,6 +242,27 @@ export default function VisionProductResults() {
         )}
       </div>
 
+      {/* Questionable Ingredients Section */}
+      {questionableTags.length > 0 && (
+        <section className="rounded-[7px] px-3 sm:px-4 py-4 sm:py-5 mt-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex gap-2 items-center justify-center overflow-hidden">
+          <ProductResultInfoCard
+            icon={chemicalsIcon}
+            title="Questionable Ingredients"
+            titleType="warning"
+            tags={questionableTags}
+            tagColor="yellow"
+            tagDescriptions={questionableTagDescriptions}
+            onTagClick={(tag) => setSelectedQuestionable(tag)}
+            descTitle={selectedQuestionable || 'Questionable Ingredients'}
+            description={
+              selectedQuestionable && questionableTagDescriptions[selectedQuestionable]
+                ? String(questionableTagDescriptions[selectedQuestionable])
+                : "These are common synthetic additives found in processed waters and foods. They're approved for use but not ideal for daily consumption if you're aiming for natural, plant-based products."
+            }
+          />
+        </section>
+      )}
+
       {/* Clean Ingredients Section */}
       {safeTags.length > 0 && (
         <section className="rounded-[7px] px-3 sm:px-4 py-4 sm:py-5 mt-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex gap-2 items-center justify-center overflow-hidden">
@@ -214,6 +302,257 @@ export default function VisionProductResults() {
             }
           />
         </section>
+      )}
+
+      {/* Hippiekit Product Recommendations */}
+      <section className="mt-5">
+        {loadingRecommendations ? (
+          // Loading skeleton
+          <div className="animate-pulse">
+            <div className="text-center py-4 mb-3.5">
+              <div className="inline-flex items-center gap-2 text-primary">
+                <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <span className="font-family-roboto text-base sm:text-[18px] font-medium">
+                  Finding Similar Alternatives
+                </span>
+              </div>
+            </div>
+            <div className="flex flex-col gap-2.5">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="bg-white rounded-[13px] p-2.5 flex gap-3"
+                >
+                  <div className="w-[60px] h-[60px] bg-gray-200 rounded"></div>
+                  <div className="flex-1 flex flex-col gap-2">
+                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-3 bg-gray-200 rounded w-full"></div>
+                  </div>
+                  <div className="w-20 h-9 bg-gray-200 rounded"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : recommendations &&
+          (recommendations.products.length > 0 ||
+            recommendations.ai_alternatives.length > 0) ? (
+          <div>
+            {/* WordPress Products */}
+            {recommendations.products.length > 0 && (
+              <div className="mb-5">
+                <header className="font-family-roboto text-base sm:text-[18px] font-medium mb-3.5">
+                  {isCleanScan ? 'Similar Products' : 'Hippiekit Vetted Swaps'}
+                </header>
+                <div className="flex flex-col gap-2.5">
+                  {recommendations.products.map((product) => (
+                    <div
+                      key={product.id}
+                      onClick={() => navigate(`/products/${product.id}`)}
+                      className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex flex-col sm:flex-row gap-2 sm:gap-3 items-start sm:items-center overflow-hidden cursor-pointer hover:shadow-[0px_2px_15px_0px_rgba(0,0,0,0.22)] transition-shadow"
+                    >
+                      <img
+                        src={product.image_url}
+                        alt={product.name}
+                        className="w-14 h-14 sm:w-[60px] sm:h-[60px] object-cover rounded-lg flex-shrink-0"
+                      />
+
+                      <div className="flex flex-col flex-1 gap-1 min-w-0">
+                        <h3 className="font-roboto font-semibold text-sm sm:text-[16px] text-black capitalize leading-snug break-words">
+                          {product.name}
+                        </h3>
+                        <p className="font-roboto font-normal text-xs sm:text-[14px] text-[#4e4e4e] leading-normal line-clamp-2">
+                          {product.description}
+                        </p>
+                        {product.price && (
+                          <span className="font-roboto text-xs sm:text-[14px] font-semibold text-[#00A23E]">
+                            {product.price}
+                          </span>
+                        )}
+                      </div>
+
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(
+                            product.affiliate_url || product.permalink,
+                            '_blank',
+                          );
+                        }}
+                        className="bg-[#00A23E] text-white px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm hover:bg-[#008f35] transition-colors flex-shrink-0 whitespace-nowrap"
+                      >
+                        Buy now
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* AI-Generated Alternatives - Only show when no WordPress products */}
+            {recommendations.ai_alternatives.length > 0 &&
+              recommendations.products.length === 0 && (
+                <div>
+                  <header className="font-family-roboto text-base sm:text-[18px] font-medium mb-3.5 flex items-center gap-2">
+                    Healthier Eco-Friendly Recommendation
+                    <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-purple-100 to-blue-100 rounded-full">
+                      <img src={aiIcon} alt="AI" className="w-4 h-4" />
+                      <span className="text-xs font-semibold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                        AI
+                      </span>
+                    </div>
+                  </header>
+                  <div className="flex flex-col gap-2.5">
+                    {recommendations.ai_alternatives.map((alt, index) => (
+                      <div
+                        key={index}
+                        onClick={() => setSelectedAIAlternative(alt)}
+                        className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex flex-col sm:flex-row gap-2 sm:gap-3 items-start sm:items-center overflow-hidden cursor-pointer hover:shadow-[0px_2px_15px_0px_rgba(0,0,0,0.22)] transition-shadow"
+                      >
+                        <div className="w-14 h-14 sm:w-[60px] sm:h-[60px] bg-gradient-to-br from-[#00A23E] to-[#20799F] rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                          {alt.logo_url ? (
+                            <img
+                              src={alt.logo_url}
+                              alt={`${alt.brand} logo`}
+                              className="w-full h-full object-contain p-1"
+                              onError={(e) => {
+                                // Fallback to emoji if image fails to load
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const parent = target.parentElement;
+                                if (parent) {
+                                  parent.innerHTML =
+                                    '<span class="text-white font-bold text-lg sm:text-xl">🌱</span>';
+                                }
+                              }}
+                            />
+                          ) : (
+                            <span className="text-white font-bold text-lg sm:text-xl">
+                              🌱
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex flex-col flex-1 gap-1 min-w-0">
+                          <h3 className="font-roboto font-semibold text-sm sm:text-[16px] text-black leading-snug break-words">
+                            {alt.name}
+                          </h3>
+                          <p className="font-roboto text-xs sm:text-[12px] font-medium text-[#00A23E]">
+                            {alt.brand}
+                          </p>
+                          <p className="font-roboto font-normal text-xs sm:text-[13px] text-[#4e4e4e] leading-normal line-clamp-2">
+                            {alt.description}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+          </div>
+        ) : null}
+      </section>
+
+      {/* AI Alternative Detail Modal */}
+      {selectedAIAlternative && (
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          onClick={() => setSelectedAIAlternative(null)}
+        >
+          <div
+            className="bg-white rounded-[15px] max-w-md w-full max-h-[90vh] overflow-y-auto shadow-[0px_4px_20px_0px_rgba(0,0,0,0.25)] animate-fade-in-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header with close button */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between rounded-t-[15px]">
+              <h2 className="font-roboto font-bold text-lg text-black">
+                Product Details
+              </h2>
+              <button
+                onClick={() => setSelectedAIAlternative(null)}
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-5 flex flex-col gap-4">
+              {/* Logo/Image */}
+              <div className="w-full flex justify-center">
+                <div className="w-32 h-32 bg-gradient-to-br from-[#00A23E] to-[#20799F] rounded-2xl flex items-center justify-center overflow-hidden shadow-lg">
+                  {selectedAIAlternative.logo_url ? (
+                    <img
+                      src={selectedAIAlternative.logo_url}
+                      alt={`${selectedAIAlternative.brand} logo`}
+                      className="w-full h-full object-contain p-3"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent) {
+                          parent.innerHTML =
+                            '<span class="text-white font-bold text-5xl">🌱</span>';
+                        }
+                      }}
+                    />
+                  ) : (
+                    <span className="text-white font-bold text-5xl">🌱</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Product Name */}
+              <div className="text-center">
+                <h3 className="font-roboto font-bold text-xl text-black mb-2">
+                  {selectedAIAlternative.name}
+                </h3>
+                <p className="font-roboto text-base font-semibold text-[#00A23E]">
+                  {selectedAIAlternative.brand}
+                </p>
+              </div>
+
+              {/* Divider */}
+              <div className="border-t border-gray-200"></div>
+
+              {/* Full Description */}
+              <div>
+                <h4 className="font-roboto font-semibold text-sm text-gray-700 mb-2">
+                  Why This Product?
+                </h4>
+                <p className="font-roboto text-sm text-[#4e4e4e] leading-relaxed">
+                  {selectedAIAlternative.description}
+                </p>
+              </div>
+
+              {/* AI Note */}
+              <div className="bg-[#20799F]/10 border border-[#20799F]/20 rounded-lg p-3">
+                <div className="flex gap-2 items-start">
+                  <img
+                    src={aiIcon}
+                    alt="AI"
+                    className="w-5 h-5 flex-shrink-0 mt-0.5"
+                  />
+                  <p className="font-roboto text-xs text-[#20799F] leading-relaxed">
+                    This recommendation was AI-generated based on the product
+                    you scanned and focuses on healthier, cleaner alternatives.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* AI Note */}

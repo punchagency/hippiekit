@@ -105,6 +105,7 @@ const ProductIdentificationResults = () => {
 
   // State for selected items
   const [selectedHarmful, setSelectedHarmful] = useState<string | null>(null);
+  const [selectedQuestionable, setSelectedQuestionable] = useState<string | null>(null);
   const [selectedSafe, setSelectedSafe] = useState<string | null>(null);
   const [selectedPackaging, setSelectedPackaging] = useState<string | null>(
     null,
@@ -240,6 +241,7 @@ const ProductIdentificationResults = () => {
           ingredient_descriptions: {
             safe: safeDescriptions,
             harmful: harmfulDescriptions,
+            questionable: {},
           },
           packaging: savedScanData.packaging?.map((p: any) => p.name) || [],
           packaging_analysis: {
@@ -340,7 +342,7 @@ const ProductIdentificationResults = () => {
           marketing_claims: basicInfo.marketing_claims || [],
           certifications_visible: basicInfo.certifications_visible || [],
           container_info: basicInfo.container_info || {},
-          ingredient_descriptions: { harmful: {}, safe: {} },
+          ingredient_descriptions: { harmful: {}, questionable: {}, safe: {} },
         });
         setLoadingBasicData(false);
 
@@ -356,13 +358,14 @@ const ProductIdentificationResults = () => {
             console.log('🧪 Ingredient separation received:', separationResult);
 
             const harmful = separationResult.harmful || [];
+            const questionable = separationResult.questionable || [];
             const safe = separationResult.safe || [];
 
             // Only call descriptions if we have ingredients
-            if (harmful.length > 0 || safe.length > 0) {
+            if (harmful.length > 0 || questionable.length > 0 || safe.length > 0) {
               // IMMEDIATELY launch descriptions request (don't wait for state updates)
               setLoadingDescriptions(true);
-              describePhotoIngredients(harmful, safe)
+              describePhotoIngredients(harmful, questionable, safe)
                 .then((descriptionsResult) => {
                   console.log(
                     '📝 Ingredient descriptions received:',
@@ -374,6 +377,7 @@ const ProductIdentificationResults = () => {
                       ...prev,
                       ingredient_descriptions: {
                         harmful: descriptionsResult.descriptions?.harmful || {},
+                        questionable: descriptionsResult.descriptions?.questionable || {},
                         safe: descriptionsResult.descriptions?.safe || {},
                       },
                     };
@@ -391,10 +395,15 @@ const ProductIdentificationResults = () => {
 
             // Show ingredient names immediately with placeholder descriptions
             const harmfulPlaceholders: Record<string, string> = {};
+            const questionablePlaceholders: Record<string, string> = {};
             const safePlaceholders: Record<string, string> = {};
 
             harmful.forEach((name: string) => {
               harmfulPlaceholders[name] = '';
+            });
+
+            questionable.forEach((name: string) => {
+              questionablePlaceholders[name] = '';
             });
 
             safe.forEach((name: string) => {
@@ -407,6 +416,7 @@ const ProductIdentificationResults = () => {
                 ...prev,
                 ingredient_descriptions: {
                   harmful: harmfulPlaceholders,
+                  questionable: questionablePlaceholders,
                   safe: safePlaceholders,
                 },
               };
@@ -735,16 +745,25 @@ const ProductIdentificationResults = () => {
     );
   }
 
-  // Extract harmful and safe ingredients (only if product exists)
+  // Extract harmful, questionable, and safe ingredients (only if product exists)
   const harmfulDescriptions = product?.ingredient_descriptions?.harmful || {};
+  const questionableDescriptions = product?.ingredient_descriptions?.questionable || {};
   const safeDescriptions = product?.ingredient_descriptions?.safe || {};
 
   // Prepare tags and descriptions
   const harmfulTags = Object.keys(harmfulDescriptions);
+  const questionableTags = Object.keys(questionableDescriptions);
   const safeTags = Object.keys(safeDescriptions);
+
+  // Determine if this is a "clean" scan (no harmful ingredients AND safe packaging)
+  // A "clean" scan means: no harmful chemicals AND packaging is not harmful
+  const isCleanScan = 
+    harmfulTags.length === 0 && 
+    packagingAnalysis?.overall_safety !== 'harmful';
 
   // Create tag descriptions mappings
   const harmfulTagDescriptions: Record<string, string> = harmfulDescriptions;
+  const questionableTagDescriptions: Record<string, string> = questionableDescriptions;
   const safeTagDescriptions: Record<string, string> = safeDescriptions;
 
   // Extract packaging analysis (similar to BarcodeProductResults)
@@ -931,6 +950,32 @@ const ProductIdentificationResults = () => {
         </div>
       ) : null}
 
+      {/* Questionable Ingredients Section */}
+      {!loadingIngredients && questionableTags.length > 0 && (
+        <section
+          className="rounded-[7px] px-3 sm:px-4 py-4 sm:py-5 mt-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex gap-2 items-center justify-center overflow-hidden animate-fade-in-up"
+        >
+          <ProductResultInfoCard
+            icon={chemicalsIcon}
+            title="Questionable Ingredients"
+            titleType="warning"
+            tags={questionableTags}
+            tagColor="yellow"
+            tagDescriptions={questionableTagDescriptions}
+            onTagClick={(tag) => setSelectedQuestionable(tag)}
+            descTitle={selectedQuestionable || 'Questionable Ingredients'}
+            description={
+              loadingDescriptions
+                ? 'Analyzing ingredients with AI...'
+                : selectedQuestionable && questionableTagDescriptions[selectedQuestionable]
+                  ? String(questionableTagDescriptions[selectedQuestionable])
+                  : 'These are common synthetic additives found in processed waters and foods. They\'re approved for use but not ideal for daily consumption if you\'re aiming for natural, plant-based products.'
+            }
+            isLoadingDescription={loadingDescriptions}
+          />
+        </section>
+      )}
+
       {/* Clean Ingredients Section */}
       {loadingIngredients ? (
         <section className="rounded-[7px] px-3 sm:px-4 py-4 sm:py-5 mt-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] animate-fade-in-up overflow-hidden">
@@ -1071,7 +1116,7 @@ const ProductIdentificationResults = () => {
             {recommendations.products.length > 0 && (
               <div className="mb-5">
                 <header className="font-family-roboto text-base sm:text-[18px] font-medium mb-3.5">
-                  Hippiekit Vetted Swaps
+                  {isCleanScan ? 'Similar Products' : 'Hippiekit Vetted Swaps'}
                 </header>
                 <div className="flex flex-col gap-2.5">
                   {recommendations.products.map((product) => (

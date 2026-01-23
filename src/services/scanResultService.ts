@@ -12,6 +12,7 @@ export interface SaveScanResultRequest {
   scannedImage?: string;
   safeIngredients: { name: string; description: string }[];
   harmfulIngredients: { name: string; description: string }[];
+  questionableIngredients?: { name: string; description: string }[];
   packaging: { name: string; description: string }[];
   packagingSummary?: string;
   packagingSafety?: 'safe' | 'harmful' | 'caution' | 'unknown';
@@ -28,6 +29,7 @@ export interface SaveScanResultRequest {
   chemicalAnalysis?: {
     safety_score?: number;
     total_harmful?: number;
+    total_questionable?: number;
     total_safe?: number;
   };
 }

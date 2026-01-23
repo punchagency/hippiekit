@@ -119,6 +119,7 @@ const BarcodeProductResults = () => {
 
   // State for selected items
   const [selectedHarmful, setSelectedHarmful] = useState<string | null>(null);
+  const [selectedQuestionable, setSelectedQuestionable] = useState<string | null>(null);
   const [selectedSafe, setSelectedSafe] = useState<string | null>(null);
   const [selectedPackaging, setSelectedPackaging] = useState<string | null>(
     null,
@@ -205,6 +206,7 @@ const BarcodeProductResults = () => {
           url: '',
           ingredient_descriptions: {
             harmful: harmfulDescriptions,
+            questionable: {},
             safe: safeDescriptions,
           },
           packaging_analysis: {
@@ -322,7 +324,7 @@ const BarcodeProductResults = () => {
           labels: '',
           countries: '',
           url: '',
-          ingredient_descriptions: { harmful: {}, safe: {} },
+          ingredient_descriptions: { harmful: {}, questionable: {}, safe: {} },
         });
         setLoadingBasicData(false);
 
@@ -341,6 +343,7 @@ const BarcodeProductResults = () => {
               .describeIngredients(
                 barcode,
                 separationResult.harmful,
+                separationResult.questionable || [],
                 separationResult.safe,
               )
               .then((descriptionsResult) => {
@@ -354,6 +357,7 @@ const BarcodeProductResults = () => {
                     ...prev,
                     ingredient_descriptions: {
                       harmful: descriptionsResult.descriptions?.harmful || {},
+                      questionable: descriptionsResult.descriptions?.questionable || {},
                       safe: descriptionsResult.descriptions?.safe || {},
                     },
                   };
@@ -367,10 +371,15 @@ const BarcodeProductResults = () => {
 
             // Show ingredient names immediately with placeholder descriptions
             const harmfulPlaceholders: Record<string, string> = {};
+            const questionablePlaceholders: Record<string, string> = {};
             const safePlaceholders: Record<string, string> = {};
 
             separationResult.harmful.forEach((name) => {
               harmfulPlaceholders[name] = ''; // Empty string as placeholder
+            });
+
+            (separationResult.questionable || []).forEach((name) => {
+              questionablePlaceholders[name] = ''; // Empty string as placeholder
             });
 
             separationResult.safe.forEach((name) => {
@@ -390,6 +399,11 @@ const BarcodeProductResults = () => {
                     severity: 'moderate' as const,
                     why_flagged: 'Flagged by AI analysis',
                   })),
+                  questionable_chemicals: (separationResult.questionable || []).map((name) => ({
+                    name: name,
+                    type: 'synthetic_additive',
+                    category: 'Synthetic Minerals',
+                  })),
                   safe_chemicals: separationResult.safe.map((name) => ({
                     name: name,
                     category: 'ingredient',
@@ -397,6 +411,7 @@ const BarcodeProductResults = () => {
                 },
                 ingredient_descriptions: {
                   harmful: harmfulPlaceholders,
+                  questionable: questionablePlaceholders,
                   safe: safePlaceholders,
                 },
               };
@@ -514,7 +529,7 @@ const BarcodeProductResults = () => {
             labels: '',
             countries: '',
             url: '',
-            ingredient_descriptions: { harmful: {}, safe: {} },
+            ingredient_descriptions: { harmful: {}, questionable: {}, safe: {} },
           };
 
           getBarcodeRecommendations(barcode, productForRecommendations)
@@ -639,11 +654,10 @@ const BarcodeProductResults = () => {
             const formattedName = formatTagName(material);
             return {
               name: formattedName,
-              description: `${details.description}\n\n${
-                details.health_concerns !== 'None identified'
+              description: `${details.description}\n\n${details.health_concerns !== 'None identified'
                   ? `Health Concerns: ${details.health_concerns}\n`
                   : ''
-              }Environmental Impact: ${details.environmental_impact}`,
+                }Environmental Impact: ${details.environmental_impact}`,
             };
           })
           .filter(
@@ -686,10 +700,10 @@ const BarcodeProductResults = () => {
         // Prepare chemical analysis
         const chemicalAnalysis = product.chemical_analysis
           ? {
-              safety_score: product.chemical_analysis.safety_score,
-              total_harmful: Object.keys(harmfulDescriptions).length,
-              total_safe: Object.keys(safeDescriptions).length,
-            }
+            safety_score: product.chemical_analysis.safety_score,
+            total_harmful: Object.keys(harmfulDescriptions).length,
+            total_safe: Object.keys(safeDescriptions).length,
+          }
           : undefined;
 
         // Save to database
@@ -881,8 +895,9 @@ const BarcodeProductResults = () => {
   console.log('Raw ingredients:', product?.ingredients);
   console.log('Raw packaging:', product?.packaging);
 
-  // Extract harmful and safe ingredients (with null checks)
+  // Extract harmful, questionable, and safe ingredients (with null checks)
   const harmfulDescriptions = product?.ingredient_descriptions?.harmful || {};
+  const questionableDescriptions = product?.ingredient_descriptions?.questionable || {};
   const safeDescriptions = product?.ingredient_descriptions?.safe || {};
 
   // Extract packaging analysis
@@ -892,7 +907,14 @@ const BarcodeProductResults = () => {
 
   // Prepare tags and descriptions
   const harmfulTags = Object.keys(harmfulDescriptions);
+  const questionableTags = Object.keys(questionableDescriptions);
   const safeTags = Object.keys(safeDescriptions);
+
+  // Determine if this is a "clean" scan (no harmful ingredients AND safe packaging)
+  // A "clean" scan means: no harmful chemicals AND packaging is not harmful
+  const isCleanScan =
+    harmfulTags.length === 0 &&
+    packagingAnalysis?.overall_safety !== 'harmful';
 
   // Format packaging tags for display (replace underscores and capitalize)
   const packagingTags = packagingMaterials.map((material) =>
@@ -901,6 +923,7 @@ const BarcodeProductResults = () => {
 
   // Create tag descriptions mappings
   const harmfulTagDescriptions: Record<string, string> = harmfulDescriptions;
+  const questionableTagDescriptions: Record<string, string> = questionableDescriptions;
   const safeTagDescriptions: Record<string, string> = safeDescriptions;
   const packagingTagDescriptions: Record<string, string> = {};
 
@@ -918,11 +941,10 @@ const BarcodeProductResults = () => {
     console.log(`Found details:`, details);
 
     if (details) {
-      packagingTagDescriptions[formattedName] = `${details.description}\n\n${
-        details.health_concerns !== 'None identified'
+      packagingTagDescriptions[formattedName] = `${details.description}\n\n${details.health_concerns !== 'None identified'
           ? `Health Concerns: ${details.health_concerns}\n`
           : ''
-      }Environmental Impact: ${details.environmental_impact}`;
+        }Environmental Impact: ${details.environmental_impact}`;
     } else {
       console.warn(`No details found for material: "${material}"`);
     }
@@ -972,7 +994,7 @@ const BarcodeProductResults = () => {
         <img
           src={productResultsIcon}
           alt=""
-          className="w-5 h-5 flex-shrink-0"
+          className="w-5 h-5 shrink-0"
         />
         <span className="font-family-segoe text-primary text-base sm:text-[18px] font-bold">
           Product Results
@@ -984,7 +1006,7 @@ const BarcodeProductResults = () => {
         <div className="mt-2.5 py-4 sm:py-5 px-3 sm:px-3.5 bg-white rounded-[13px] shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] flex flex-col gap-4 sm:gap-6 overflow-hidden">
           <div className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex gap-2 sm:gap-3 items-start animate-pulse">
             {/* Image skeleton */}
-            <div className="w-14 h-14 sm:w-[60px] sm:h-[60px] bg-gray-200 rounded-lg flex-shrink-0"></div>
+            <div className="w-14 h-14 sm:w-[60px] sm:h-[60px] bg-gray-200 rounded-lg shrink-0"></div>
 
             {/* Product info skeleton */}
             <div className="flex flex-col flex-1 gap-1 sm:gap-2 min-w-0">
@@ -993,7 +1015,7 @@ const BarcodeProductResults = () => {
             </div>
 
             {/* Favorite button skeleton */}
-            <div className="w-5 h-5 sm:w-[22px] sm:h-[22px] bg-gray-200 rounded-sm flex-shrink-0"></div>
+            <div className="w-5 h-5 sm:w-[22px] sm:h-[22px] bg-gray-200 rounded-sm shrink-0"></div>
           </div>
 
           {/* Loading message */}
@@ -1011,7 +1033,7 @@ const BarcodeProductResults = () => {
           <div className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex gap-2 sm:gap-3 items-start">
             {/* Product Image */}
             <div
-              className="relative w-14 h-14 sm:w-[60px] sm:h-[60px] rounded-lg overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+              className="relative w-14 h-14 sm:w-[60px] sm:h-[60px] rounded-lg overflow-hidden shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() =>
                 product.image_url && setSelectedImage(product.image_url)
               }
@@ -1032,7 +1054,7 @@ const BarcodeProductResults = () => {
             {/* Product Info */}
             <div className="flex flex-col flex-1 gap-1 sm:gap-2 min-w-0">
               {/* Product Name */}
-              <h3 className="font-roboto font-semibold text-sm sm:text-[16px] text-black capitalize leading-snug break-words">
+              <h3 className="font-roboto font-semibold text-sm sm:text-[16px] text-black capitalize leading-snug wrap-break-word">
                 {product.name}
               </h3>
               {/* Brand */}
@@ -1044,7 +1066,7 @@ const BarcodeProductResults = () => {
             </div>
 
             {/* Favorite Button */}
-            <button className="w-5 h-5 sm:w-[22px] sm:h-[22px] bg-[rgba(255,255,255,0.3)] p-1 sm:p-[5px] rounded-sm shadow-[0px_2px_16px_0px_rgba(6,51,54,0.1)] flex-shrink-0">
+            <button className="w-5 h-5 sm:w-[22px] sm:h-[22px] bg-[rgba(255,255,255,0.3)] p-1 sm:p-[5px] rounded-sm shadow-[0px_2px_16px_0px_rgba(6,51,54,0.1)] shrink-0">
               <img src={heartIcon} alt="Favorite" className="w-full h-full" />
             </button>
           </div>
@@ -1102,6 +1124,33 @@ const BarcodeProductResults = () => {
           ) : null}
         </div>
       ) : null}
+
+      {/* Questionable Ingredients Section */}
+      {!loadingIngredients && questionableTags.length > 0 && (
+        <section
+          className="rounded-[7px] px-3 sm:px-4 py-4 sm:py-5 mt-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex gap-2 items-center justify-center overflow-hidden animate-fade-in-up"
+          style={{ animationDelay: '0.15s' }}
+        >
+          <ProductResultInfoCard
+            icon={chemicalsIcon}
+            title="Questionable Ingredients"
+            titleType="warning"
+            tags={questionableTags}
+            tagColor="yellow"
+            tagDescriptions={questionableTagDescriptions}
+            onTagClick={(tag) => setSelectedQuestionable(tag)}
+            descTitle={selectedQuestionable || 'Questionable Ingredients'}
+            description={
+              loadingDescriptions
+                ? 'Analyzing ingredients with AI...'
+                : selectedQuestionable && questionableTagDescriptions[selectedQuestionable]
+                  ? String(questionableTagDescriptions[selectedQuestionable])
+                  : 'These are common synthetic additives found in processed waters and foods. They\'re approved for use but not ideal for daily consumption if you\'re aiming for natural, plant-based products.'
+            }
+            isLoadingDescription={loadingDescriptions}
+          />
+        </section>
+      )}
 
       {/* Clean Ingredients Section */}
       {loadingIngredients ? (
@@ -1207,7 +1256,7 @@ const BarcodeProductResults = () => {
               loadingPackagingDescriptions
                 ? 'Analyzing packaging materials with AI...'
                 : selectedPackaging &&
-                    packagingTagDescriptions[selectedPackaging]
+                  packagingTagDescriptions[selectedPackaging]
                   ? String(packagingTagDescriptions[selectedPackaging])
                   : packagingAnalysis?.summary
                     ? String(packagingAnalysis.summary)
@@ -1255,7 +1304,7 @@ const BarcodeProductResults = () => {
             {recommendations.products.length > 0 && (
               <div className="mb-5">
                 <header className="font-family-roboto text-base sm:text-[18px] font-medium mb-3.5">
-                  Hippiekit Vetted Swaps
+                  {isCleanScan ? 'Similar Products' : 'Hippiekit Vetted Swaps'}
                 </header>
                 <div className="flex flex-col gap-2.5">
                   {recommendations.products.map((product) => (
@@ -1267,11 +1316,11 @@ const BarcodeProductResults = () => {
                       <img
                         src={product.image_url}
                         alt={product.name}
-                        className="w-14 h-14 sm:w-[60px] sm:h-[60px] object-cover rounded-lg flex-shrink-0"
+                        className="w-14 h-14 sm:w-[60px] sm:h-[60px] object-cover rounded-lg shrink-0"
                       />
 
                       <div className="flex flex-col flex-1 gap-1 min-w-0">
-                        <h3 className="font-roboto font-semibold text-sm sm:text-[16px] text-black capitalize leading-snug break-words">
+                        <h3 className="font-roboto font-semibold text-sm sm:text-[16px] text-black capitalize leading-snug wrap-break-word">
                           {product.name}
                         </h3>
                         <p className="font-roboto font-normal text-xs sm:text-[14px] text-[#4e4e4e] leading-normal line-clamp-2">
@@ -1292,7 +1341,7 @@ const BarcodeProductResults = () => {
                             '_blank',
                           );
                         }}
-                        className="bg-[#00A23E] text-white px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm hover:bg-[#008f35] transition-colors flex-shrink-0 whitespace-nowrap"
+                        className="bg-[#00A23E] text-white px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm hover:bg-[#008f35] transition-colors shrink-0 whitespace-nowrap"
                       >
                         Buy now
                       </Button>
@@ -1308,9 +1357,9 @@ const BarcodeProductResults = () => {
                 <div>
                   <header className="font-family-roboto text-base sm:text-[18px] font-medium mb-3.5 flex items-center gap-2">
                     Healthier Eco-Friendly Recommendation
-                    <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-purple-100 to-blue-100 rounded-full">
+                    <div className="flex items-center gap-1 px-2 py-1 bg-linear-to-r from-purple-100 to-blue-100 rounded-full">
                       <img src={aiIcon} alt="AI" className="w-4 h-4" />
-                      <span className="text-xs font-semibold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                      <span className="text-xs font-semibold bg-linear-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
                         AI
                       </span>
                     </div>
@@ -1322,7 +1371,7 @@ const BarcodeProductResults = () => {
                         onClick={() => setSelectedAIAlternative(alt)}
                         className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex flex-col sm:flex-row gap-2 sm:gap-3 items-start sm:items-center overflow-hidden cursor-pointer hover:shadow-[0px_2px_15px_0px_rgba(0,0,0,0.22)] transition-shadow"
                       >
-                        <div className="w-14 h-14 sm:w-[60px] sm:h-[60px] bg-gradient-to-br from-[#00A23E] to-[#20799F] rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        <div className="w-14 h-14 sm:w-[60px] sm:h-[60px] bg-linear-to-br from-[#00A23E] to-[#20799F] rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
                           {alt.logo_url ? (
                             <img
                               src={alt.logo_url}
@@ -1347,7 +1396,7 @@ const BarcodeProductResults = () => {
                         </div>
 
                         <div className="flex flex-col flex-1 gap-1 min-w-0">
-                          <h3 className="font-roboto font-semibold text-sm sm:text-[16px] text-black leading-snug break-words">
+                          <h3 className="font-roboto font-semibold text-sm sm:text-[16px] text-black leading-snug wrap-break-word">
                             {alt.name}
                           </h3>
                           <p className="font-roboto text-xs sm:text-[12px] font-medium text-[#00A23E]">
@@ -1456,7 +1505,7 @@ const BarcodeProductResults = () => {
             <div className="p-5 flex flex-col gap-4">
               {/* Logo/Image */}
               <div className="w-full flex justify-center">
-                <div className="w-32 h-32 bg-gradient-to-br from-[#00A23E] to-[#20799F] rounded-2xl flex items-center justify-center overflow-hidden shadow-lg">
+                <div className="w-32 h-32 bg-linear-to-br from-[#00A23E] to-[#20799F] rounded-2xl flex items-center justify-center overflow-hidden shadow-lg">
                   {selectedAIAlternative.logo_url ? (
                     <img
                       src={selectedAIAlternative.logo_url}
@@ -1507,7 +1556,7 @@ const BarcodeProductResults = () => {
                   <img
                     src={aiIcon}
                     alt="AI"
-                    className="w-5 h-5 flex-shrink-0 mt-0.5"
+                    className="w-5 h-5 shrink-0 mt-0.5"
                   />
                   <p className="font-roboto text-xs text-[#20799F] leading-relaxed">
                     This recommendation was AI-generated based on the product
@@ -1557,7 +1606,7 @@ const BarcodeProductResults = () => {
               <img
                 src={aiIcon}
                 alt=""
-                className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0"
+                className="w-5 h-5 sm:w-6 sm:h-6 shrink-0"
               />
               <span>AI Note</span>
             </header>

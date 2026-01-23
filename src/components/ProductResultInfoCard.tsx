@@ -1,13 +1,13 @@
 type Props = {
   icon: string;
   title: string;
-  titleType?: 'positive' | 'negative' | 'normal';
+  titleType?: 'positive' | 'negative' | 'normal' | 'warning';
   tags: string[];
   descTitle: string;
   description: string;
   onTagClick?: (tag: string, description: string) => void;
   tagDescriptions?: Record<string, string>;
-  tagColor?: 'red' | 'green';
+  tagColor?: 'red' | 'green' | 'yellow';
   isLoadingDescription?: boolean;
 };
 
@@ -30,6 +30,9 @@ export const ProductResultInfoCard = ({
     if (tagColor === 'green') {
       return 'text-[#4E6C34] border-[#4E6C34]';
     }
+    if (tagColor === 'yellow') {
+      return 'text-[#B8860B] border-[#B8860B]';
+    }
     return 'text-black border-[#DADADA]';
   };
 
@@ -40,7 +43,23 @@ export const ProductResultInfoCard = ({
     if (tagColor === 'green') {
       return 'border-[#4E6C34]';
     }
+    if (tagColor === 'yellow') {
+      return 'border-[#B8860B]';
+    }
     return 'border-primary';
+  };
+
+  const getDescriptionBgColor = () => {
+    if (tagColor === 'red') {
+      return 'bg-[#FFEEEE]';
+    }
+    if (tagColor === 'green') {
+      return 'bg-[#E8F5E9]';
+    }
+    if (tagColor === 'yellow') {
+      return 'bg-[#FFF8E1]';
+    }
+    return 'bg-[#FFEEEE]';
   };
 
   return (
@@ -57,6 +76,8 @@ export const ProductResultInfoCard = ({
               ? 'text-[#4E6C34]'
               : titleType === 'negative'
               ? 'text-[#F35959]'
+              : titleType === 'warning'
+              ? 'text-[#B8860B]'
               : 'text-primary'
           } font-family-segoe font-bold break-words`}
         >
@@ -78,7 +99,7 @@ export const ProductResultInfoCard = ({
           </button>
         ))}
       </div>
-      <div className="rounded-[10px] p-3 sm:p-4 bg-[#FFEEEE]">
+      <div className={`rounded-[10px] p-3 sm:p-4 ${getDescriptionBgColor()}`}>
         <p className="font-family-segoe font-bold capitalize text-sm sm:text-base">
           {descTitle}
         </p>

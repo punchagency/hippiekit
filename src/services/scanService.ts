@@ -79,8 +79,13 @@ export interface BarcodeProduct {
     harmful_chemicals: Array<{
       chemical: string;
       category: string;
-      severity: 'critical' | 'high' | 'moderate' | 'low';
+      severity: 'critical' | 'high' | 'moderate' | 'questionable' | 'low';
       why_flagged: string;
+    }>;
+    questionable_chemicals?: Array<{
+      name: string;
+      type: string;
+      category: string;
     }>;
     safe_chemicals?: Array<{
       name: string;
@@ -93,9 +98,11 @@ export interface BarcodeProduct {
       certifications: string[];
     };
   };
+  questionable_ingredients?: string[];
   ingredient_descriptions?: {
     safe: Record<string, string>;
     harmful: Record<string, string>;
+    questionable: Record<string, string>;
   };
   packaging_analysis?: {
     materials: string[];
@@ -128,6 +135,8 @@ export interface ProductIdentificationResponse {
   category: string;
   product_type: string;
   ingredients: string;
+  harmful_ingredients?: string[];
+  questionable_ingredients?: string[];
   marketing_claims: string[];
   certifications_visible: string[];
   barcode?: string;
@@ -147,6 +156,7 @@ export interface ProductIdentificationResponse {
   ingredient_descriptions?: {
     safe: Record<string, string>;
     harmful: Record<string, string>;
+    questionable: Record<string, string>;
   };
   packaging_analysis?: {
     materials: string[];
@@ -167,7 +177,7 @@ export interface ProductIdentificationResponse {
     flags: Array<{
       chemical: string;
       category: string;
-      severity: 'CRITICAL' | 'HIGH' | 'MODERATE' | 'LOW';
+      severity: 'CRITICAL' | 'HIGH' | 'MODERATE' | 'QUESTIONABLE' | 'LOW';
       why_flagged: string;
     }>;
     safety_score: number;
@@ -220,7 +230,7 @@ export interface VisionAnalysis {
     flags: Array<{
       chemical: string;
       category: string;
-      severity: 'critical' | 'high' | 'moderate' | 'low';
+      severity: 'critical' | 'high' | 'moderate' | 'questionable' | 'low';
       why_flagged: string;
     }>;
     safety_score: number | null;
@@ -367,7 +377,8 @@ export const lookupBarcodeBasic = async (
  */
 export const getBarcodeRecommendations = async (
   barcode: string,
-  productData?: any
+  productData?: any,
+  isCleanScan?: boolean
 ): Promise<ProductRecommendations | null> => {
   try {
     const response = await fetch(`${AI_SERVICE_URL}/barcode/recommendations`, {
@@ -379,6 +390,7 @@ export const getBarcodeRecommendations = async (
       body: JSON.stringify({
         barcode,
         product_data: productData, // Pass product data to avoid redundant API call
+        is_clean_scan: isCleanScan, // Pass clean scan status for better recommendations
       }),
     });
 
@@ -627,11 +639,13 @@ export const separatePhotoIngredients = async (
  */
 export const describePhotoIngredients = async (
   harmfulIngredients: string[],
+  questionableIngredients: string[],
   safeIngredients: string[]
 ) => {
   try {
     const formData = new FormData();
     formData.append('harmful_ingredients', harmfulIngredients.join(','));
+    formData.append('questionable_ingredients', questionableIngredients.join(','));
     formData.append('safe_ingredients', safeIngredients.join(','));
 
     const res = await fetch(`${AI_SERVICE_URL}/identify/ingredients/describe`, {
