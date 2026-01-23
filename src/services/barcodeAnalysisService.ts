@@ -179,6 +179,7 @@ export const separateIngredients = async (
 export const describeIngredients = async (
   barcode: string,
   harmfulIngredients: string[],
+  questionableIngredients: string[],
   safeIngredients: string[]
 ): Promise<IngredientsDescriptions> => {
   const response = await fetch(
@@ -192,6 +193,7 @@ export const describeIngredients = async (
       body: JSON.stringify({
         barcode,
         harmful_ingredients: harmfulIngredients,
+        questionable_ingredients: questionableIngredients,
         safe_ingredients: safeIngredients,
       }),
     }

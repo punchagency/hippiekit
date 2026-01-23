@@ -119,6 +119,7 @@ const BarcodeProductResults = () => {
 
   // State for selected items
   const [selectedHarmful, setSelectedHarmful] = useState<string | null>(null);
+  const [selectedQuestionable, setSelectedQuestionable] = useState<string | null>(null);
   const [selectedSafe, setSelectedSafe] = useState<string | null>(null);
   const [selectedPackaging, setSelectedPackaging] = useState<string | null>(
     null,
@@ -341,6 +342,7 @@ const BarcodeProductResults = () => {
               .describeIngredients(
                 barcode,
                 separationResult.harmful,
+                separationResult.questionable || [],
                 separationResult.safe,
               )
               .then((descriptionsResult) => {
@@ -354,6 +356,7 @@ const BarcodeProductResults = () => {
                     ...prev,
                     ingredient_descriptions: {
                       harmful: descriptionsResult.descriptions?.harmful || {},
+                      questionable: descriptionsResult.descriptions?.questionable || {},
                       safe: descriptionsResult.descriptions?.safe || {},
                     },
                   };
@@ -367,10 +370,15 @@ const BarcodeProductResults = () => {
 
             // Show ingredient names immediately with placeholder descriptions
             const harmfulPlaceholders: Record<string, string> = {};
+            const questionablePlaceholders: Record<string, string> = {};
             const safePlaceholders: Record<string, string> = {};
 
             separationResult.harmful.forEach((name) => {
               harmfulPlaceholders[name] = ''; // Empty string as placeholder
+            });
+
+            (separationResult.questionable || []).forEach((name) => {
+              questionablePlaceholders[name] = ''; // Empty string as placeholder
             });
 
             separationResult.safe.forEach((name) => {
@@ -390,6 +398,12 @@ const BarcodeProductResults = () => {
                     severity: 'moderate' as const,
                     why_flagged: 'Flagged by AI analysis',
                   })),
+                  questionable_chemicals: (separationResult.questionable || []).map((name) => ({
+                    chemical: name,
+                    category: 'ingredient',
+                    severity: 'low' as const,
+                    why_flagged: 'Synthetic additive - approved but not ideal for natural nutrition',
+                  })),
                   safe_chemicals: separationResult.safe.map((name) => ({
                     name: name,
                     category: 'ingredient',
@@ -397,6 +411,7 @@ const BarcodeProductResults = () => {
                 },
                 ingredient_descriptions: {
                   harmful: harmfulPlaceholders,
+                  questionable: questionablePlaceholders,
                   safe: safePlaceholders,
                 },
               };
@@ -604,9 +619,11 @@ const BarcodeProductResults = () => {
 
         console.log('💾 User authenticated, preparing to save scan result...');
 
-        // Extract harmful and safe ingredients
+        // Extract harmful, questionable, and safe ingredients
         const harmfulDescriptions =
           product.ingredient_descriptions?.harmful || {};
+        const questionableDescriptions =
+          product.ingredient_descriptions?.questionable || {};
         const safeDescriptions = product.ingredient_descriptions?.safe || {};
 
         // Extract packaging analysis
@@ -616,6 +633,14 @@ const BarcodeProductResults = () => {
 
         // Prepare harmful ingredients
         const harmfulIngredients = Object.entries(harmfulDescriptions).map(
+          ([name, description]) => ({
+            name,
+            description: String(description),
+          }),
+        );
+
+        // Prepare questionable ingredients
+        const questionableIngredients = Object.entries(questionableDescriptions).map(
           ([name, description]) => ({
             name,
             description: String(description),
@@ -688,6 +713,7 @@ const BarcodeProductResults = () => {
           ? {
               safety_score: product.chemical_analysis.safety_score,
               total_harmful: Object.keys(harmfulDescriptions).length,
+              total_questionable: Object.keys(questionableDescriptions).length,
               total_safe: Object.keys(safeDescriptions).length,
             }
           : undefined;
@@ -701,6 +727,7 @@ const BarcodeProductResults = () => {
           productImage: product.image_url,
           safeIngredients,
           harmfulIngredients,
+          questionableIngredients,
           packaging: packagingData,
           packagingSummary: packagingAnalysis?.summary,
           packagingSafety: (() => {
@@ -881,8 +908,9 @@ const BarcodeProductResults = () => {
   console.log('Raw ingredients:', product?.ingredients);
   console.log('Raw packaging:', product?.packaging);
 
-  // Extract harmful and safe ingredients (with null checks)
+  // Extract harmful, questionable, and safe ingredients (with null checks)
   const harmfulDescriptions = product?.ingredient_descriptions?.harmful || {};
+  const questionableDescriptions = product?.ingredient_descriptions?.questionable || {};
   const safeDescriptions = product?.ingredient_descriptions?.safe || {};
 
   // Extract packaging analysis
@@ -892,6 +920,7 @@ const BarcodeProductResults = () => {
 
   // Prepare tags and descriptions
   const harmfulTags = Object.keys(harmfulDescriptions);
+  const questionableTags = Object.keys(questionableDescriptions);
   const safeTags = Object.keys(safeDescriptions);
 
   // Format packaging tags for display (replace underscores and capitalize)
@@ -901,6 +930,7 @@ const BarcodeProductResults = () => {
 
   // Create tag descriptions mappings
   const harmfulTagDescriptions: Record<string, string> = harmfulDescriptions;
+  const questionableTagDescriptions: Record<string, string> = questionableDescriptions;
   const safeTagDescriptions: Record<string, string> = safeDescriptions;
   const packagingTagDescriptions: Record<string, string> = {};
 
@@ -1101,6 +1131,56 @@ const BarcodeProductResults = () => {
             </div>
           ) : null}
         </div>
+      ) : null}
+
+      {/* Questionable Ingredients Section */}
+      {loadingIngredients ? (
+        <section
+          className="rounded-[7px] px-3 sm:px-4 py-4 sm:py-5 mt-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] animate-fade-in-up"
+          style={{ animationDelay: '0.15s' }}
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-5 h-5 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-4 bg-gray-200 rounded w-56 animate-pulse"></div>
+          </div>
+          <div className="flex flex-wrap gap-2 mb-3">
+            <div className="h-6 bg-gray-200 rounded-full w-24 animate-pulse"></div>
+            <div className="h-6 bg-gray-200 rounded-full w-20 animate-pulse"></div>
+            <div className="h-6 bg-gray-200 rounded-full w-28 animate-pulse"></div>
+          </div>
+          <div className="text-center py-3">
+            <div className="inline-flex items-center gap-2 text-yellow-600">
+              <div className="w-4 h-4 border-2 border-yellow-600 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-sm font-medium">
+                Checking for questionable additives...
+              </span>
+            </div>
+          </div>
+        </section>
+      ) : questionableTags.length > 0 ? (
+        <section
+          className="rounded-[7px] px-3 sm:px-4 py-4 sm:py-5 mt-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex gap-2 items-center justify-center overflow-hidden animate-fade-in-up"
+          style={{ animationDelay: '0.15s' }}
+        >
+          <ProductResultInfoCard
+            icon={chemicalsIcon}
+            title="Synthetic & Questionable Additives"
+            titleType="warning"
+            tags={questionableTags}
+            tagColor="yellow"
+            tagDescriptions={questionableTagDescriptions}
+            onTagClick={(tag) => setSelectedQuestionable(tag)}
+            descTitle={selectedQuestionable || 'Questionable Ingredients'}
+            description={
+              loadingDescriptions
+                ? 'Analyzing ingredients with AI...'
+                : selectedQuestionable && questionableTagDescriptions[selectedQuestionable]
+                  ? String(questionableTagDescriptions[selectedQuestionable])
+                  : 'Click on an ingredient above to learn more about it'
+            }
+            isLoadingDescription={loadingDescriptions}
+          />
+        </section>
       ) : null}
 
       {/* Clean Ingredients Section */}

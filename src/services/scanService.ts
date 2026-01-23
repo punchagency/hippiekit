@@ -627,11 +627,13 @@ export const separatePhotoIngredients = async (
  */
 export const describePhotoIngredients = async (
   harmfulIngredients: string[],
+  questionableIngredients: string[],
   safeIngredients: string[]
 ) => {
   try {
     const formData = new FormData();
     formData.append('harmful_ingredients', harmfulIngredients.join(','));
+    formData.append('questionable_ingredients', questionableIngredients.join(','));
     formData.append('safe_ingredients', safeIngredients.join(','));
 
     const res = await fetch(`${AI_SERVICE_URL}/identify/ingredients/describe`, {
