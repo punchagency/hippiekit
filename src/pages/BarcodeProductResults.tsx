@@ -160,10 +160,15 @@ const BarcodeProductResults = () => {
 
         // Convert saved data back to BarcodeProduct format
         const harmfulDescriptions: Record<string, string> = {};
+        const questionableDescriptions: Record<string, string> = {};
         const safeDescriptions: Record<string, string> = {};
 
         savedScanData.harmfulIngredients?.forEach((ing: any) => {
           harmfulDescriptions[ing.name] = ing.description;
+        });
+
+        savedScanData.questionableIngredients?.forEach((ing: any) => {
+          questionableDescriptions[ing.name] = ing.description;
         });
 
         savedScanData.safeIngredients?.forEach((ing: any) => {
@@ -188,6 +193,10 @@ const BarcodeProductResults = () => {
               text: name,
               type: 'harmful' as const,
             })),
+            ...Object.keys(questionableDescriptions).map((name) => ({
+              text: name,
+              type: 'questionable' as const,
+            })),
             ...Object.keys(safeDescriptions).map((name) => ({
               text: name,
               type: 'safe' as const,
@@ -208,6 +217,8 @@ const BarcodeProductResults = () => {
           url: '',
           ingredient_descriptions: {
             harmful: harmfulDescriptions,
+            questionable: questionableDescriptions,
+            safe: safeDescriptions,
             questionable: {},
             safe: safeDescriptions,
           },
