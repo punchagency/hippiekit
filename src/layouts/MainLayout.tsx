@@ -4,17 +4,12 @@ import BottomNav from '@/components/BottomNav';
 const MainLayout = () => {
   return (
     <div className="relative h-full">
-      {/* Main content area with padding for bottom nav and safe areas */}
-      <div
-        className="pb-[60px] h-full overflow-y-auto"
-        style={{
-          paddingBottom: 'calc(60px + env(safe-area-inset-bottom))',
-        }}
-      >
+      {/* Main content area - edge-to-edge with safe area padding */}
+      <div className="h-full overflow-y-auto pt-safe pb-safe-nav">
         <Outlet />
       </div>
 
-      {/* Bottom Navigation - positioned above safe area */}
+      {/* Bottom Navigation - floating pill style */}
       <BottomNav />
     </div>
   );
