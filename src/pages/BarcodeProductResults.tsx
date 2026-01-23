@@ -119,7 +119,9 @@ const BarcodeProductResults = () => {
 
   // State for selected items
   const [selectedHarmful, setSelectedHarmful] = useState<string | null>(null);
-  const [selectedQuestionable, setSelectedQuestionable] = useState<string | null>(null);
+  const [selectedQuestionable, setSelectedQuestionable] = useState<
+    string | null
+  >(null);
   const [selectedSafe, setSelectedSafe] = useState<string | null>(null);
   const [selectedPackaging, setSelectedPackaging] = useState<string | null>(
     null,
@@ -357,7 +359,8 @@ const BarcodeProductResults = () => {
                     ...prev,
                     ingredient_descriptions: {
                       harmful: descriptionsResult.descriptions?.harmful || {},
-                      questionable: descriptionsResult.descriptions?.questionable || {},
+                      questionable:
+                        descriptionsResult.descriptions?.questionable || {},
                       safe: descriptionsResult.descriptions?.safe || {},
                     },
                   };
@@ -399,7 +402,9 @@ const BarcodeProductResults = () => {
                     severity: 'moderate' as const,
                     why_flagged: 'Flagged by AI analysis',
                   })),
-                  questionable_chemicals: (separationResult.questionable || []).map((name) => ({
+                  questionable_chemicals: (
+                    separationResult.questionable || []
+                  ).map((name) => ({
                     name: name,
                     type: 'synthetic_additive',
                     category: 'Synthetic Minerals',
@@ -529,7 +534,11 @@ const BarcodeProductResults = () => {
             labels: '',
             countries: '',
             url: '',
-            ingredient_descriptions: { harmful: {}, questionable: {}, safe: {} },
+            ingredient_descriptions: {
+              harmful: {},
+              questionable: {},
+              safe: {},
+            },
           };
 
           getBarcodeRecommendations(barcode, productForRecommendations)
@@ -619,9 +628,11 @@ const BarcodeProductResults = () => {
 
         console.log('💾 User authenticated, preparing to save scan result...');
 
-        // Extract harmful and safe ingredients
+        // Extract harmful, questionable, and safe ingredients
         const harmfulDescriptions =
           product.ingredient_descriptions?.harmful || {};
+        const questionableDescriptions =
+          product.ingredient_descriptions?.questionable || {};
         const safeDescriptions = product.ingredient_descriptions?.safe || {};
 
         // Extract packaging analysis
@@ -645,6 +656,14 @@ const BarcodeProductResults = () => {
           }),
         );
 
+        // Prepare questionable ingredients
+        const questionableIngredients = Object.entries(
+          questionableDescriptions,
+        ).map(([name, description]) => ({
+          name,
+          description: String(description),
+        }));
+
         // Prepare packaging data
         const packagingData = packagingMaterials
           .map((material) => {
@@ -654,10 +673,11 @@ const BarcodeProductResults = () => {
             const formattedName = formatTagName(material);
             return {
               name: formattedName,
-              description: `${details.description}\n\n${details.health_concerns !== 'None identified'
+              description: `${details.description}\n\n${
+                details.health_concerns !== 'None identified'
                   ? `Health Concerns: ${details.health_concerns}\n`
                   : ''
-                }Environmental Impact: ${details.environmental_impact}`,
+              }Environmental Impact: ${details.environmental_impact}`,
             };
           })
           .filter(
@@ -700,10 +720,11 @@ const BarcodeProductResults = () => {
         // Prepare chemical analysis
         const chemicalAnalysis = product.chemical_analysis
           ? {
-            safety_score: product.chemical_analysis.safety_score,
-            total_harmful: Object.keys(harmfulDescriptions).length,
-            total_safe: Object.keys(safeDescriptions).length,
-          }
+              safety_score: product.chemical_analysis.safety_score,
+              total_harmful: Object.keys(harmfulDescriptions).length,
+              total_questionable: Object.keys(questionableDescriptions).length,
+              total_safe: Object.keys(safeDescriptions).length,
+            }
           : undefined;
 
         // Save to database
@@ -715,6 +736,7 @@ const BarcodeProductResults = () => {
           productImage: product.image_url,
           safeIngredients,
           harmfulIngredients,
+          questionableIngredients,
           packaging: packagingData,
           packagingSummary: packagingAnalysis?.summary,
           packagingSafety: (() => {
@@ -897,7 +919,8 @@ const BarcodeProductResults = () => {
 
   // Extract harmful, questionable, and safe ingredients (with null checks)
   const harmfulDescriptions = product?.ingredient_descriptions?.harmful || {};
-  const questionableDescriptions = product?.ingredient_descriptions?.questionable || {};
+  const questionableDescriptions =
+    product?.ingredient_descriptions?.questionable || {};
   const safeDescriptions = product?.ingredient_descriptions?.safe || {};
 
   // Extract packaging analysis
@@ -913,8 +936,7 @@ const BarcodeProductResults = () => {
   // Determine if this is a "clean" scan (no harmful ingredients AND safe packaging)
   // A "clean" scan means: no harmful chemicals AND packaging is not harmful
   const isCleanScan =
-    harmfulTags.length === 0 &&
-    packagingAnalysis?.overall_safety !== 'harmful';
+    harmfulTags.length === 0 && packagingAnalysis?.overall_safety !== 'harmful';
 
   // Format packaging tags for display (replace underscores and capitalize)
   const packagingTags = packagingMaterials.map((material) =>
@@ -923,7 +945,8 @@ const BarcodeProductResults = () => {
 
   // Create tag descriptions mappings
   const harmfulTagDescriptions: Record<string, string> = harmfulDescriptions;
-  const questionableTagDescriptions: Record<string, string> = questionableDescriptions;
+  const questionableTagDescriptions: Record<string, string> =
+    questionableDescriptions;
   const safeTagDescriptions: Record<string, string> = safeDescriptions;
   const packagingTagDescriptions: Record<string, string> = {};
 
@@ -941,10 +964,11 @@ const BarcodeProductResults = () => {
     console.log(`Found details:`, details);
 
     if (details) {
-      packagingTagDescriptions[formattedName] = `${details.description}\n\n${details.health_concerns !== 'None identified'
+      packagingTagDescriptions[formattedName] = `${details.description}\n\n${
+        details.health_concerns !== 'None identified'
           ? `Health Concerns: ${details.health_concerns}\n`
           : ''
-        }Environmental Impact: ${details.environmental_impact}`;
+      }Environmental Impact: ${details.environmental_impact}`;
     } else {
       console.warn(`No details found for material: "${material}"`);
     }
@@ -991,11 +1015,7 @@ const BarcodeProductResults = () => {
 
       {/* Product Results Section Header */}
       <section className="rounded-[7px] px-3 sm:px-4 py-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex gap-2 items-center justify-center flex-wrap">
-        <img
-          src={productResultsIcon}
-          alt=""
-          className="w-5 h-5 shrink-0"
-        />
+        <img src={productResultsIcon} alt="" className="w-5 h-5 shrink-0" />
         <span className="font-family-segoe text-primary text-base sm:text-[18px] font-bold">
           Product Results
         </span>
@@ -1143,9 +1163,10 @@ const BarcodeProductResults = () => {
             description={
               loadingDescriptions
                 ? 'Analyzing ingredients with AI...'
-                : selectedQuestionable && questionableTagDescriptions[selectedQuestionable]
+                : selectedQuestionable &&
+                    questionableTagDescriptions[selectedQuestionable]
                   ? String(questionableTagDescriptions[selectedQuestionable])
-                  : 'These are common synthetic additives found in processed waters and foods. They\'re approved for use but not ideal for daily consumption if you\'re aiming for natural, plant-based products.'
+                  : "These are common synthetic additives found in processed waters and foods. They're approved for use but not ideal for daily consumption if you're aiming for natural, plant-based products."
             }
             isLoadingDescription={loadingDescriptions}
           />
@@ -1256,7 +1277,7 @@ const BarcodeProductResults = () => {
               loadingPackagingDescriptions
                 ? 'Analyzing packaging materials with AI...'
                 : selectedPackaging &&
-                  packagingTagDescriptions[selectedPackaging]
+                    packagingTagDescriptions[selectedPackaging]
                   ? String(packagingTagDescriptions[selectedPackaging])
                   : packagingAnalysis?.summary
                     ? String(packagingAnalysis.summary)

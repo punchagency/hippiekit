@@ -105,7 +105,9 @@ const ProductIdentificationResults = () => {
 
   // State for selected items
   const [selectedHarmful, setSelectedHarmful] = useState<string | null>(null);
-  const [selectedQuestionable, setSelectedQuestionable] = useState<string | null>(null);
+  const [selectedQuestionable, setSelectedQuestionable] = useState<
+    string | null
+  >(null);
   const [selectedSafe, setSelectedSafe] = useState<string | null>(null);
   const [selectedPackaging, setSelectedPackaging] = useState<string | null>(
     null,
@@ -362,7 +364,11 @@ const ProductIdentificationResults = () => {
             const safe = separationResult.safe || [];
 
             // Only call descriptions if we have ingredients
-            if (harmful.length > 0 || questionable.length > 0 || safe.length > 0) {
+            if (
+              harmful.length > 0 ||
+              questionable.length > 0 ||
+              safe.length > 0
+            ) {
               // IMMEDIATELY launch descriptions request (don't wait for state updates)
               setLoadingDescriptions(true);
               describePhotoIngredients(harmful, questionable, safe)
@@ -377,7 +383,8 @@ const ProductIdentificationResults = () => {
                       ...prev,
                       ingredient_descriptions: {
                         harmful: descriptionsResult.descriptions?.harmful || {},
-                        questionable: descriptionsResult.descriptions?.questionable || {},
+                        questionable:
+                          descriptionsResult.descriptions?.questionable || {},
                         safe: descriptionsResult.descriptions?.safe || {},
                       },
                     };
@@ -622,11 +629,14 @@ const ProductIdentificationResults = () => {
           }
         }
 
-        // Extract harmful and safe ingredients
+        // Extract harmful, questionable, and safe ingredients
         const harmfulDescriptions =
           product?.ingredient_descriptions?.harmful || {};
+        const questionableDescriptions =
+          product?.ingredient_descriptions?.questionable || {};
         const safeDescriptions = product?.ingredient_descriptions?.safe || {};
         const harmfulTags = Object.keys(harmfulDescriptions);
+        const questionableTags = Object.keys(questionableDescriptions);
         const safeTags = Object.keys(safeDescriptions);
 
         // Extract packaging data
@@ -648,6 +658,12 @@ const ProductIdentificationResults = () => {
             name: tag,
             description:
               harmfulDescriptions[tag] || 'Potentially harmful ingredient',
+          })),
+          questionableIngredients: questionableTags.map((tag) => ({
+            name: tag,
+            description:
+              questionableDescriptions[tag] ||
+              'Questionable ingredient - approved but not ideal for natural/plant-based nutrition',
           })),
           packaging: packagingMaterials.map((material: string) => ({
             name: material,
@@ -747,8 +763,14 @@ const ProductIdentificationResults = () => {
 
   // Extract harmful, questionable, and safe ingredients (only if product exists)
   const harmfulDescriptions = product?.ingredient_descriptions?.harmful || {};
-  const questionableDescriptions = product?.ingredient_descriptions?.questionable || {};
+  const questionableDescriptions =
+    product?.ingredient_descriptions?.questionable || {};
   const safeDescriptions = product?.ingredient_descriptions?.safe || {};
+
+  // Extract packaging analysis (similar to BarcodeProductResults) - MUST be before usage
+  const packagingAnalysis = product?.packaging_analysis;
+  const packagingMaterials = packagingAnalysis?.materials || [];
+  const packagingDetails = packagingAnalysis?.analysis || {};
 
   // Prepare tags and descriptions
   const harmfulTags = Object.keys(harmfulDescriptions);
@@ -757,19 +779,14 @@ const ProductIdentificationResults = () => {
 
   // Determine if this is a "clean" scan (no harmful ingredients AND safe packaging)
   // A "clean" scan means: no harmful chemicals AND packaging is not harmful
-  const isCleanScan = 
-    harmfulTags.length === 0 && 
-    packagingAnalysis?.overall_safety !== 'harmful';
+  const isCleanScan =
+    harmfulTags.length === 0 && packagingAnalysis?.overall_safety !== 'harmful';
 
   // Create tag descriptions mappings
   const harmfulTagDescriptions: Record<string, string> = harmfulDescriptions;
-  const questionableTagDescriptions: Record<string, string> = questionableDescriptions;
+  const questionableTagDescriptions: Record<string, string> =
+    questionableDescriptions;
   const safeTagDescriptions: Record<string, string> = safeDescriptions;
-
-  // Extract packaging analysis (similar to BarcodeProductResults)
-  const packagingAnalysis = product?.packaging_analysis;
-  const packagingMaterials = packagingAnalysis?.materials || [];
-  const packagingDetails = packagingAnalysis?.analysis || {};
 
   // Format packaging tags for display (replace underscores and capitalize)
   const packagingTags = packagingMaterials.map((material: string) =>
@@ -952,9 +969,7 @@ const ProductIdentificationResults = () => {
 
       {/* Questionable Ingredients Section */}
       {!loadingIngredients && questionableTags.length > 0 && (
-        <section
-          className="rounded-[7px] px-3 sm:px-4 py-4 sm:py-5 mt-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex gap-2 items-center justify-center overflow-hidden animate-fade-in-up"
-        >
+        <section className="rounded-[7px] px-3 sm:px-4 py-4 sm:py-5 mt-5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)] flex gap-2 items-center justify-center overflow-hidden animate-fade-in-up">
           <ProductResultInfoCard
             icon={chemicalsIcon}
             title="Questionable Ingredients"
@@ -967,9 +982,10 @@ const ProductIdentificationResults = () => {
             description={
               loadingDescriptions
                 ? 'Analyzing ingredients with AI...'
-                : selectedQuestionable && questionableTagDescriptions[selectedQuestionable]
+                : selectedQuestionable &&
+                    questionableTagDescriptions[selectedQuestionable]
                   ? String(questionableTagDescriptions[selectedQuestionable])
-                  : 'These are common synthetic additives found in processed waters and foods. They\'re approved for use but not ideal for daily consumption if you\'re aiming for natural, plant-based products.'
+                  : "These are common synthetic additives found in processed waters and foods. They're approved for use but not ideal for daily consumption if you're aiming for natural, plant-based products."
             }
             isLoadingDescription={loadingDescriptions}
           />

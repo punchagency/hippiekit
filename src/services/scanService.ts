@@ -287,7 +287,7 @@ export const scanImage = async (imageUri: string): Promise<ScanResponse> => {
  * Scan an image with OpenAI Vision to extract OCR + analysis
  */
 export const scanImageVision = async (
-  imageUri: string
+  imageUri: string,
 ): Promise<VisionAnalysisResponse> => {
   try {
     const response = await fetch(imageUri);
@@ -324,7 +324,7 @@ export const scanImageVision = async (
 
       if (fetchError instanceof Error && fetchError.name === 'AbortError') {
         throw new Error(
-          'Vision analysis timed out. Please try again with a clearer, closer photo of the product label.'
+          'Vision analysis timed out. Please try again with a clearer, closer photo of the product label.',
         );
       }
       throw fetchError;
@@ -341,7 +341,7 @@ export const scanImageVision = async (
  * Use this for initial page navigation, then call separate ingredient/packaging analysis
  */
 export const lookupBarcodeBasic = async (
-  barcode: string
+  barcode: string,
 ): Promise<BarcodeLookupResponse> => {
   try {
     const response = await fetch(
@@ -352,7 +352,7 @@ export const lookupBarcodeBasic = async (
           'Content-Type': 'application/json',
           'ngrok-skip-browser-warning': 'true',
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -378,7 +378,7 @@ export const lookupBarcodeBasic = async (
 export const getBarcodeRecommendations = async (
   barcode: string,
   productData?: any,
-  isCleanScan?: boolean
+  isCleanScan?: boolean,
 ): Promise<ProductRecommendations | null> => {
   try {
     const response = await fetch(`${AI_SERVICE_URL}/barcode/recommendations`, {
@@ -424,7 +424,7 @@ export const getProductRecommendations = async (
   marketingClaims?: string,
   certifications?: string,
   productType?: string,
-  imageUri?: string
+  imageUri?: string,
 ): Promise<ProductRecommendations | null> => {
   try {
     // Create form data to send image along with product info
@@ -462,7 +462,7 @@ export const getProductRecommendations = async (
           'ngrok-skip-browser-warning': 'true',
         },
         body: formData,
-      }
+      },
     );
 
     console.log('Recommendations API response status:', apiResponse.status);
@@ -472,7 +472,7 @@ export const getProductRecommendations = async (
       console.error(
         'Failed to get product recommendations:',
         apiResponse.statusText,
-        errorText
+        errorText,
       );
       return null;
     }
@@ -519,7 +519,7 @@ export const getIndexStats = async () => {
  * Uses multi-tier approach: Database -> Web Search -> AI Knowledge -> Category Generic
  */
 export const identifyProduct = async (
-  imageUri: string
+  imageUri: string,
 ): Promise<ProductIdentificationResponse> => {
   try {
     const response = await fetch(imageUri);
@@ -556,7 +556,7 @@ export const identifyProduct = async (
 
       if (fetchError instanceof Error && fetchError.name === 'AbortError') {
         throw new Error(
-          'Product identification timed out. This may happen when searching for ingredients online. Please try again.'
+          'Product identification timed out. This may happen when searching for ingredients online. Please try again.',
         );
       }
       throw fetchError;
@@ -606,7 +606,7 @@ export const identifyProductBasic = async (imageUri: string) => {
 export const separatePhotoIngredients = async (
   productName: string,
   brand: string,
-  category?: string
+  category?: string,
 ) => {
   try {
     const formData = new FormData();
@@ -640,12 +640,15 @@ export const separatePhotoIngredients = async (
 export const describePhotoIngredients = async (
   harmfulIngredients: string[],
   questionableIngredients: string[],
-  safeIngredients: string[]
+  safeIngredients: string[],
 ) => {
   try {
     const formData = new FormData();
     formData.append('harmful_ingredients', harmfulIngredients.join(','));
-    formData.append('questionable_ingredients', questionableIngredients.join(','));
+    formData.append(
+      'questionable_ingredients',
+      questionableIngredients.join(','),
+    );
     formData.append('safe_ingredients', safeIngredients.join(','));
 
     const res = await fetch(`${AI_SERVICE_URL}/identify/ingredients/describe`, {
@@ -676,7 +679,7 @@ export const separatePhotoPackaging = async (
   brand: string,
   category?: string,
   containerMaterial?: string,
-  containerType?: string
+  containerType?: string,
 ) => {
   try {
     const formData = new FormData();
@@ -715,7 +718,7 @@ export const describePhotoPackaging = async (
   materials: string[],
   brandName?: string,
   productName?: string,
-  category?: string
+  category?: string,
 ) => {
   try {
     const formData = new FormData();

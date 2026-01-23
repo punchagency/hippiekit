@@ -73,7 +73,7 @@ const getAuthToken = async () => {
 
 // Save scan result to database
 export const saveScanResult = async (
-  scanData: SaveScanResultRequest
+  scanData: SaveScanResultRequest,
 ): Promise<ScanResult> => {
   const token = await getAuthToken();
 
@@ -94,7 +94,7 @@ export const saveScanResult = async (
 // Get all scan results for current user
 export const getScanResults = async (
   page: number = 1,
-  limit: number = 10
+  limit: number = 10,
 ): Promise<ScanResultsResponse> => {
   const token = await getAuthToken();
 
@@ -131,7 +131,7 @@ export const getScanResultById = async (id: string): Promise<ScanResult> => {
 
 // Get scan results by barcode
 export const getScanResultsByBarcode = async (
-  barcode: string
+  barcode: string,
 ): Promise<ScanResult[]> => {
   const token = await getAuthToken();
 
@@ -145,7 +145,7 @@ export const getScanResultsByBarcode = async (
       headers: {
         Authorization: `Bearer ${token}`,
       },
-    }
+    },
   );
 
   return response.data.data;
