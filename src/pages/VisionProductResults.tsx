@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import productResultsIcon from '@/assets/productResultsIcon.svg';
 import heartIcon from '@/assets/heartIcon.svg';
 import chemicalsIcon from '@/assets/chemicalsIcon.svg';
@@ -7,8 +7,13 @@ import cleanIngredientsIcon from '@/assets/cleanIngredientsIcon.svg';
 import productContainerIngIcon from '@/assets/productContainerIngIcon.svg';
 import aiIcon from '@/assets/aiIcon.svg';
 import type { VisionAnalysis } from '@/services/scanService';
+import {
+  getProductRecommendations,
+  type ProductRecommendations,
+} from '@/services/scanService';
 import { ProductResultInfoCard } from '@/components/ProductResultInfoCard';
 import { PageHeader } from '@/components/PageHeader';
+import { Button } from '@/components/ui/button';
 
 export default function VisionProductResults() {
   const location = useLocation();
@@ -20,10 +25,12 @@ export default function VisionProductResults() {
 
   // State for selected items
   const [selectedHarmful, setSelectedHarmful] = useState<string | null>(null);
-  const [selectedQuestionable, setSelectedQuestionable] = useState<string | null>(null);
+  const [selectedQuestionable, setSelectedQuestionable] = useState<
+    string | null
+  >(null);
   const [selectedSafe, setSelectedSafe] = useState<string | null>(null);
   const [selectedPackaging, setSelectedPackaging] = useState<string | null>(
-    null
+    null,
   );
   const [selectedAIAlternative, setSelectedAIAlternative] = useState<{
     name: string;
@@ -33,7 +40,8 @@ export default function VisionProductResults() {
   } | null>(null);
 
   // State for recommendations
-  const [recommendations, setRecommendations] = useState<ProductRecommendations | null>(null);
+  const [recommendations, setRecommendations] =
+    useState<ProductRecommendations | null>(null);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
 
   if (!analysis) {
@@ -52,32 +60,41 @@ export default function VisionProductResults() {
 
   // Extract harmful, questionable, and safe ingredients from chemical_analysis
   const chemicalFlags = analysis.chemical_analysis?.flags || [];
-  
+
   // Separate harmful (critical, high, moderate) from questionable
-  const harmfulFlags = chemicalFlags.filter((flag) => 
-    ['CRITICAL', 'HIGH', 'MODERATE', 'critical', 'high', 'moderate'].includes(flag.severity)
+  const harmfulFlags = chemicalFlags.filter((flag) =>
+    ['CRITICAL', 'HIGH', 'MODERATE', 'critical', 'high', 'moderate'].includes(
+      flag.severity,
+    ),
   );
-  const questionableFlags = chemicalFlags.filter((flag) => 
-    ['QUESTIONABLE', 'questionable'].includes(flag.severity)
+  const questionableFlags = chemicalFlags.filter((flag) =>
+    ['QUESTIONABLE', 'questionable'].includes(flag.severity),
   );
-  
+
   const harmfulTags = harmfulFlags.map((flag) => flag.chemical);
   const questionableTags = questionableFlags.map((flag) => flag.chemical);
-  
+
   const harmfulTagDescriptions: Record<string, string> = {};
   harmfulFlags.forEach((flag) => {
     harmfulTagDescriptions[flag.chemical] = flag.why_flagged;
   });
-  
+
   const questionableTagDescriptions: Record<string, string> = {};
   questionableFlags.forEach((flag) => {
-    questionableTagDescriptions[flag.chemical] = flag.why_flagged || 
+    questionableTagDescriptions[flag.chemical] =
+      flag.why_flagged ||
       "These are common synthetic additives found in processed products. They're approved for use but not ideal for daily consumption if you're aiming for natural, plant-based products.";
   });
 
+  // Extract packaging information (must be before usage)
+  const packagingMaterial = analysis.packaging?.material || '';
+  const packagingType = analysis.packaging?.type || '';
+  const packagingRecyclable = analysis.packaging?.recyclable || '';
+
   // Determine if this is a "clean" scan (no harmful ingredients AND no plastic packaging)
   // A "clean" scan means: no harmful chemicals AND packaging is not plastic/harmful
-  const hasPlasticPackaging = packagingMaterial.toLowerCase().includes('plastic') || 
+  const hasPlasticPackaging =
+    packagingMaterial.toLowerCase().includes('plastic') ||
     packagingType.toLowerCase().includes('plastic');
   const isCleanScan = harmfulTags.length === 0 && !hasPlasticPackaging;
 
@@ -87,12 +104,12 @@ export default function VisionProductResults() {
     .split(',')
     .map((ing) => ing.trim())
     .filter((ing) => ing);
-  
+
   // Filter out both harmful AND questionable from safe ingredients
   const safeTags = allIngredients.filter(
-    (ing) => 
+    (ing) =>
       !harmfulTags.some((h) => h.toLowerCase() === ing.toLowerCase()) &&
-      !questionableTags.some((q) => q.toLowerCase() === ing.toLowerCase())
+      !questionableTags.some((q) => q.toLowerCase() === ing.toLowerCase()),
   );
   const safeTagDescriptions: Record<string, string> = {};
   safeTags.forEach((ing) => {
@@ -100,22 +117,16 @@ export default function VisionProductResults() {
       'Common ingredient used in food and personal care products.';
   });
 
-  // Extract packaging information
-  const packagingMaterial = analysis.packaging?.material || '';
-  const packagingType = analysis.packaging?.type || '';
-  const packagingRecyclable = analysis.packaging?.recyclable || '';
-
   const packagingTags = packagingMaterial
     ? [packagingMaterial]
     : packagingType
-    ? [packagingType]
-    : [];
+      ? [packagingType]
+      : [];
 
   const packagingTagDescriptions: Record<string, string> = {};
   if (packagingMaterial) {
-    packagingTagDescriptions[
-      packagingMaterial
-    ] = `Type: ${packagingType}\nRecyclable: ${packagingRecyclable}`;
+    packagingTagDescriptions[packagingMaterial] =
+      `Type: ${packagingType}\nRecyclable: ${packagingRecyclable}`;
   }
 
   // Fetch recommendations based on product info
@@ -129,11 +140,11 @@ export default function VisionProductResults() {
           analysis.product_info.name,
           analysis.product_info.brand || '',
           analysis.product_info.category || '',
-          allIngredients,
+          allIngredients.join(', '),
           undefined, // marketing_claims
           undefined, // certifications
           undefined, // product_type
-          scannedImage // Pass the scanned image for multimodal search
+          scannedImage, // Pass the scanned image for multimodal search
         );
         setRecommendations(recs);
       } catch (error) {
@@ -145,7 +156,11 @@ export default function VisionProductResults() {
     };
 
     fetchRecommendations();
-  }, [analysis?.product_info?.name, analysis?.product_info?.brand, analysis?.product_info?.category]);
+  }, [
+    analysis?.product_info?.name,
+    analysis?.product_info?.brand,
+    analysis?.product_info?.category,
+  ]);
 
   return (
     <section className="relative px-5 pt-6 pb-4 md:mx-7">
@@ -213,8 +228,8 @@ export default function VisionProductResults() {
                   analysis.chemical_analysis.safety_score >= 70
                     ? 'bg-green-100 text-green-800'
                     : analysis.chemical_analysis.safety_score >= 40
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : 'bg-red-100 text-red-800'
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : 'bg-red-100 text-red-800'
                 }`}
               >
                 Safety Score: {analysis.chemical_analysis.safety_score}/100
@@ -255,7 +270,8 @@ export default function VisionProductResults() {
             onTagClick={(tag) => setSelectedQuestionable(tag)}
             descTitle={selectedQuestionable || 'Questionable Ingredients'}
             description={
-              selectedQuestionable && questionableTagDescriptions[selectedQuestionable]
+              selectedQuestionable &&
+              questionableTagDescriptions[selectedQuestionable]
                 ? String(questionableTagDescriptions[selectedQuestionable])
                 : "These are common synthetic additives found in processed waters and foods. They're approved for use but not ideal for daily consumption if you're aiming for natural, plant-based products."
             }
@@ -344,7 +360,7 @@ export default function VisionProductResults() {
                   {isCleanScan ? 'Similar Products' : 'Hippiekit Vetted Swaps'}
                 </header>
                 <div className="flex flex-col gap-2.5">
-                  {recommendations.products.map((product) => (
+                  {recommendations.products.map((product: any) => (
                     <div
                       key={product.id}
                       onClick={() => navigate(`/products/${product.id}`)}
@@ -371,7 +387,7 @@ export default function VisionProductResults() {
                       </div>
 
                       <Button
-                        onClick={(e) => {
+                        onClick={(e: React.MouseEvent) => {
                           e.stopPropagation();
                           window.open(
                             product.affiliate_url || product.permalink,
@@ -402,49 +418,51 @@ export default function VisionProductResults() {
                     </div>
                   </header>
                   <div className="flex flex-col gap-2.5">
-                    {recommendations.ai_alternatives.map((alt, index) => (
-                      <div
-                        key={index}
-                        onClick={() => setSelectedAIAlternative(alt)}
-                        className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex flex-col sm:flex-row gap-2 sm:gap-3 items-start sm:items-center overflow-hidden cursor-pointer hover:shadow-[0px_2px_15px_0px_rgba(0,0,0,0.22)] transition-shadow"
-                      >
-                        <div className="w-14 h-14 sm:w-[60px] sm:h-[60px] bg-gradient-to-br from-[#00A23E] to-[#20799F] rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
-                          {alt.logo_url ? (
-                            <img
-                              src={alt.logo_url}
-                              alt={`${alt.brand} logo`}
-                              className="w-full h-full object-contain p-1"
-                              onError={(e) => {
-                                // Fallback to emoji if image fails to load
-                                const target = e.target as HTMLImageElement;
-                                target.style.display = 'none';
-                                const parent = target.parentElement;
-                                if (parent) {
-                                  parent.innerHTML =
-                                    '<span class="text-white font-bold text-lg sm:text-xl">🌱</span>';
-                                }
-                              }}
-                            />
-                          ) : (
-                            <span className="text-white font-bold text-lg sm:text-xl">
-                              🌱
-                            </span>
-                          )}
-                        </div>
+                    {recommendations.ai_alternatives.map(
+                      (alt: any, index: number) => (
+                        <div
+                          key={index}
+                          onClick={() => setSelectedAIAlternative(alt)}
+                          className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex flex-col sm:flex-row gap-2 sm:gap-3 items-start sm:items-center overflow-hidden cursor-pointer hover:shadow-[0px_2px_15px_0px_rgba(0,0,0,0.22)] transition-shadow"
+                        >
+                          <div className="w-14 h-14 sm:w-[60px] sm:h-[60px] bg-gradient-to-br from-[#00A23E] to-[#20799F] rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            {alt.logo_url ? (
+                              <img
+                                src={alt.logo_url}
+                                alt={`${alt.brand} logo`}
+                                className="w-full h-full object-contain p-1"
+                                onError={(e) => {
+                                  // Fallback to emoji if image fails to load
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  const parent = target.parentElement;
+                                  if (parent) {
+                                    parent.innerHTML =
+                                      '<span class="text-white font-bold text-lg sm:text-xl">🌱</span>';
+                                  }
+                                }}
+                              />
+                            ) : (
+                              <span className="text-white font-bold text-lg sm:text-xl">
+                                🌱
+                              </span>
+                            )}
+                          </div>
 
-                        <div className="flex flex-col flex-1 gap-1 min-w-0">
-                          <h3 className="font-roboto font-semibold text-sm sm:text-[16px] text-black leading-snug break-words">
-                            {alt.name}
-                          </h3>
-                          <p className="font-roboto text-xs sm:text-[12px] font-medium text-[#00A23E]">
-                            {alt.brand}
-                          </p>
-                          <p className="font-roboto font-normal text-xs sm:text-[13px] text-[#4e4e4e] leading-normal line-clamp-2">
-                            {alt.description}
-                          </p>
+                          <div className="flex flex-col flex-1 gap-1 min-w-0">
+                            <h3 className="font-roboto font-semibold text-sm sm:text-[16px] text-black leading-snug break-words">
+                              {alt.name}
+                            </h3>
+                            <p className="font-roboto text-xs sm:text-[12px] font-medium text-[#00A23E]">
+                              {alt.brand}
+                            </p>
+                            <p className="font-roboto font-normal text-xs sm:text-[13px] text-[#4e4e4e] leading-normal line-clamp-2">
+                              {alt.description}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ),
+                    )}
                   </div>
                 </div>
               )}

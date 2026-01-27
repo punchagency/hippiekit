@@ -212,10 +212,15 @@ const ProductIdentificationResults = () => {
         console.log('📦 Converting from MongoDB format');
         // Convert saved data back to the component's expected format
         const harmfulDescriptions: Record<string, string> = {};
+        const questionableDescriptions: Record<string, string> = {};
         const safeDescriptions: Record<string, string> = {};
 
         savedScanData.harmfulIngredients?.forEach((ing: any) => {
           harmfulDescriptions[ing.name] = ing.description;
+        });
+
+        savedScanData.questionableIngredients?.forEach((ing: any) => {
+          questionableDescriptions[ing.name] = ing.description;
         });
 
         savedScanData.safeIngredients?.forEach((ing: any) => {
@@ -239,11 +244,12 @@ const ProductIdentificationResults = () => {
           ingredients: {
             safe: Object.keys(safeDescriptions),
             harmful: Object.keys(harmfulDescriptions),
+            questionable: Object.keys(questionableDescriptions),
           },
           ingredient_descriptions: {
             safe: safeDescriptions,
             harmful: harmfulDescriptions,
-            questionable: {},
+            questionable: questionableDescriptions,
           },
           packaging: savedScanData.packaging?.map((p: any) => p.name) || [],
           packaging_analysis: {
