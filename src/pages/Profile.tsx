@@ -9,15 +9,69 @@ import profileImgSample from '@/assets/profileImgSample.jpg';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Toggle } from '@/components/ui/toggle';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
+import { preferencesStore } from '@/lib/preferencesStore';
+import type { UserPreferences } from '@/lib/preferencesStore';
 
 const Profile = () => {
   const [notifications, setNotifications] = useState(false);
+  const [countryPreferences, setCountryPreferences] = useState<
+    UserPreferences['countryPreferences']
+  >({
+    usa: false,
+    canada: false,
+    mexico: false,
+    europe: false,
+  });
   const [imgError, setImgError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Load preferences from storage on mount
+  useEffect(() => {
+    const loadPreferences = async () => {
+      try {
+        const prefs = await preferencesStore.getPreferences();
+        setNotifications(prefs.notifications);
+        setCountryPreferences(prefs.countryPreferences);
+      } catch (error) {
+        console.error('Error loading preferences:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadPreferences();
+  }, []);
+
+  // Handle notifications toggle change
+  const handleNotificationsChange = async (enabled: boolean) => {
+    setNotifications(enabled);
+    try {
+      await preferencesStore.setNotifications(enabled);
+    } catch (error) {
+      console.error('Error saving notifications preference:', error);
+      // Revert on error
+      setNotifications(!enabled);
+    }
+  };
+
+  // Handle country preference change
+  const handleCountryPreferenceChange = async (
+    country: keyof UserPreferences['countryPreferences'],
+    enabled: boolean
+  ) => {
+    setCountryPreferences((prev) => ({ ...prev, [country]: enabled }));
+    try {
+      await preferencesStore.setCountryPreference(country, enabled);
+    } catch (error) {
+      console.error('Error saving country preference:', error);
+      // Revert on error
+      setCountryPreferences((prev) => ({ ...prev, [country]: !enabled }));
+    }
+  };
 
   console.log('users phone number', user);
   return (
@@ -86,7 +140,11 @@ const Profile = () => {
           </div>
           <div className="flex justify-between items-center">
             <p className="text-[10px] sm:text-[11.765px]">New products here</p>
-            <Toggle checked={notifications} onChange={setNotifications} />
+            <Toggle
+              checked={notifications}
+              onChange={handleNotificationsChange}
+              disabled={isLoading}
+            />
           </div>
         </div>
 
@@ -99,19 +157,43 @@ const Profile = () => {
             <ul className="flex flex-col gap-2">
               <li className="flex justify-between items-center w-full text-sm sm:text-base">
                 <p>Made in USA</p>
-                <Checkbox />
+                <Checkbox
+                  checked={countryPreferences.usa}
+                  onCheckedChange={(checked) =>
+                    handleCountryPreferenceChange('usa', checked === true)
+                  }
+                  disabled={isLoading}
+                />
               </li>
               <li className="flex justify-between items-center w-full text-sm sm:text-base">
                 <p>Canada</p>
-                <Checkbox />
+                <Checkbox
+                  checked={countryPreferences.canada}
+                  onCheckedChange={(checked) =>
+                    handleCountryPreferenceChange('canada', checked === true)
+                  }
+                  disabled={isLoading}
+                />
               </li>
               <li className="flex justify-between items-center w-full text-sm sm:text-base">
                 <p>Mexico</p>
-                <Checkbox />
+                <Checkbox
+                  checked={countryPreferences.mexico}
+                  onCheckedChange={(checked) =>
+                    handleCountryPreferenceChange('mexico', checked === true)
+                  }
+                  disabled={isLoading}
+                />
               </li>
               <li className="flex justify-between items-center w-full text-sm sm:text-base">
                 <p>Europe</p>
-                <Checkbox />
+                <Checkbox
+                  checked={countryPreferences.europe}
+                  onCheckedChange={(checked) =>
+                    handleCountryPreferenceChange('europe', checked === true)
+                  }
+                  disabled={isLoading}
+                />
               </li>
             </ul>
           </div>
