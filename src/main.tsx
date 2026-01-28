@@ -37,6 +37,8 @@ import Notifications from './pages/Notifications.tsx';
 import { ZeroPlastic } from './pages/ZeroPlastic.tsx';
 import TermsOfUse from './pages/TermsOfUse.tsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.tsx';
+import IconDescription from './pages/IconDescription.tsx';
+import HelpCenter from './pages/HelpCenter.tsx';
 import OAuthCallback from './pages/OAuthCallback.tsx';
 import VerifyEmail from './pages/VerifyEmail.tsx';
 import { useStatusBar } from './hooks/useStatusBar.ts';
@@ -140,6 +142,8 @@ function Root() {
                 <Route path="/zero-plastic" element={<ZeroPlastic />} />
                 <Route path="/terms-of-use" element={<TermsOfUse />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/icon-description" element={<IconDescription />} />
+                <Route path="/help" element={<HelpCenter />} />
               </Route>
 
               {/* ========== PROTECTED ROUTES (Main Pages - With Bottom Nav) ========== */}
