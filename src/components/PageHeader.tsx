@@ -48,7 +48,7 @@ export const PageHeader = ({
   const isLongTitle = title.length > 20;
 
   return (
-    <div className={cn('flex items-center gap-3 mb-4', className)}>
+    <div className={cn('flex items-center gap-3 pt-4 mb-4', className)}>
       {showBack ? (
         <button
           onClick={handleBack}

@@ -20,7 +20,7 @@ export const SafeAreaLayout = ({
 }: SafeAreaLayoutProps) => {
   return (
     <div
-      className={`w-full relative h-[calc(100vh_-_(env(safe-area-inset-top))_-_(env(safe-area-inset-bottom)))] flex flex-col ${className}`}
+      className={`w-full relative h-[calc(100vh_-_var(--safe-area-inset-top)_-_var(--safe-area-inset-bottom))] flex flex-col ${className}`}
     >
       {children}
     </div>

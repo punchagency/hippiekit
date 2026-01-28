@@ -26,6 +26,14 @@
   --font-family-inter: "Inter", sans-serif;
 }
 
+/* Safe area CSS variables - set by JS on Android, uses env() fallback on iOS */
+:root {
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
+}
+
 html,
 body {
   @apply bg-[#f5f5f5] m-0 p-0;
@@ -254,26 +262,27 @@ body.barcode-scanner-active #root {
 }
 
 /* Safe area utilities for edge-to-edge design */
+/* Uses CSS variables that are set by JS on Android, with env() fallback for iOS */
 .pt-safe {
-  padding-top: env(safe-area-inset-top);
+  padding-top: var(--safe-area-inset-top);
 }
 
 .pb-safe {
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: var(--safe-area-inset-bottom);
 }
 
 .pt-safe-header {
-  padding-top: calc(env(safe-area-inset-top) + 1rem);
+  padding-top: calc(var(--safe-area-inset-top) + 1rem);
 }
 
 .pb-safe-nav {
-  padding-bottom: calc(env(safe-area-inset-bottom) + 80px);
+  padding-bottom: calc(var(--safe-area-inset-bottom) + 80px);
 }
 
 /* For pages that need both safe areas */
 .safe-area-page {
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: calc(env(safe-area-inset-bottom) + 80px);
+  padding-top: var(--safe-area-inset-top);
+  padding-bottom: calc(var(--safe-area-inset-bottom) + 80px);
 }
 
 /* Keyboard handling - scroll input into view */

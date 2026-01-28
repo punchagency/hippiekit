@@ -85,7 +85,7 @@ const HomeSidebar = ({ open, onOpenChange }: HomeSidebarProps) => {
         }`}
       >
         {/* Purple Header Section - extends to top of screen */}
-        <div className="bg-primary p-5 sm:p-6 pb-6 sm:pb-8 pt-[calc(env(safe-area-inset-top)+1.25rem)] sm:pt-[calc(env(safe-area-inset-top)+1.5rem)]">
+        <div className="bg-primary p-5 sm:p-6 pb-6 sm:pb-8 pt-[calc(var(--safe-area-inset-top)+1.25rem)] sm:pt-[calc(var(--safe-area-inset-top)+1.5rem)]">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2.5 sm:gap-3">
               {/* Avatar */}

@@ -108,44 +108,10 @@ const Onboarding = () => {
   const currentData = onboardingIconsMap[currentStep];
 
   return (
-    <div className="flex flex-col h-full bg-white">
-      {/* Skip Button and Test Server - Fixed at top */}
-      <div className="flex justify-between items-center p-4 max-[400px]:p-3 shrink-0">
-        <Button
-          onClick={testServer}
-          disabled={testing}
-          className="bg-blue-500 text-white border-0 rounded-full px-4 py-1 text-sm"
-        >
-          {testing ? 'Testing...' : 'Test Server'}
-        </Button>
-        <Button
-          onClick={handleSkip}
-          className="bg-transparent text-secondary border border-secondary rounded-full px-4 py-1 text-sm"
-        >
-          Skip
-        </Button>
-      </div>
-
-      {/* Server Status Display */}
-      {serverStatus && (
-        <div className="px-4 pb-2 shrink-0">
-          <div
-            className={`p-2.5 rounded-lg text-sm ${
-              serverStatus.startsWith('✅')
-                ? 'bg-green-100 text-green-800'
-                : serverStatus.startsWith('❌')
-                ? 'bg-red-100 text-red-800'
-                : 'bg-blue-100 text-blue-800'
-            }`}
-          >
-            {serverStatus}
-          </div>
-        </div>
-      )}
-
-      {/* Onboarding Card - Fills remaining space */}
+    <div className="relative h-screen w-full bg-white overflow-hidden">
+      {/* Onboarding Card - Full screen, starts from very top (behind status bar) */}
       <div
-        className="flex-1 overflow-hidden min-h-0"
+        className="absolute inset-0"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -162,8 +128,42 @@ const Onboarding = () => {
         />
       </div>
 
-      {/* Progress Dots & Navigation - Fixed at bottom */}
-      <div className="py-4 px-4 bg-white shrink-0">
+      {/* Skip Button and Test Server - Overlaid at top with safe area padding */}
+      <div className="absolute top-0 left-0 right-0 flex justify-between items-center px-4 pt-[calc(var(--safe-area-inset-top)+8px)] pb-2 z-10">
+        <Button
+          onClick={testServer}
+          disabled={testing}
+          className="bg-blue-500 text-white border-0 rounded-full px-4 py-1 text-sm shadow-md"
+        >
+          {testing ? 'Testing...' : 'Test Server'}
+        </Button>
+        <Button
+          onClick={handleSkip}
+          className="bg-white/90 text-secondary border border-secondary rounded-full px-4 py-1 text-sm shadow-md"
+        >
+          Skip
+        </Button>
+      </div>
+
+      {/* Server Status Display */}
+      {serverStatus && (
+        <div className="absolute top-16 left-0 right-0 px-4 z-10">
+          <div
+            className={`p-2.5 rounded-lg text-sm shadow-md ${
+              serverStatus.startsWith('✅')
+                ? 'bg-green-100 text-green-800'
+                : serverStatus.startsWith('❌')
+                ? 'bg-red-100 text-red-800'
+                : 'bg-blue-100 text-blue-800'
+            }`}
+          >
+            {serverStatus}
+          </div>
+        </div>
+      )}
+
+      {/* Progress Dots & Navigation - Fixed at bottom with safe area padding */}
+      <div className="absolute bottom-0 left-0 right-0 pt-4 px-4 pb-[calc(var(--safe-area-inset-bottom)+16px)] bg-white z-10">
         <div className="flex justify-between items-center">
           <Button
             onClick={handleBack}

@@ -47,8 +47,8 @@ const BottomNav = () => {
     <nav
       className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[440px] bg-white rounded-tl-[20px] rounded-tr-[20px] shadow-[0_-2px_10px_rgba(0,0,0,0.1)] z-30"
       style={{
-        height: 'calc(60px + env(safe-area-inset-bottom))',
-        paddingBottom: 'env(safe-area-inset-bottom)',
+        height: 'calc(60px + var(--safe-area-inset-bottom))',
+        paddingBottom: 'var(--safe-area-inset-bottom)',
       }}
     >
       <ul className="flex justify-around items-center h-[60px] px-2">

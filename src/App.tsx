@@ -204,7 +204,7 @@ function App() {
           <HomeSidebar open={isSidebarOpen} onOpenChange={setIsSidebarOpen} />
 
           {/* Fixed Header */}
-          <header className="fixed top-[env(safe-area-inset-top)] left-0 right-0 max-w-[440px] mx-auto px-4 sm:px-5 pt-4 sm:pt-6 pb-3 sm:pb-4 bg-[#f5f5f5] z-40">
+          <header className="fixed top-[var(--safe-area-inset-top)] left-0 right-0 max-w-[440px] mx-auto px-4 sm:px-5 pt-4 sm:pt-6 pb-3 sm:pb-4 bg-[#f5f5f5] z-40">
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <button
                 onClick={() => setIsSidebarOpen(true)}

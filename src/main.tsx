@@ -84,6 +84,16 @@ function Root() {
               {/* OAuth Callback Route - Public (no auth check needed) */}
               <Route path="/oauth-callback" element={<OAuthCallback />} />
 
+              {/* Onboarding - Edge-to-edge, no layout wrapper */}
+              <Route
+                path="/onboarding"
+                element={
+                  <PublicRoute>
+                    <Onboarding />
+                  </PublicRoute>
+                }
+              />
+
               {/* ========== PUBLIC ROUTES (Auth Pages) ========== */}
               <Route
                 element={
@@ -92,7 +102,6 @@ function Root() {
                   </PublicRoute>
                 }
               >
-                <Route path="/onboarding" element={<Onboarding />} />
                 <Route path="/signin" element={<SignIn />} />
                 <Route path="/signup" element={<SignUp />} />
                 <Route path="/verify-email" element={<VerifyEmail />} />

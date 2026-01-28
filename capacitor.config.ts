@@ -24,8 +24,10 @@ const config: CapacitorConfig = {
   },
   // Live reload on device: serve from your LAN Vite dev server
   // Comment out for production builds
+  // For Android emulator: use 10.0.2.2 (emulator's alias for host machine)
+  // For physical device: use your LAN IP (e.g., 172.20.10.6)
   server: {
-    url: 'http://172.20.10.6:5173',
+    url: 'http://10.0.2.2:5173',
     cleartext: true,
   },
 };

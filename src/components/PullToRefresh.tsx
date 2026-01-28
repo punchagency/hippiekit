@@ -80,7 +80,7 @@ export const PullToRefresh = ({
             top: `calc(${Math.max(
               pullDistance * 0.5,
               20
-            )}px + env(safe-area-inset-top))`,
+            )}px + var(--safe-area-inset-top))`,
             opacity: spinnerOpacity,
             transition: isRefreshing ? 'opacity 150ms ease-out' : 'none',
           }}

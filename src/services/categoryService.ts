@@ -359,18 +359,17 @@ export const searchCategoriesAndProducts = async (
 
 /**
  * Hook to fetch all categories with caching
- * Categories are cached for 7 days since they rarely change
+ * Categories are cached but refresh periodically to pick up count changes
  */
 export const useCategories = (): UseQueryResult<Category[], Error> => {
   return useQuery({
     queryKey: ['categories'],
     queryFn: fetchCategories,
-    staleTime: Infinity, // Categories never go stale - they're static content
-    gcTime: Infinity, // Keep in cache forever
-    refetchOnMount: false, // Don't refetch on component mount
-    refetchOnWindowFocus: false, // Don't refetch on window focus
-    refetchOnReconnect: false, // Don't refetch on reconnect
-    networkMode: 'offlineFirst', // Use cache first, even if online
+    staleTime: 1000 * 60 * 10, // 10 minutes - categories don't change often but counts do
+    gcTime: 1000 * 60 * 60 * 24, // 24 hours cache retention for offline support
+    refetchOnMount: false, // Use cached data on mount, background refresh if stale
+    refetchOnWindowFocus: false, // Don't refetch on window focus (mobile app)
+    refetchOnReconnect: true, // Sync when network is restored
   });
 };
 
@@ -384,12 +383,11 @@ export const useTopCategories = (
   return useQuery({
     queryKey: ['categories', 'top', limit],
     queryFn: () => fetchTopCategories(limit),
-    staleTime: Infinity, // Categories never go stale - they're static content
-    gcTime: Infinity, // Keep in cache forever
-    refetchOnMount: false, // Don't refetch on component mount
-    refetchOnWindowFocus: false, // Don't refetch on window focus
-    refetchOnReconnect: false, // Don't refetch on reconnect
-    networkMode: 'offlineFirst', // Use cache first, even if online
+    staleTime: 1000 * 60 * 10, // 10 minutes - categories don't change often but counts do
+    gcTime: 1000 * 60 * 60 * 24, // 24 hours cache retention for offline support
+    refetchOnMount: false, // Use cached data on mount, background refresh if stale
+    refetchOnWindowFocus: false, // Don't refetch on window focus (mobile app)
+    refetchOnReconnect: true, // Sync when network is restored
   });
 };
 
@@ -404,11 +402,11 @@ export const useSubCategories = (
     queryKey: ['categories', 'subcategories', parentId],
     queryFn: () => fetchSubCategories(parentId),
     enabled: !!parentId,
-    staleTime: Infinity, // Subcategories never go stale - they're static content
-    gcTime: 1000 * 60 * 60 * 24 * 30, // 30 days cache retention
-    refetchOnMount: false, // Don't refetch on component mount
-    refetchOnWindowFocus: false, // Don't refetch on window focus
-    refetchOnReconnect: false, // Don't refetch on reconnect
+    staleTime: 1000 * 60 * 10, // 10 minutes - subcategories don't change often but counts do
+    gcTime: 1000 * 60 * 60 * 24, // 24 hours cache retention for offline support
+    refetchOnMount: false, // Use cached data on mount, background refresh if stale
+    refetchOnWindowFocus: false, // Don't refetch on window focus (mobile app)
+    refetchOnReconnect: true, // Sync when network is restored
   });
 };
 
