@@ -219,7 +219,7 @@ export const Scan = () => {
   };
 
   return (
-    <div className="flex flex-col h-full min-h-screen overflow-auto pb-safe">
+    <div className="flex flex-col h-full overflow-auto">
       {/* Module Install Modal for Android */}
       <ModuleInstallModal
         isOpen={moduleModalOpen}
@@ -231,7 +231,7 @@ export const Scan = () => {
         onClose={handleModuleClose}
       />
 
-      <div className="px-5 pt-6">
+      <div className="px-5">
         <PageHeader
           title="Scan Product"
           titleIconSrc={undefined}

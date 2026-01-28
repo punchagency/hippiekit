@@ -824,9 +824,9 @@ const BarcodeProductResults = () => {
   // Show error state
   if (error || (!product && !loadingBasicData)) {
     return (
-      <section className="relative px-5 pt-6 pb-4 md:mx-7">
+      <section className="relative px-5 md:mx-7">
         <PageHeader title="Product Analysis" />
-        <div className="flex flex-col gap-5 p-2 items-center justify-center min-h-[400px] p-4">
+        <div className="flex flex-col gap-5 p-2 items-center justify-center min-h-[400px]">
           {isNetworkIssue ? (
             <>
               <div className="text-6xl mb-4">📡</div>
@@ -1018,7 +1018,7 @@ const BarcodeProductResults = () => {
   // };
 
   return (
-    <section className="relative px-5 pt-6 pb-4 md:mx-7">
+    <section className="relative px-5 md:mx-7">
       {/* Header */}
       <PageHeader title="Barcode Product" />
 
@@ -1631,7 +1631,7 @@ const BarcodeProductResults = () => {
       {recommendations &&
         recommendations.ai_alternatives.length > 0 &&
         recommendations.products.length === 0 && (
-          <section className="mt-6 sm:mt-8 mb-20 p-3 sm:p-4 text-white font-family-roboto leading-6 rounded-[10px] bg-[#20799F]">
+          <section className="mt-6 sm:mt-8 p-3 sm:p-4 text-white font-family-roboto leading-6 rounded-[10px] bg-[#20799F]">
             <header className="flex gap-2.5 font-medium text-base sm:text-[18px] items-center">
               <img
                 src={aiIcon}

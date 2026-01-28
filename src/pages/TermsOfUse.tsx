@@ -5,7 +5,7 @@ const TermsOfUse = () => {
   return (
     <div className="min-h-screen bg-[#F5F5F5] pb-8">
       {/* Header */}
-      <header className="px-4 pt-6 pb-4 bg-white shadow-sm sticky top-0 z-10">
+      <header className="px-4 bg-white shadow-sm sticky top-0 z-10">
         <div className="flex items-center gap-4">
           <Link
             to="/profile"

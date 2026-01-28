@@ -299,7 +299,7 @@ const AllCategories = () => {
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
-      <section className="relative px-5 pt-6 pb-4">
+      <section className="relative px-5">
         <PageHeader
           title={pageTitle}
           onBack={

@@ -12,6 +12,8 @@ import OtpVerification from './pages/OtpVerification.tsx';
 import Onboarding from './pages/Onboarding.tsx';
 import Profile from './pages/Profile.tsx';
 import MainLayout from './layouts/MainLayout.tsx';
+import AuthLayout from './layouts/AuthLayout.tsx';
+import ContentLayout from './layouts/ContentLayout.tsx';
 import EditProfile from './pages/EditProfile.tsx';
 import { Search } from './pages/Search.tsx';
 import Scan from './pages/Scan.tsx';
@@ -41,6 +43,7 @@ import { useStatusBar } from './hooks/useStatusBar.ts';
 import Splash from './pages/Splash.tsx';
 import { initializeGoogleAuth } from './lib/androidAuth.ts';
 import { DeepLinkListener } from './components/DeepLinkListener.tsx';
+import { ScrollToTop } from './components/ScrollToTop.tsx';
 // import CategoryPage from './pages/CategoryPage.tsx';
 import ProductPage from './pages/ProductPage.tsx';
 import ProductResultsBefore from './pages/ProductResultsBefore.tsx';
@@ -75,250 +78,62 @@ function Root() {
       <AuthProvider>
         <ScanCacheProvider>
           <BrowserRouter>
+            <ScrollToTop />
             <DeepLinkListener />
             <Routes>
               {/* OAuth Callback Route - Public (no auth check needed) */}
               <Route path="/oauth-callback" element={<OAuthCallback />} />
 
-              {/* Public Routes WITHOUT bottom nav - redirect to home if authenticated */}
+              {/* ========== PUBLIC ROUTES (Auth Pages) ========== */}
+              <Route
+                element={
+                  <PublicRoute>
+                    <AuthLayout />
+                  </PublicRoute>
+                }
+              >
+                <Route path="/onboarding" element={<Onboarding />} />
+                <Route path="/signin" element={<SignIn />} />
+                <Route path="/signup" element={<SignUp />} />
+                <Route path="/verify-email" element={<VerifyEmail />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/reset-password/confirm" element={<ResetPasswordConfirm />} />
+                <Route path="/otp-verification" element={<OtpVerification />} />
+                <Route path="/productresbef" element={<ProductResultsBefore />} />
+              </Route>
 
+              {/* ========== PROTECTED ROUTES (Content Pages - No Bottom Nav) ========== */}
               <Route
-                path="/productresbef"
                 element={
-                  <PublicRoute>
-                    <ProductResultsBefore />
-                  </PublicRoute>
+                  <ProtectedRoute>
+                    <ContentLayout />
+                  </ProtectedRoute>
                 }
-              />
-              <Route
-                path="/onboarding"
-                element={
-                  <PublicRoute>
-                    <Onboarding />
-                  </PublicRoute>
-                }
-              />
-              <Route
-                path="/signin"
-                element={
-                  <PublicRoute>
-                    <SignIn />
-                  </PublicRoute>
-                }
-              />
-              <Route
-                path="/signup"
-                element={
-                  <PublicRoute>
-                    <SignUp />
-                  </PublicRoute>
-                }
-              />
-              <Route
-                path="/verify-email"
-                element={
-                  <PublicRoute>
-                    <VerifyEmail />
-                  </PublicRoute>
-                }
-              />
-              <Route
-                path="/reset-password"
-                element={
-                  <PublicRoute>
-                    <ResetPassword />
-                  </PublicRoute>
-                }
-              />
-              <Route
-                path="/reset-password/confirm"
-                element={
-                  <PublicRoute>
-                    <ResetPasswordConfirm />
-                  </PublicRoute>
-                }
-              />
-              <Route
-                path="/otp-verification"
-                element={
-                  <PublicRoute>
-                    <OtpVerification />
-                  </PublicRoute>
-                }
-              />
+              >
+                <Route path="/search" element={<Search />} />
+                <Route path="/splash" element={<Splash />} />
+                <Route path="/scan" element={<Scan />} />
+                <Route path="/product-results" element={<ProductResults />} />
+                <Route path="/vision-product-results" element={<VisionProductResults />} />
+                <Route path="/barcode-product-results" element={<BarcodeProductResults />} />
+                <Route path="/product-identification-results" element={<ProductIdentificationResults />} />
+                <Route path="/gallery" element={<Gallery />} />
+                <Route path="/categories" element={<AllCategories />} />
+                <Route path="/categories/*" element={<AllCategories />} />
+                <Route path="/products/:productId" element={<ProductPage />} />
+                <Route path="/categorysearch/:categorySlug" element={<CategorySearch />} />
+                <Route path="/favorites/search" element={<FavoritesSearch />} />
+                <Route path="/favorite-items" element={<FavoriteItems />} />
+                <Route path="/shopping-list" element={<ShoppingList />} />
+                <Route path="/kitchen-items" element={<KitchenItems />} />
+                <Route path="/monthly-specials" element={<MonthlySpecials />} />
+                <Route path="/notifications" element={<Notifications />} />
+                <Route path="/zero-plastic" element={<ZeroPlastic />} />
+                <Route path="/terms-of-use" element={<TermsOfUse />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              </Route>
 
-              {/* Protected Routes WITHOUT bottom nav */}
-              <Route
-                path="/search"
-                element={
-                  <ProtectedRoute>
-                    <Search />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/splash"
-                element={
-                  <ProtectedRoute>
-                    <Splash />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/scan"
-                element={
-                  <ProtectedRoute>
-                    <Scan />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/product-results"
-                element={
-                  <ProtectedRoute>
-                    <ProductResults />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/vision-product-results"
-                element={
-                  <ProtectedRoute>
-                    <VisionProductResults />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/barcode-product-results"
-                element={
-                  <ProtectedRoute>
-                    <BarcodeProductResults />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/product-identification-results"
-                element={
-                  <ProtectedRoute>
-                    <ProductIdentificationResults />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/gallery"
-                element={
-                  <ProtectedRoute>
-                    <Gallery />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/categories"
-                element={
-                  <ProtectedRoute>
-                    <AllCategories />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/categories/*"
-                element={
-                  <ProtectedRoute>
-                    <AllCategories />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/products/:productId"
-                element={
-                  <ProtectedRoute>
-                    <ProductPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/categorysearch/:categorySlug"
-                element={
-                  <ProtectedRoute>
-                    <CategorySearch />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/favorites/search"
-                element={
-                  <ProtectedRoute>
-                    <FavoritesSearch />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/favorite-items"
-                element={
-                  <ProtectedRoute>
-                    <FavoriteItems />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/shopping-list"
-                element={
-                  <ProtectedRoute>
-                    <ShoppingList />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/kitchen-items"
-                element={
-                  <ProtectedRoute>
-                    <KitchenItems />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/monthly-specials"
-                element={
-                  <ProtectedRoute>
-                    <MonthlySpecials />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/notifications"
-                element={
-                  <ProtectedRoute>
-                    <Notifications />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/zero-plastic"
-                element={
-                  <ProtectedRoute>
-                    <ZeroPlastic />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/terms-of-use"
-                element={
-                  <ProtectedRoute>
-                    <TermsOfUse />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/privacy-policy"
-                element={
-                  <ProtectedRoute>
-                    <PrivacyPolicy />
-                  </ProtectedRoute>
-                }
-              />
-
-              {/* Protected Routes WITH bottom nav */}
+              {/* ========== PROTECTED ROUTES (Main Pages - With Bottom Nav) ========== */}
               <Route
                 element={
                   <ProtectedRoute>

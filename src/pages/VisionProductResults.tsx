@@ -163,7 +163,7 @@ export default function VisionProductResults() {
   ]);
 
   return (
-    <section className="relative px-5 pt-6 pb-4 md:mx-7">
+    <section className="relative px-5 md:mx-7">
       {/* Header */}
       <PageHeader title="AI OCR Results" />
 
@@ -172,7 +172,7 @@ export default function VisionProductResults() {
         <img
           src={productResultsIcon}
           alt=""
-          className="w-5 h-5 flex-shrink-0"
+          className="w-5 h-5 shrink-0"
         />
         <span className="font-family-segoe text-primary text-base sm:text-[18px] font-bold">
           Product Results
@@ -196,7 +196,7 @@ export default function VisionProductResults() {
           {/* Product Info */}
           <div className="flex flex-col flex-1 gap-1 sm:gap-2 min-w-0">
             {/* Product Name */}
-            <h3 className="font-roboto font-semibold text-sm sm:text-[16px] text-black capitalize leading-snug break-words">
+            <h3 className="font-roboto font-semibold text-sm sm:text-[16px] text-black capitalize leading-snug wrap-break-word">
               {analysis.product_info?.name || 'Unknown Product'}
             </h3>
             {/* Brand */}
@@ -214,7 +214,7 @@ export default function VisionProductResults() {
           </div>
 
           {/* Favorite Button */}
-          <button className="w-5 h-5 sm:w-[22px] sm:h-[22px] bg-[rgba(255,255,255,0.3)] p-1 sm:p-[5px] rounded-sm shadow-[0px_2px_16px_0px_rgba(6,51,54,0.1)] flex-shrink-0">
+          <button className="w-5 h-5 sm:w-[22px] sm:h-[22px] bg-[rgba(255,255,255,0.3)] p-1 sm:p-[5px] rounded-sm shadow-[0px_2px_16px_0px_rgba(6,51,54,0.1)] shrink-0">
             <img src={heartIcon} alt="Favorite" className="w-full h-full" />
           </button>
         </div>
@@ -224,13 +224,12 @@ export default function VisionProductResults() {
           analysis.chemical_analysis?.safety_score !== undefined && (
             <div className="flex items-center justify-center gap-3">
               <div
-                className={`px-4 py-2 rounded-lg font-bold text-base sm:text-lg ${
-                  analysis.chemical_analysis.safety_score >= 70
-                    ? 'bg-green-100 text-green-800'
-                    : analysis.chemical_analysis.safety_score >= 40
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : 'bg-red-100 text-red-800'
-                }`}
+                className={`px-4 py-2 rounded-lg font-bold text-base sm:text-lg ${analysis.chemical_analysis.safety_score >= 70
+                  ? 'bg-green-100 text-green-800'
+                  : analysis.chemical_analysis.safety_score >= 40
+                    ? 'bg-yellow-100 text-yellow-800'
+                    : 'bg-red-100 text-red-800'
+                  }`}
               >
                 Safety Score: {analysis.chemical_analysis.safety_score}/100
               </div>
@@ -271,7 +270,7 @@ export default function VisionProductResults() {
             descTitle={selectedQuestionable || 'Questionable Ingredients'}
             description={
               selectedQuestionable &&
-              questionableTagDescriptions[selectedQuestionable]
+                questionableTagDescriptions[selectedQuestionable]
                 ? String(questionableTagDescriptions[selectedQuestionable])
                 : "These are common synthetic additives found in processed waters and foods. They're approved for use but not ideal for daily consumption if you're aiming for natural, plant-based products."
             }
@@ -369,11 +368,11 @@ export default function VisionProductResults() {
                       <img
                         src={product.image_url}
                         alt={product.name}
-                        className="w-14 h-14 sm:w-[60px] sm:h-[60px] object-cover rounded-lg flex-shrink-0"
+                        className="w-14 h-14 sm:w-[60px] sm:h-[60px] object-cover rounded-lg shrink-0"
                       />
 
                       <div className="flex flex-col flex-1 gap-1 min-w-0">
-                        <h3 className="font-roboto font-semibold text-sm sm:text-[16px] text-black capitalize leading-snug break-words">
+                        <h3 className="font-roboto font-semibold text-sm sm:text-[16px] text-black capitalize leading-snug wrap-break-word">
                           {product.name}
                         </h3>
                         <p className="font-roboto font-normal text-xs sm:text-[14px] text-[#4e4e4e] leading-normal line-clamp-2">
@@ -394,7 +393,7 @@ export default function VisionProductResults() {
                             '_blank',
                           );
                         }}
-                        className="bg-[#00A23E] text-white px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm hover:bg-[#008f35] transition-colors flex-shrink-0 whitespace-nowrap"
+                        className="bg-[#00A23E] text-white px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm hover:bg-[#008f35] transition-colors shrink-0 whitespace-nowrap"
                       >
                         Buy now
                       </Button>
@@ -410,9 +409,9 @@ export default function VisionProductResults() {
                 <div>
                   <header className="font-family-roboto text-base sm:text-[18px] font-medium mb-3.5 flex items-center gap-2">
                     Healthier Eco-Friendly Recommendation
-                    <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-purple-100 to-blue-100 rounded-full">
+                    <div className="flex items-center gap-1 px-2 py-1 bg-linear-to-r from-purple-100 to-blue-100 rounded-full">
                       <img src={aiIcon} alt="AI" className="w-4 h-4" />
-                      <span className="text-xs font-semibold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                      <span className="text-xs font-semibold bg-linear-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
                         AI
                       </span>
                     </div>
@@ -425,7 +424,7 @@ export default function VisionProductResults() {
                           onClick={() => setSelectedAIAlternative(alt)}
                           className="bg-white rounded-[13px] w-full shadow-[0px_1px_10px_0px_rgba(0,0,0,0.16)] p-2.5 flex flex-col sm:flex-row gap-2 sm:gap-3 items-start sm:items-center overflow-hidden cursor-pointer hover:shadow-[0px_2px_15px_0px_rgba(0,0,0,0.22)] transition-shadow"
                         >
-                          <div className="w-14 h-14 sm:w-[60px] sm:h-[60px] bg-gradient-to-br from-[#00A23E] to-[#20799F] rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                          <div className="w-14 h-14 sm:w-[60px] sm:h-[60px] bg-linear-to-br from-[#00A23E] to-[#20799F] rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
                             {alt.logo_url ? (
                               <img
                                 src={alt.logo_url}
@@ -450,7 +449,7 @@ export default function VisionProductResults() {
                           </div>
 
                           <div className="flex flex-col flex-1 gap-1 min-w-0">
-                            <h3 className="font-roboto font-semibold text-sm sm:text-[16px] text-black leading-snug break-words">
+                            <h3 className="font-roboto font-semibold text-sm sm:text-[16px] text-black leading-snug wrap-break-word">
                               {alt.name}
                             </h3>
                             <p className="font-roboto text-xs sm:text-[12px] font-medium text-[#00A23E]">
@@ -509,7 +508,7 @@ export default function VisionProductResults() {
             <div className="p-5 flex flex-col gap-4">
               {/* Logo/Image */}
               <div className="w-full flex justify-center">
-                <div className="w-32 h-32 bg-gradient-to-br from-[#00A23E] to-[#20799F] rounded-2xl flex items-center justify-center overflow-hidden shadow-lg">
+                <div className="w-32 h-32 bg-linear-to-br from-[#00A23E] to-[#20799F] rounded-2xl flex items-center justify-center overflow-hidden shadow-lg">
                   {selectedAIAlternative.logo_url ? (
                     <img
                       src={selectedAIAlternative.logo_url}
@@ -560,7 +559,7 @@ export default function VisionProductResults() {
                   <img
                     src={aiIcon}
                     alt="AI"
-                    className="w-5 h-5 flex-shrink-0 mt-0.5"
+                    className="w-5 h-5 shrink-0 mt-0.5"
                   />
                   <p className="font-roboto text-xs text-[#20799F] leading-relaxed">
                     This recommendation was AI-generated based on the product
@@ -574,12 +573,12 @@ export default function VisionProductResults() {
       )}
 
       {/* AI Note */}
-      <section className="mt-6 sm:mt-8 mb-20 p-3 sm:p-4 text-white font-family-roboto leading-6 rounded-[10px] bg-[#20799F]">
+      <section className="mt-6 sm:mt-8 p-3 sm:p-4 text-white font-family-roboto leading-6 rounded-[10px] bg-[#20799F]">
         <header className="flex gap-2.5 font-medium text-base sm:text-[18px] items-center">
           <img
             src={aiIcon}
             alt=""
-            className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0"
+            className="w-5 h-5 sm:w-6 sm:h-6 shrink-0"
           />
           <span>AI Note</span>
         </header>

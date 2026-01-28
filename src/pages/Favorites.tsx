@@ -215,7 +215,7 @@ const Favorites = () => {
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
-      <header className="px-5 pt-6 pb-4">
+      <header className="px-5">
         <PageHeader
           title="Favorites"
           titleIconSrc={favoritesIcon}

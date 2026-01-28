@@ -4,7 +4,6 @@ import { OnboardingCard } from '@/components/OnboardingCard';
 import { Button } from '@/components/ui/button';
 import { onboardingIconsMap } from '@/constants';
 import { ArrowLeft, ArrowRight } from '@/assets/onboardingIcons';
-import { SafeAreaLayout } from '@/components/layouts/SafeAreaLayout';
 
 const Onboarding = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -109,19 +108,19 @@ const Onboarding = () => {
   const currentData = onboardingIconsMap[currentStep];
 
   return (
-    <SafeAreaLayout className="bg-white">
+    <div className="flex flex-col h-full bg-white">
       {/* Skip Button and Test Server - Fixed at top */}
-      <div className="flex justify-between items-center p-4 max-[400px]:p-3">
+      <div className="flex justify-between items-center p-4 max-[400px]:p-3 shrink-0">
         <Button
           onClick={testServer}
           disabled={testing}
-          className="bg-blue-500 text-white border-0 rounded-[60px] px-4 py-[5px] max-[400px]:px-3 max-[400px]:text-sm"
+          className="bg-blue-500 text-white border-0 rounded-full px-4 py-1 text-sm"
         >
           {testing ? 'Testing...' : 'Test Server'}
         </Button>
         <Button
           onClick={handleSkip}
-          className="bg-transparent text-secondary border border-secondary inline-flex rounded-[60px] px-4 py-[5px] justify-center items-center gap-2.5 max-[400px]:px-3 max-[400px]:text-sm"
+          className="bg-transparent text-secondary border border-secondary rounded-full px-4 py-1 text-sm"
         >
           Skip
         </Button>
@@ -129,9 +128,9 @@ const Onboarding = () => {
 
       {/* Server Status Display */}
       {serverStatus && (
-        <div className="px-4 pb-2">
+        <div className="px-4 pb-2 shrink-0">
           <div
-            className={`p-3 rounded-lg text-sm ${
+            className={`p-2.5 rounded-lg text-sm ${
               serverStatus.startsWith('✅')
                 ? 'bg-green-100 text-green-800'
                 : serverStatus.startsWith('❌')
@@ -146,7 +145,7 @@ const Onboarding = () => {
 
       {/* Onboarding Card - Fills remaining space */}
       <div
-        className="flex-1 overflow-hidden"
+        className="flex-1 overflow-hidden min-h-0"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -164,13 +163,12 @@ const Onboarding = () => {
       </div>
 
       {/* Progress Dots & Navigation - Fixed at bottom */}
-      <div className="pb-6 bg-white max-[400px]:pb-4">
-        {/* Navigation Buttons and Progress Dots on Same Level */}
-        <div className="flex justify-between items-center px-6 ">
+      <div className="py-4 px-4 bg-white shrink-0">
+        <div className="flex justify-between items-center">
           <Button
             onClick={handleBack}
             disabled={currentStep === 0}
-            className={`bg-transparent border border-primary text-primary rounded-[60px] px-6 py-2 max-[400px]:px-4 max-[400px]:text-sm ${
+            className={`bg-transparent border border-primary text-primary rounded-full px-4 py-1.5 text-sm ${
               currentStep === 0 ? 'invisible' : 'visible'
             }`}
           >
@@ -178,14 +176,14 @@ const Onboarding = () => {
           </Button>
 
           {/* Progress Dots */}
-          <div className="flex gap-2 max-[400px]:gap-1.5">
+          <div className="flex gap-1.5">
             {onboardingIconsMap.map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentStep(index)}
                 className={`h-2 rounded-full transition-all ${
                   index === currentStep
-                    ? 'w-8 max-[400px]:w-6 bg-primary'
+                    ? 'w-6 bg-primary'
                     : 'w-2 bg-gray-300'
                 }`}
                 aria-label={`Go to step ${index + 1}`}
@@ -195,7 +193,7 @@ const Onboarding = () => {
 
           <Button
             onClick={handleNext}
-            className="bg-transparency border border-primary text-primary rounded-[60px] px-6 py-2 max-[400px]:px-4 max-[400px]:text-sm"
+            className="bg-transparent border border-primary text-primary rounded-full px-4 py-1.5 text-sm"
           >
             {isLastStep ? (
               'Get Started'
@@ -207,7 +205,7 @@ const Onboarding = () => {
           </Button>
         </div>
       </div>
-    </SafeAreaLayout>
+    </div>
   );
 };
 

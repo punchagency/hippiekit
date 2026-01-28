@@ -20,7 +20,6 @@ import { useAuth } from '@/context/AuthContext';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PasswordResetOtpModal from '@/components/PasswordResetOtpModal';
-import { SafeAreaLayout } from '@/components/layouts/SafeAreaLayout';
 
 const formSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -79,26 +78,23 @@ export default function ResetPassword() {
   };
 
   return (
-    <SafeAreaLayout>
-      <section className="mt-20 mx-[25.45px] font-family-poppins text-[#222] pb-20">
-        <TitleSubtitle
-          title="Reset Password"
-          subtitle="Enter email address and a verification code will be sent to you."
-        />
+    <section className="px-5 font-family-poppins text-[#222] min-h-full">
+      <TitleSubtitle
+        title="Reset Password"
+        subtitle="Enter email address and a verification code will be sent to you."
+      />
 
-        {
-          <>
-            {error && (
-              <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-                {error}
-              </div>
-            )}
+      {error && (
+        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+          {error}
+        </div>
+      )}
 
-            <form
-              id="reset-form"
-              onSubmit={form.handleSubmit(onSubmit)}
-              className="mt-8"
-            >
+      <form
+        id="reset-form"
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="mt-6"
+      >
               <FieldGroup className="relative">
                 <Controller
                   name="email"
@@ -131,60 +127,57 @@ export default function ResetPassword() {
               </FieldGroup>
             </form>
 
-            <Button
-              className="w-full text-[#FFF] mt-[323.95px] disabled:opacity-50 disabled:cursor-not-allowed"
-              form="reset-form"
-              type="submit"
-              disabled={isLoading}
+      <Button
+        className="w-full text-[#FFF] mt-8 disabled:opacity-50 disabled:cursor-not-allowed"
+        form="reset-form"
+        type="submit"
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <span className="flex items-center justify-center gap-2">
+            <svg
+              className="animate-spin h-5 w-5 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
             >
-              {isLoading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg
-                    className="animate-spin h-5 w-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Sending...
-                </span>
-              ) : (
-                'Request Password Reset'
-              )}
-            </Button>
-          </>
-        }
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            Sending...
+          </span>
+        ) : (
+          'Request Password Reset'
+        )}
+      </Button>
 
-        <div className="mt-10 flex justify-center">
-          <p>
-            Remember Password?{' '}
-            <Link to="/signin" className="font-semibold hover:text-[#7B61FF]">
-              Login
-            </Link>
-          </p>
-        </div>
+      <div className="mt-6 pb-8 flex justify-center">
+        <p className="text-sm">
+          <span className="text-gray-600">Remember Password? </span>
+          <Link to="/signin" className="font-semibold hover:text-primary">
+            Login
+          </Link>
+        </p>
+      </div>
 
-        {/* OTP Verification Modal */}
-        <PasswordResetOtpModal
-          isOpen={showOtpModal}
-          onClose={handleModalClose}
-          onVerified={handleOtpVerified}
-          email={userEmail}
-        />
-      </section>
-    </SafeAreaLayout>
+      {/* OTP Verification Modal */}
+      <PasswordResetOtpModal
+        isOpen={showOtpModal}
+        onClose={handleModalClose}
+        onVerified={handleOtpVerified}
+        email={userEmail}
+      />
+    </section>
   );
 }

@@ -124,7 +124,7 @@ export default function CategoryPage() {
   // }, [currentProductIndex, featuredProducts]);
   return (
     <PullToRefresh onRefresh={handleRefresh}>
-      <div className=" px-5 pt-6 pb-4">
+      <div className=" px-5">
         <PageHeader title={displayCategoryName || 'Category'} />
         {isLoadingProducts ? (
           // Featured Products Loading Skeleton

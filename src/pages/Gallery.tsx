@@ -5,7 +5,7 @@ import GalleryIcon from '../assets/galleryIcon.svg';
 export const Gallery = () => {
   return (
     <div className="relative mx-[24.5px]">
-      <header className="flex items-center justify-between pt-6 ">
+      <header className="flex items-center justify-between">
         <div className="rounded-[7px] p-2.5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]">
           <img src={cancelButton} alt="" />
         </div>

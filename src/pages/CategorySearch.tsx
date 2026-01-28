@@ -25,7 +25,7 @@ export default function CategorySearch() {
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
-      <div className="min-h-screen bg-[#F5F5F5] relative px-5 pt-6 pb-4">
+      <div className="min-h-screen bg-[#F5F5F5] relative px-5">
         <PageHeader title={pageTitle} onBack={() => navigate(-1)} />
         {/* Use CategoryProductsView which handles everything */}
         <CategoryProductsView categorySlug={categorySlug || ''} />

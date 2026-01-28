@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 
 const ProductResultsBefore = () => {
   return (
-    <section className="relative pt-6 mx-7">
+    <section className="relative mx-7">
       <div className="flex items-center justify-between mb-4">
         <div className="rounded-[7px] p-2.5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]">
           <img src={backButton} alt="" className="w-5 h-5" />
@@ -157,7 +157,7 @@ const ProductResultsBefore = () => {
         </div>
       </section>
 
-      <section className="mt-32 mb-20 p-4 text-white font-family-roboto leading-6 rounded-[10px] bg-[#20799F]">
+      <section className="mt-32 p-4 text-white font-family-roboto leading-6 rounded-[10px] bg-[#20799F]">
         <header className="flex gap-2.5 font-medium   text-[18px]">
           <img src={aiIcon} alt="" />
           <span>AI Note</span>

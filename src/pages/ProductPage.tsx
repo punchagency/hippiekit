@@ -89,7 +89,7 @@ const ProductPage = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#f5f5f5] pb-6">
-        <div className="px-5 pt-6">
+        <div className="px-5">
           <PageHeader title="Product" onBack={() => navigate(-1)} />
         </div>
         <div className="px-5 mt-6">
@@ -104,7 +104,7 @@ const ProductPage = () => {
   if (error || !product) {
     return (
       <div className="min-h-screen bg-[#f5f5f5] pb-6">
-        <div className="px-5 pt-6">
+        <div className="px-5">
           <PageHeader title="Product" onBack={() => navigate(-1)} />
         </div>
         <div className="px-5 mt-6 text-center">
@@ -125,7 +125,7 @@ const ProductPage = () => {
   return (
     <div className="min-h-screen bg-[#f5f5f5] pb-6">
       {/* Header */}
-      <div className="sticky top-0 z-10 px-5 pt-6 pb-4 bg-[#f5f5f5]">
+      <div className="sticky top-0 z-10 px-5 bg-[#f5f5f5]">
         <PageHeader title={productTitle} onBack={() => navigate(-1)} />
       </div>
 

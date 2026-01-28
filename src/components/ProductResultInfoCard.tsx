@@ -68,18 +68,17 @@ export const ProductResultInfoCard = ({
         <img
           src={icon}
           alt=""
-          className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0"
+          className="w-5 h-5 sm:w-6 sm:h-6 shrink-0"
         />
         <span
-          className={`capitalize text-sm sm:text-base ${
-            titleType === 'positive'
-              ? 'text-[#4E6C34]'
-              : titleType === 'negative'
+          className={`capitalize text-sm sm:text-base ${titleType === 'positive'
+            ? 'text-[#4E6C34]'
+            : titleType === 'negative'
               ? 'text-[#F35959]'
               : titleType === 'warning'
-              ? 'text-[#B8860B]'
-              : 'text-primary'
-          } font-family-segoe font-bold break-words`}
+                ? 'text-[#B8860B]'
+                : 'text-primary'
+            } font-family-segoe font-bold wrap-break-word`}
         >
           {title}
         </span>
@@ -113,7 +112,7 @@ export const ProductResultInfoCard = ({
             </span>
           </div>
         ) : (
-          <p className="mt-2 sm:mt-5 font-family-roboto text-xs sm:text-[14px] whitespace-pre-line break-words">
+          <p className="mt-2 sm:mt-5 font-family-roboto text-xs sm:text-[14px] whitespace-pre-line wrap-break-word">
             {description}
           </p>
         )}

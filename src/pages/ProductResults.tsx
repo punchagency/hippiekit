@@ -34,7 +34,7 @@ const ProductResults = () => {
   // If no scan results, redirect back
   if (!scanResults || scanResults.length === 0) {
     return (
-      <section className="relative pt-6 mx-7">
+      <section className="relative mx-7">
         <div className="flex flex-col items-center justify-center py-20">
           <p className="text-gray-500 mb-4">No scan results found</p>
           <Button
@@ -51,7 +51,7 @@ const ProductResults = () => {
   const topMatch = scanResults[0];
   const alternatives = scanResults.slice(1);
   return (
-    <section className="relative pt-6 mx-7">
+    <section className="relative mx-7">
       <div className="flex items-center justify-between mb-4">
         <button
           onClick={() => navigate('/')}
@@ -223,7 +223,7 @@ const ProductResults = () => {
       )}
 
       {/* AI Note */}
-      <section className="mt-10 mb-20 p-4 text-white font-family-roboto leading-6 rounded-[10px] bg-[#20799F]">
+      <section className="mt-10 p-4 text-white font-family-roboto leading-6 rounded-[10px] bg-[#20799F]">
         <header className="flex gap-2.5 font-medium text-[18px]">
           <img src={aiIcon} alt="AI" />
           <span>AI Scan Results</span>

@@ -19,7 +19,6 @@ import { TitleSubtitle } from '@/components/auth/title-subtitle';
 import { useAuth } from '@/context/AuthContext';
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { SafeAreaLayout } from '@/components/layouts/SafeAreaLayout';
 
 const formSchema = z
   .object({
@@ -90,24 +89,23 @@ export default function ResetPasswordConfirm() {
   }
 
   return (
-    <SafeAreaLayout>
-      <section className="mt-20 mx-[25.45px] font-family-poppins text-[#222] pb-20">
-        <TitleSubtitle
-          title="Create New Password"
-          subtitle="Create a new password to access your account."
-        />
+    <section className="px-5 font-family-poppins text-[#222] min-h-full">
+      <TitleSubtitle
+        title="Create New Password"
+        subtitle="Create a new password to access your account."
+      />
 
-        {error && (
-          <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-            {error}
-          </div>
-        )}
+      {error && (
+        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+          {error}
+        </div>
+      )}
 
-        <form
-          id="reset-confirm-form"
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="mt-8"
-        >
+      <form
+        id="reset-confirm-form"
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="mt-6"
+      >
           <FieldGroup className="space-y-6">
             <Controller
               name="password"
@@ -190,49 +188,48 @@ export default function ResetPasswordConfirm() {
         </form>
 
         <Button
-          className="w-full text-[#FFF] mt-[250px] disabled:opacity-50 disabled:cursor-not-allowed"
-          form="reset-confirm-form"
-          type="submit"
-          disabled={isLoading || !email || !otp}
-        >
-          {isLoading ? (
-            <span className="flex items-center justify-center gap-2">
-              <svg
-                className="animate-spin h-5 w-5 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-              Resetting...
-            </span>
-          ) : (
-            'Reset Password'
-          )}
-        </Button>
+        className="w-full text-[#FFF] mt-8 disabled:opacity-50 disabled:cursor-not-allowed"
+        form="reset-confirm-form"
+        type="submit"
+        disabled={isLoading || !email || !otp}
+      >
+        {isLoading ? (
+          <span className="flex items-center justify-center gap-2">
+            <svg
+              className="animate-spin h-5 w-5 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            Resetting...
+          </span>
+        ) : (
+          'Reset Password'
+        )}
+      </Button>
 
-        <div className="mt-10 flex justify-center">
-          <p>
-            Remember Password?{' '}
-            <Link to="/signin" className="font-semibold hover:text-[#7B61FF]">
-              Login
-            </Link>
-          </p>
-        </div>
-      </section>
-    </SafeAreaLayout>
+      <div className="mt-6 pb-8 flex justify-center">
+        <p className="text-sm">
+          <span className="text-gray-600">Remember Password? </span>
+          <Link to="/signin" className="font-semibold hover:text-primary">
+            Login
+          </Link>
+        </p>
+      </div>
+    </section>
   );
 }

@@ -2,7 +2,6 @@ import { Button } from '@/components/ui/button';
 import { TitleSubtitle } from '@/components/auth/title-subtitle';
 import { useState, useRef, type KeyboardEvent } from 'react';
 import { Input } from '@/components/ui/input';
-import { SafeAreaLayout } from '@/components/layouts/SafeAreaLayout';
 
 function OtpVerification() {
   const [otp, setOtp] = useState(['', '', '', '']);
@@ -54,21 +53,20 @@ function OtpVerification() {
   };
 
   return (
-    <SafeAreaLayout>
-      <section className="mt-20 mx-[25.45px] font-family-poppins text-[#222]">
-        <TitleSubtitle
-          title="OTP Verification"
-          subtitle="Verify Your Mobile Number"
-        />
+    <section className="px-5 font-family-poppins text-[#222] min-h-full">
+      <TitleSubtitle
+        title="OTP Verification"
+        subtitle="Verify Your Mobile Number"
+      />
 
-        <p className="mt-2 text-[14px]">
-          Enter the 4 digit cod sent to{' '}
-          <span className="font-semibold">+123 456 7890</span>{' '}
-          <span className="underline font-medium cursor-pointer">Chage</span>
-        </p>
+      <p className="mt-2 text-sm">
+        Enter the 4 digit code sent to{' '}
+        <span className="font-semibold">+123 456 7890</span>{' '}
+        <span className="underline font-medium cursor-pointer">Change</span>
+      </p>
 
-        {/* OTP Input Fields */}
-        <div className="flex gap-[30px] justify-center mt-10">
+      {/* OTP Input Fields */}
+      <div className="flex gap-6 justify-center mt-8">
           {otp.map((digit, index) => (
             <div key={index} className="flex flex-col items-center">
               <Input
@@ -89,12 +87,12 @@ function OtpVerification() {
           ))}
         </div>
 
-        {/* Paste from Clipboard Button */}
-        <div className="flex justify-center mt-9">
-          <button
-            onClick={handlePaste}
-            className="flex items-center gap-2.5 bg-neutral-200 px-2.5 py-[7px] rounded-[10px]"
-          >
+      {/* Paste from Clipboard Button */}
+      <div className="flex justify-center mt-6">
+        <button
+          onClick={handlePaste}
+          className="flex items-center gap-2 bg-neutral-200 px-3 py-2 rounded-lg text-sm"
+        >
             <svg
               width="15"
               height="18"
@@ -107,74 +105,73 @@ function OtpVerification() {
                 fill="#222222"
               />
             </svg>
-            <span className="capitalize font-medium text-[14px] text-[#222222]">
-              paste from clipboard
-            </span>
-          </button>
-        </div>
+          <span className="capitalize font-medium text-[#222222]">
+            paste from clipboard
+          </span>
+        </button>
+      </div>
 
-        {/* Timer and Resend Options */}
-        <div className="mt-[60px] text-[16px]">
-          <p className="capitalize">
-            The OTP will be expired in{' '}
-            <span className="font-medium">
-              (0:{timer.toString().padStart(2, '0')})
-            </span>
-          </p>
+      {/* Timer and Resend Options */}
+      <div className="mt-8 text-sm">
+        <p>
+          The OTP will expire in{' '}
+          <span className="font-medium">
+            (0:{timer.toString().padStart(2, '0')})
+          </span>
+        </p>
 
-          <p className="mt-2">
-            Didn't receive the code?{' '}
-            <span className="underline font-medium cursor-pointer">Resend</span>{' '}
-            or{' '}
-            <span className="underline font-medium cursor-pointer">
-              send to Email
-            </span>
-          </p>
-        </div>
+        <p className="mt-2">
+          Didn't receive the code?{' '}
+          <span className="underline font-medium cursor-pointer">Resend</span>{' '}
+          or{' '}
+          <span className="underline font-medium cursor-pointer">
+            send to Email
+          </span>
+        </p>
+      </div>
 
-        {/* Verify Button */}
-        <Button
-          onClick={handleVerify}
-          className="w-full text-[#FFF] mt-[178px]"
-          disabled={otp.some((digit) => !digit)}
+      {/* Verify Button */}
+      <Button
+        onClick={handleVerify}
+        className="w-full text-[#FFF] mt-8"
+        disabled={otp.some((digit) => !digit)}
+      >
+        Verify
+      </Button>
+
+      {/* Remember Device Checkbox */}
+      <div className="flex items-center gap-2 justify-center mt-6 pb-8">
+        <button
+          onClick={() => setRememberDevice(!rememberDevice)}
+          className="flex items-center justify-center"
         >
-          Verify
-        </Button>
-
-        {/* Remember Device Checkbox */}
-        <div className="flex items-center gap-2.5 justify-center mt-[184px]">
-          <button
-            onClick={() => setRememberDevice(!rememberDevice)}
-            className="flex items-center justify-center"
+          <div
+            className={`w-[18px] h-[18px] border-2 rounded ${
+              rememberDevice ? 'bg-primary border-primary' : 'border-[#222]'
+            } flex items-center justify-center`}
           >
-            <div
-              className={`w-[18px] h-[18px] border-2 rounded ${
-                rememberDevice ? 'bg-primary border-primary' : 'border-[#222]'
-              } flex items-center justify-center`}
-            >
-              {rememberDevice && (
-                <svg
-                  width="12"
-                  height="9"
-                  viewBox="0 0 12 9"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M1 4.5L4.5 8L11 1.5"
-                    stroke="white"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              )}
-            </div>
-          </button>
-          <p className="capitalize text-[14px]">Remember this device.</p>
-        </div>
-      </section>
-    </SafeAreaLayout>
+            {rememberDevice && (
+              <svg
+                width="12"
+                height="9"
+                viewBox="0 0 12 9"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M1 4.5L4.5 8L11 1.5"
+                  stroke="white"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            )}
+          </div>
+        </button>
+        <p className="text-sm">Remember this device.</p>
+      </div>
+    </section>
   );
 }
 

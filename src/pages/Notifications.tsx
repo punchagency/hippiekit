@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { NotificationCard } from '@/components/NotificationCard';
-import { Title } from '@/components/Title';
+import { PageHeader } from '@/components/PageHeader';
 import {
   getNotifications,
   markNotificationAsRead,
@@ -117,15 +117,15 @@ const Notifications = () => {
 
   return (
     <section className="bg-white h-full">
-      <div className="h-full relative">
-        <Title title="Notifications" />
+      <div className="h-full relative px-5 pt-4">
+        <PageHeader title="Notifications" showNotification={false} />
 
         {loading ? (
           <div className="flex justify-center items-center py-20">
             <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
           </div>
         ) : notifications.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 px-5 text-center">
+          <div className="flex flex-col items-center justify-center py-20 text-center">
             <p className="text-gray-500 font-family-roboto">
               No notifications yet
             </p>
@@ -138,20 +138,20 @@ const Notifications = () => {
             {/* Today's Notifications */}
             {todayNotifications.length > 0 && (
               <>
-                <div className="border-b border-[#D9D9D9] flex justify-between font-family-roboto">
-                  <div className="ml-5 border-b border-primary font-family-roboto text-primary font-bold w-fit">
+                <div className="border-b border-[#D9D9D9] flex justify-between font-family-roboto -mx-5 px-5">
+                  <div className="border-b border-primary font-family-roboto text-primary font-bold w-fit">
                     Today
                   </div>
                   {unreadCount > 0 && (
                     <button
                       onClick={handleMarkAllAsRead}
-                      className="font-medium mr-5 text-primary hover:underline"
+                      className="font-medium text-primary hover:underline"
                     >
                       Mark all as read
                     </button>
                   )}
                 </div>
-                <section className="my-[17px] mx-5 space-y-3">
+                <section className="my-[17px] space-y-3">
                   {todayNotifications.map((notification) => (
                     <NotificationCard
                       key={notification._id}
@@ -166,12 +166,12 @@ const Notifications = () => {
             {/* Yesterday's Notifications */}
             {yesterdayNotifications.length > 0 && (
               <>
-                <div className="flex justify-between border-t border-[#D9D9D9] pt-4">
-                  <div className="ml-5 font-family-roboto text-[#686868] font-bold w-fit">
+                <div className="flex justify-between border-t border-[#D9D9D9] pt-4 -mx-5 px-5">
+                  <div className="font-family-roboto text-[#686868] font-bold w-fit">
                     Yesterday
                   </div>
                 </div>
-                <section className="my-[17px] mx-5 space-y-3">
+                <section className="my-[17px] space-y-3">
                   {yesterdayNotifications.map((notification) => (
                     <NotificationCard
                       key={notification._id}
@@ -186,12 +186,12 @@ const Notifications = () => {
             {/* Older Notifications */}
             {olderNotifications.length > 0 && (
               <>
-                <div className="flex justify-between border-t border-[#D9D9D9] pt-4">
-                  <div className="ml-5 font-family-roboto text-[#686868] font-bold w-fit">
+                <div className="flex justify-between border-t border-[#D9D9D9] pt-4 -mx-5 px-5">
+                  <div className="font-family-roboto text-[#686868] font-bold w-fit">
                     Older
                   </div>
                 </div>
-                <section className="my-[17px] mx-5 space-y-3">
+                <section className="my-[17px] space-y-3">
                   {olderNotifications.map((notification) => (
                     <NotificationCard
                       key={notification._id}

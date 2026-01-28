@@ -52,13 +52,13 @@ export const PageHeader = ({
       {showBack ? (
         <button
           onClick={handleBack}
-          className="flex-shrink-0 rounded-[7px] p-2.5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]"
+          className="shrink-0 rounded-[7px] p-2.5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]"
           aria-label="Go back"
         >
           <img src={backButton} alt="Back" />
         </button>
       ) : (
-        <div className="flex-shrink-0 w-10" aria-hidden />
+        <div className="shrink-0 w-10" aria-hidden />
       )}
 
       {/* TITLE */}
@@ -69,7 +69,7 @@ export const PageHeader = ({
         )}
       >
         {titleIconSrc ? (
-          <img src={titleIconSrc} alt="" className="flex-shrink-0 w-5 h-5" />
+          <img src={titleIconSrc} alt="" className="shrink-0 w-5 h-5" />
         ) : null}
 
         {isLongTitle ? (
@@ -98,13 +98,13 @@ export const PageHeader = ({
       ) : showNotification ? (
         <button
           onClick={handleNotifications}
-          className="flex-shrink-0 rounded-[7px] p-2.5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]"
+          className="shrink-0 rounded-[7px] p-2.5 bg-[#FFF] shadow-[0_2px_4px_0_rgba(0,0,0,0.07)]"
           aria-label="Notifications"
         >
           <NotificationBadge />
         </button>
       ) : (
-        <div className="flex-shrink-0 w-10" aria-hidden />
+        <div className="shrink-0 w-10" aria-hidden />
       )}
     </div>
   );

@@ -303,7 +303,7 @@ export const Search = () => {
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
-      <section className="relative pt-6 mx-7 pb-4">
+      <section className="relative mx-7">
         <PageHeader
           title="Search"
           onBack={() => navigate('/')}
